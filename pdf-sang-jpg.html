@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PDF sang JPG — Chuyển đổi trực tuyến</title>
+  <meta name="description" content="Chuyển đổi nhiều tệp PDF sang JPG ngay trên trình duyệt. Kéo thả, xem trước và tải về ảnh JPG chất lượng cao." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#f4f5f9;
+      --surface:#ffffff;
+      --muted:#6b7280;
+      --text:#111827;
+      --primary:#e53935;
+      --primary-dark:#c62828;
+      --ring:rgba(229,57,53,.3);
+      --shadow:0 20px 40px rgba(17,24,39,.09), 0 10px 20px rgba(17,24,39,.05);
+      --radius:18px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:var(--text);background:var(--bg);}
+
+    .app{display:grid;grid-template-columns:1fr 360px;gap:28px;min-height:100vh;padding:28px;}
+    @media (max-width:1100px){
+      .app{grid-template-columns:1fr;padding:16px 16px 90px;gap:16px;}
+    }
+
+    .board{background:linear-gradient(180deg,#f7f8fc 0%,#f3f4f8 100%);border-radius:var(--radius);box-shadow:var(--shadow);padding:28px;display:flex;flex-direction:column;gap:24px;position:relative;overflow:hidden;}
+    @media (max-width:600px){.board{padding:20px;}}
+
+    .dropzone{border:2px dashed #e5e7eb;border-radius:22px;background:rgba(255,255,255,.9);backdrop-filter:blur(3px);padding:60px 30px;text-align:center;color:#4b5563;display:flex;flex-direction:column;align-items:center;gap:14px;transition:border-color .2s,box-shadow .2s,transform .2s;background-image:linear-gradient(135deg,rgba(229,57,53,.08),rgba(255,255,255,0));}
+    .dropzone.dragover{border-color:var(--primary);box-shadow:0 0 0 6px var(--ring);transform:translateY(-2px);}
+    .dropzone.disabled{opacity:.55;pointer-events:none;}
+    .dropzone.disabled button{cursor:not-allowed;background:#d1d5db;color:#6b7280;box-shadow:none;}
+    .dropzone strong{font-size:20px;font-weight:700;color:#1f2937;}
+    .dropzone button{background:var(--primary);color:#fff;border:none;border-radius:14px;padding:14px 20px;font-weight:600;cursor:pointer;box-shadow:0 12px 24px rgba(229,57,53,.25);transition:background .2s,transform .2s;}
+    .dropzone button:hover{background:var(--primary-dark);transform:translateY(-1px);}    
+
+    .selection-bar{display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.85);border-radius:16px;padding:14px 18px;font-weight:600;color:#1f2937;box-shadow:0 12px 24px rgba(17,24,39,.06);backdrop-filter:blur(2px);}
+    .selection-bar span{color:var(--muted);font-weight:500;}
+    .clear-btn{border:none;background:transparent;color:var(--primary);font-weight:600;cursor:pointer;}
+    .clear-btn:hover{text-decoration:underline;}
+
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:18px;}
+    .card{background:var(--surface);border-radius:16px;box-shadow:0 10px 30px rgba(17,24,39,.1);padding:14px;display:flex;flex-direction:column;gap:10px;position:relative;transition:transform .18s ease,box-shadow .18s ease;}
+    .card:hover{transform:translateY(-4px);box-shadow:0 14px 36px rgba(17,24,39,.14);}    
+    .thumb{width:100%;aspect-ratio:3/4;border-radius:13px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;}
+    .thumb img{width:100%;height:100%;object-fit:contain;}
+    .thumb::after{content:attr(data-pages);position:absolute;bottom:10px;right:10px;background:rgba(17,24,39,.82);color:#fff;font-size:12px;font-weight:600;padding:4px 8px;border-radius:999px;}
+    .filename{font-size:13px;font-weight:600;color:#1f2937;text-align:center;word-break:break-word;line-height:1.35;}
+    .remove{position:absolute;top:10px;right:10px;border:none;background:#fff;color:#ef4444;border-radius:10px;padding:6px 9px;font-weight:700;cursor:pointer;box-shadow:0 6px 16px rgba(239,68,68,.35);} 
+    .empty{border:1px dashed #d1d5db;border-radius:16px;padding:28px 18px;text-align:center;color:#9ca3af;font-size:14px;}
+
+    .rightpanel{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:26px;display:flex;flex-direction:column;gap:22px;position:sticky;top:26px;align-self:flex-start;}
+    .rightpanel h2{margin:0;font-size:22px;font-weight:700;}
+    .rightpanel p{margin:0;color:var(--muted);line-height:1.5;font-size:14px;}
+
+    .mode-toggle{display:grid;grid-template-columns:1fr 1fr;background:#f3f4f6;border-radius:14px;padding:6px;gap:6px;}
+    .mode-toggle button{border:none;border-radius:12px;padding:12px;font-weight:600;background:transparent;color:#4b5563;display:flex;flex-direction:column;gap:6px;align-items:center;cursor:pointer;transition:all .2s;}
+    .mode-toggle button.active{background:#fff;box-shadow:0 10px 24px rgba(229,57,53,.18);color:var(--primary);}
+    .mode-toggle button span{font-size:12px;color:var(--muted);}
+
+    .quality{display:flex;gap:12px;}
+    .qitem{flex:1;border:2px solid #e5e7eb;border-radius:14px;padding:16px;text-align:center;font-weight:600;cursor:pointer;transition:border-color .2s,box-shadow .2s;background:#fff;}
+    .qitem small{display:block;font-weight:500;color:var(--muted);margin-top:4px;}
+    .qitem.active{border-color:var(--primary);box-shadow:0 0 0 4px var(--ring);}
+
+    .status{min-height:32px;border-radius:12px;padding:10px 14px;font-size:13px;line-height:1.5;display:none;}
+    .status.show{display:block;}
+    .status.info{background:#f1f5f9;color:#1e293b;}
+    .status.success{background:#ecfdf5;color:#047857;}
+    .status.warn{background:#fef3c7;color:#b45309;}
+    .status.error{background:#fee2e2;color:#b91c1c;}
+
+    .progress{height:6px;background:#f3f4f6;border-radius:999px;overflow:hidden;display:none;}
+    .progress span{display:block;height:100%;width:0;background:var(--primary);transition:width .2s ease;}
+
+    .convert{border:none;border-radius:15px;padding:16px;font-weight:700;background:var(--primary);color:#fff;display:flex;justify-content:center;align-items:center;gap:10px;letter-spacing:.1px;font-size:15px;cursor:pointer;transition:background .2s,transform .2s;box-shadow:0 18px 32px rgba(229,57,53,.32);}
+    .convert:hover{background:var(--primary-dark);transform:translateY(-1px);}
+    .convert:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none;}
+
+    .options-toggle{display:none;position:fixed;right:16px;bottom:20px;z-index:40;background:var(--primary);color:#fff;border:none;padding:14px 18px;border-radius:999px;font-weight:600;box-shadow:0 14px 28px rgba(229,57,53,.35);}
+    @media (max-width:1100px){
+      .rightpanel{position:fixed;left:0;right:0;bottom:0;top:auto;border-radius:22px 22px 0 0;padding:22px 20px 96px;transform:translateY(110%);transition:transform .34s ease;z-index:39;max-height:85vh;overflow-y:auto;}
+      .rightpanel.open{transform:translateY(0);}
+      .options-toggle{display:inline-flex;gap:8px;align-items:center;}
+    }
+
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="board" id="board" aria-label="Danh sách tệp PDF">
+      <div class="dropzone" id="dropzone" tabindex="0">
+        <div style="font-size:48px">📄 ➜ 🖼️</div>
+        <strong>Kéo & thả PDF vào đây</strong>
+        <span>hoặc</span>
+        <button type="button" id="chooseBtn">Chọn tệp PDF</button>
+        <div class="muted">Hỗ trợ nhiều tệp, chuyển đổi trực tiếp trên trình duyệt</div>
+        <input type="file" id="fileInput" accept="application/pdf" multiple hidden>
+      </div>
+
+      <div class="selection-bar" id="selectionBar" style="display:none;">
+        <div><strong id="selectionCount">0 tệp</strong> <span id="pageCount">0 trang</span></div>
+        <button class="clear-btn" id="clearAll" type="button">Xóa tất cả</button>
+      </div>
+
+      <div class="grid" id="fileGrid"></div>
+      <div class="empty" id="emptyState">Chưa có tệp nào. Kéo PDF của bạn vào khung bên trên.</div>
+    </section>
+
+    <aside class="rightpanel" id="panel">
+      <h2>Chuyển PDF sang JPG</h2>
+      <p>Tải nhiều tệp PDF, chuyển từng trang sang JPG chất lượng cao và tải về gói ZIP trong vài thao tác.</p>
+
+      <div class="mode-toggle" role="group" aria-label="Chế độ chuyển đổi">
+        <button type="button" class="toggle active" data-mode="pages">
+          Trang sang JPG
+          <span>Mỗi trang thành 1 ảnh</span>
+        </button>
+        <button type="button" class="toggle" data-mode="images">
+          Xuất ảnh
+          <span>Lấy ảnh trong PDF</span>
+        </button>
+      </div>
+
+      <div>
+        <p style="font-weight:600;margin-bottom:10px;color:#1f2937;">Chất lượng ảnh</p>
+        <div class="quality" role="radiogroup">
+          <div class="qitem active" tabindex="0" role="radio" data-quality="normal" aria-checked="true">Bình thường<small>Khuyên dùng</small></div>
+          <div class="qitem" tabindex="0" role="radio" data-quality="high" aria-checked="false">Cao<small>Rõ nét hơn</small></div>
+        </div>
+      </div>
+
+      <div class="status" id="statusMessage" role="status" aria-live="polite"></div>
+
+      <div class="progress" id="progressWrap" aria-hidden="true">
+        <span id="progressBar"></span>
+      </div>
+
+      <button class="convert" id="convertBtn" type="button" disabled><span>Chuyển sang JPG</span></button>
+    </aside>
+
+    <button class="options-toggle" id="optsToggle" type="button">Tùy chọn</button>
+  </div>
+
+  <script src="./libs/pdfjs/pdf.min.js"></script>
+  <script src="./libs/jszip/jszip.min.js"></script>
+  <script src="./libs/filesaver/FileSaver.min.js"></script>
+
+  <script>
+    const state = {
+      files: [], // {id, file, name, pdf, pages, thumb}
+      mode: 'pages',
+      quality: 'normal',
+      converting: false
+    };
+
+    const $ = (selector, scope=document) => scope.querySelector(selector);
+    const $$ = (selector, scope=document) => Array.from(scope.querySelectorAll(selector));
+
+    const dropzone = $('#dropzone');
+    const fileInput = $('#fileInput');
+    const grid = $('#fileGrid');
+    const emptyState = $('#emptyState');
+    const selectionBar = $('#selectionBar');
+    const selectionCount = $('#selectionCount');
+    const pageCount = $('#pageCount');
+    const convertBtn = $('#convertBtn');
+    const progressWrap = $('#progressWrap');
+    const progressBar = $('#progressBar');
+    const statusMessage = $('#statusMessage');
+    const optsToggle = $('#optsToggle');
+    const panel = $('#panel');
+    const chooseBtn = $('#chooseBtn');
+    const pdfjs = window.pdfjsLib || null;
+
+    const mql = window.matchMedia('(max-width:1100px)');
+    const handleResponsive = () => {
+      optsToggle.style.display = mql.matches ? 'inline-flex' : 'none';
+      if(!mql.matches){panel.classList.remove('open');}
+    };
+    handleResponsive();
+    mql.addEventListener('change', handleResponsive);
+    optsToggle.addEventListener('click', () => panel.classList.toggle('open'));
+
+    function updateStatus(text='', tone='info'){
+      if(!text){statusMessage.className = 'status'; statusMessage.textContent=''; return;}
+      statusMessage.textContent = text;
+      statusMessage.className = `status show ${tone}`;
+    }
+
+    function updateSelection(){
+      const fileTotal = state.files.length;
+      const pageTotal = state.files.reduce((sum,f)=>sum+(f.pages||0),0);
+      if(fileTotal){
+        selectionBar.style.display = 'flex';
+        selectionCount.textContent = `${fileTotal} tệp`;
+        pageCount.textContent = `${pageTotal} trang`;
+      }else{
+        selectionBar.style.display = 'none';
+      }
+      emptyState.style.display = fileTotal ? 'none':'block';
+      convertBtn.disabled = !fileTotal || state.converting;
+    }
+
+    function renderGrid(){
+      if(!state.files.length){
+        grid.innerHTML = '';
+        updateSelection();
+        return;
+      }
+      const cards = state.files.map(f => `
+        <div class="card">
+          <button class="remove" type="button" data-remove="${f.id}" title="Xóa tệp">×</button>
+          <div class="thumb" data-pages="${f.pages ? `${f.pages} trang` : 'Đang xử lý'}">
+            ${f.thumb ? `<img src="${f.thumb}" alt="Trang đầu của ${f.name}">` : '<span class="muted">Đang tạo ảnh xem trước…</span>'}
+          </div>
+          <div class="filename" title="${f.name}">${f.name}</div>
+        </div>`).join('');
+      grid.innerHTML = cards;
+      updateSelection();
+    }
+
+    async function fileToArrayBuffer(file){
+      return await new Response(file).arrayBuffer();
+    }
+
+    async function loadPdfPreview(entry){
+      if(!pdfjs) throw new Error('PDF.js chưa sẵn sàng');
+      const buffer = await fileToArrayBuffer(entry.file);
+      entry.pdf = await pdfjs.getDocument({data:buffer}).promise;
+      entry.pages = entry.pdf.numPages;
+      const page = await entry.pdf.getPage(1);
+      const viewport = page.getViewport({scale:1.1});
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      await page.render({canvasContext:ctx, viewport}).promise;
+      entry.thumb = canvas.toDataURL('image/jpeg', .75);
+    }
+
+    async function handleFiles(files){
+      if(!files.length) return;
+      if(!pdfjs){
+        updateStatus('Không thể xử lý PDF vì thư viện PDF.js chưa tải xong. Hãy kiểm tra kết nối Internet và tải lại trang.', 'error');
+        return;
+      }
+      updateStatus('Đang tải PDF…', 'info');
+      for(const file of files){
+        if(!/\.pdf$/i.test(file.name)){ continue; }
+        const id = Math.random().toString(36).slice(2,9);
+        const entry = {id, file, name:file.name, pdf:null, pages:0, thumb:null};
+        state.files.push(entry);
+        renderGrid();
+        try{
+          await loadPdfPreview(entry);
+          renderGrid();
+        }catch(err){
+          console.error('Không thể đọc PDF', err);
+          updateStatus(`Không thể đọc tệp ${file.name}.`, 'error');
+          state.files = state.files.filter(f => f.id !== id);
+          renderGrid();
+        }
+      }
+      updateStatus('Tệp đã sẵn sàng, bấm "Chuyển sang JPG".', 'success');
+    }
+
+    dropzone.addEventListener('click', e => {
+      if (dropzone.classList.contains('disabled')) return;
+      if (e.target.closest('button')) return;
+      fileInput.click();
+    });
+    chooseBtn.addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (dropzone.classList.contains('disabled')) return;
+      fileInput.click();
+    });
+    fileInput.addEventListener('change', () => {
+      handleFiles(Array.from(fileInput.files || []));
+      fileInput.value = '';
+    });
+
+    ['dragenter','dragover'].forEach(evt => dropzone.addEventListener(evt, e => {
+      if (dropzone.classList.contains('disabled')) return;
+      e.preventDefault();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+      dropzone.classList.add('dragover');
+    }));
+    dropzone.addEventListener('dragleave', e => {
+      if (e.target === dropzone) {
+        dropzone.classList.remove('dragover');
+      }
+    });
+    dropzone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      if (dropzone.classList.contains('disabled')) {
+        updateStatus('Không thể nhận tệp khi thư viện PDF chưa sẵn sàng.', 'error');
+        return;
+      }
+      const files = Array.from(e.dataTransfer.files || []).filter(f => f.type === 'application/pdf' || /\.pdf$/i.test(f.name));
+      if(files.length){handleFiles(files);} else {updateStatus('Vui lòng thả tệp PDF.', 'warn');}
+    });
+
+    window.addEventListener('dragover', e => e.preventDefault());
+    window.addEventListener('drop', e => e.preventDefault());
+
+    $('#clearAll').addEventListener('click', () => {
+      state.files.forEach(f => f.pdf?.destroy?.());
+      state.files = [];
+      renderGrid();
+      updateStatus('Đã xóa danh sách tệp.', 'info');
+    });
+
+    grid.addEventListener('click', e => {
+      const btn = e.target.closest('[data-remove]');
+      if(!btn) return;
+      const id = btn.getAttribute('data-remove');
+      state.files = state.files.filter(f => f.id !== id);
+      renderGrid();
+      updateStatus('Đã loại bỏ tệp khỏi danh sách.', 'info');
+    });
+
+    $$('.mode-toggle .toggle').forEach(btn => {
+      btn.addEventListener('click', () => setMode(btn.dataset.mode));
+    });
+    function setMode(mode){
+      state.mode = mode;
+      $$('.mode-toggle .toggle').forEach(btn => {
+        const isActive = btn.dataset.mode === mode;
+        btn.classList.toggle('active', isActive);
+      });
+      if(mode === 'images'){
+        updateStatus('Chế độ "Xuất ảnh" sẽ cố gắng trích ảnh; nếu không khả dụng sẽ xuất trang.', 'info');
+      } else {
+        updateStatus('Chế độ "Trang sang JPG" đã được chọn.', 'info');
+      }
+    }
+
+    $$('.qitem').forEach(item => {
+      item.addEventListener('click', () => setQuality(item.dataset.quality));
+      item.addEventListener('keydown', e => {
+        if(e.key === 'Enter' || e.key === ' '){e.preventDefault(); setQuality(item.dataset.quality);} 
+      });
+    });
+    function setQuality(quality){
+      state.quality = quality;
+      $$('.qitem').forEach(el => {
+        const active = el.dataset.quality === quality;
+        el.classList.toggle('active', active);
+        el.setAttribute('aria-checked', active);
+      });
+      updateStatus(`Đã chọn chất lượng ${quality === 'high' ? 'cao' : 'bình thường'}.`, 'info');
+    }
+
+    async function loadPdf(entry){
+      if(!pdfjs) throw new Error('PDF.js chưa sẵn sàng');
+      if(entry.pdf) return entry.pdf;
+      const buffer = await fileToArrayBuffer(entry.file);
+      entry.pdf = await pdfjs.getDocument({data:buffer}).promise;
+      entry.pages = entry.pdf.numPages;
+      return entry.pdf;
+    }
+
+    function createLongTaskTimers(){
+      const timers = [];
+      timers.push(setTimeout(() => updateStatus('Tệp lớn đang được xử lý. Vui lòng chờ, tiến trình có thể mất vài phút.', 'warn'), 15000));
+      timers.push(setTimeout(() => updateStatus('Vẫn đang xử lý… Nếu xử lý quá lâu, hãy xem xét tách nhỏ hoặc nén tệp PDF.', 'warn'), 45000));
+      return () => timers.forEach(clearTimeout);
+    }
+
+    async function convert(){
+      if(!state.files.length || state.converting) return;
+      if(!pdfjs){
+        updateStatus('Không thể chuyển đổi vì thư viện PDF.js chưa tải xong. Hãy kiểm tra kết nối Internet và tải lại trang.', 'error');
+        return;
+      }
+      state.converting = true;
+      convertBtn.disabled = true;
+      updateStatus('Bắt đầu chuyển đổi…', 'info');
+      progressWrap.style.display = 'block';
+      progressBar.style.width = '0%';
+
+      const releaseTimers = createLongTaskTimers();
+      const zip = new JSZip();
+      let totalPages = 0;
+      for(const file of state.files){
+        totalPages += file.pages || 0;
+      }
+      if(!totalPages) totalPages = 1;
+      let processed = 0;
+
+      try{
+        for(const entry of state.files){
+          const pdf = await loadPdf(entry);
+          const folderName = entry.name.replace(/\.[Pp][Dd][Ff]$/, '');
+          const folder = zip.folder(folderName);
+          const pageCount = pdf.numPages;
+
+          if(state.mode === 'images'){
+            updateStatus(`Đang trích ảnh từ "${entry.name}"…`, 'info');
+          } else {
+            updateStatus(`Đang chuyển đổi "${entry.name}"…`, 'info');
+          }
+
+          const dpi = state.quality === 'high' ? 220 : 150;
+          const scale = dpi / 72;
+
+          for(let i=1; i<=pageCount; i++){
+            const page = await pdf.getPage(i);
+            const viewport = page.getViewport({scale});
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.floor(viewport.width);
+            canvas.height = Math.floor(viewport.height);
+            const ctx = canvas.getContext('2d', {alpha:false});
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0,0,canvas.width,canvas.height);
+            await page.render({canvasContext:ctx, viewport}).promise;
+            const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', state.quality === 'high' ? 0.92 : 0.82));
+            if(!blob){throw new Error('Không tạo được ảnh JPG.');}
+            const buffer = await blob.arrayBuffer();
+            folder.file(`page-${String(i).padStart(3,'0')}.jpg`, buffer);
+            processed++;
+            progressBar.style.width = Math.round(processed / totalPages * 100) + '%';
+          }
+        }
+
+        const blob = await zip.generateAsync({type:'blob'});
+        saveAs(blob, `pdf-sang-jpg-${Date.now()}.zip`);
+        updateStatus('Hoàn tất! Đang tải xuống tệp ZIP.', 'success');
+      }catch(err){
+        console.error(err);
+        updateStatus('Đã xảy ra lỗi trong quá trình chuyển đổi. Vui lòng thử lại.', 'error');
+      }finally{
+        releaseTimers();
+        progressWrap.style.display = 'none';
+        progressBar.style.width = '0%';
+        state.converting = false;
+        convertBtn.disabled = !state.files.length;
+      }
+    }
+
+    if (pdfjs) {
+      pdfjs.GlobalWorkerOptions.workerSrc = './libs/pdfjs/pdf.worker.min.js';
+    } else {
+      updateStatus('Không tải được thư viện xử lý PDF. Vui lòng kiểm tra kết nối Internet, sau đó tải lại trang.', 'error');
+      dropzone.classList.add('disabled');
+      dropzone.setAttribute('aria-disabled', 'true');
+      convertBtn.disabled = true;
+    }
+
+    convertBtn.addEventListener('click', convert);
+
+    window.addEventListener('keydown', e => {
+      if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'o'){
+        e.preventDefault();
+        if (!dropzone.classList.contains('disabled')) {
+          fileInput.click();
+        }
+      }
+    });
+
+    renderGrid();
+  </script>
+</body>
+</html>

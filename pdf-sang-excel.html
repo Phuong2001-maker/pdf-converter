@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Chuyển đổi PDF sang Excel trực tuyến | LibreWorks</title>
+    <meta name="description" content="Chuyển đổi PDF sang Excel trực tuyến miễn phí, tối ưu cho tiếng Việt, giữ nguyên định dạng bảng và tương thích mọi thiết bị.">
+    <meta name="keywords" content="pdf sang excel, chuyển pdf sang excel, pdf to excel online">
+    <meta name="robots" content="index,follow">
+    <meta property="og:title" content="Công cụ PDF sang Excel trực tuyến">
+    <meta property="og:description" content="Tải PDF lên và tải xuống Excel đã tối ưu chỉ trong vài giây. Giao diện responsive, bảo mật cao.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://www.libreworks.vn/assets/pdf-sang-excel-preview.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+    <style>
+:root {
+    --primary: #e11937;
+    --primary-dark: #c2102c;
+    --primary-light: #ffe6ea;
+    --accent: #2563eb;
+    --text: #1f2937;
+    --muted: #556375;
+    --bg: #f5f7fb;
+    --surface: #ffffff;
+    --radius-lg: 28px;
+    --radius-md: 18px;
+    --radius-sm: 12px;
+    --shadow: 0 18px 38px rgba(15, 23, 42, 0.12);
+}
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+body {
+    margin: 0;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: linear-gradient(180deg, #ffffff 0%, var(--bg) 100%);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+}
+a {
+    color: var(--accent);
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+header {
+    position: sticky;
+    top: 0;
+    backdrop-filter: blur(14px);
+    background: rgba(255, 255, 255, 0.9);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+    z-index: 20;
+}
+.header-inner {
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+}
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 700;
+    color: var(--primary-dark);
+}
+.brand-logo {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ff6b81, var(--primary));
+    color: #fff;
+    display: grid;
+    place-items: center;
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 1.1rem;
+}
+.nav-links {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+.nav-links a {
+    font-weight: 500;
+    color: var(--muted);
+}
+.nav-links a.active {
+    color: var(--primary);
+    position: relative;
+}
+.nav-links a.active::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -8px;
+    width: 100%;
+    height: 2px;
+    background: var(--primary);
+    border-radius: 999px;
+}
+.cta-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 999px;
+    background: var(--primary);
+    color: #fff;
+    font-weight: 600;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.cta-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(225, 25, 55, 0.25);
+}
+main {
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 64px 24px 96px;
+}
+.hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    gap: 48px;
+    align-items: center;
+    margin-bottom: 96px;
+}
+.hero h1 {
+    font-family: "Space Grotesk", sans-serif;
+    font-size: clamp(2.6rem, 4vw, 3.4rem);
+    margin: 0 0 18px;
+    color: #0f172a;
+}
+.hero p {
+    margin: 0 0 22px;
+    color: var(--muted);
+    font-size: 1.05rem;
+}
+.hero-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 28px;
+    padding: 0;
+    list-style: none;
+}
+.hero-badges li {
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    padding: 10px 16px;
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+}
+.upload-card {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 36px;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+}
+.upload-card::after {
+    content: "";
+    position: absolute;
+    inset: 12px;
+    border-radius: calc(var(--radius-lg) - 12px);
+    background: linear-gradient(135deg, rgba(225, 25, 55, 0.08), rgba(37, 99, 235, 0.08));
+    pointer-events: none;
+}
+.upload-card > * {
+    position: relative;
+    z-index: 1;
+}
+.upload-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    align-items: flex-start;
+    margin-bottom: 24px;
+}
+.toggle-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.toggle {
+    border: 1px solid rgba(203, 213, 225, 0.8);
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-weight: 500;
+    color: var(--muted);
+    background: #f8fafc;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.toggle input {
+    display: none;
+}
+.toggle.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+    box-shadow: 0 12px 28px rgba(225, 25, 55, 0.2);
+}
+.dropzone {
+    border: 2px dashed rgba(148, 163, 184, 0.7);
+    border-radius: calc(var(--radius-lg) - 10px);
+    padding: 34px 24px;
+    text-align: center;
+    background: rgba(248, 250, 252, 0.9);
+    transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+}
+.dropzone.dragover {
+    border-color: var(--primary);
+    transform: scale(1.01);
+    background: #fff1f4;
+}
+.dropzone h2 {
+    margin: 0 0 10px;
+    font-size: 1.4rem;
+}
+.dropzone p {
+    margin: 0 auto 22px;
+    max-width: 430px;
+    color: var(--muted);
+    font-size: 0.95rem;
+}
+.dropzone-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.primary-btn,
+.secondary-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: none;
+    border-radius: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+.primary-btn {
+    background: var(--primary);
+    color: #fff;
+    padding: 14px 24px;
+}
+.primary-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 32px rgba(225, 25, 55, 0.25);
+    background: var(--primary-dark);
+}
+.secondary-btn {
+    padding: 12px 20px;
+    border: 1px solid rgba(203, 213, 225, 0.9);
+    background: #fff;
+    color: var(--muted);
+}
+.secondary-btn:hover {
+    color: var(--text);
+    border-color: rgba(148, 163, 184, 0.9);
+    background: #f8fafc;
+}
+.file-list {
+    margin-top: 26px;
+    display: grid;
+    gap: 16px;
+}
+.file-card {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 16px;
+    align-items: center;
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    padding: 16px 18px;
+    background: linear-gradient(135deg, #fff, rgba(248, 250, 252, 0.96));
+}
+.file-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(225, 25, 55, 0.12);
+    color: var(--primary);
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+}
+.file-meta h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--text);
+}
+.file-meta span {
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+.remove-btn {
+    border: none;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: rgba(225, 25, 55, 0.12);
+    color: var(--primary-dark);
+    cursor: pointer;
+}
+.actions-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 26px;
+}
+.actions-row button[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+.status-text {
+    min-height: 26px;
+    margin-top: 12px;
+    font-size: 0.92rem;
+    color: var(--muted);
+}
+.progress {
+    display: none;
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(203, 213, 225, 0.7);
+    overflow: hidden;
+    margin-top: 14px;
+}
+.progress-bar {
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, var(--primary), #f97316);
+    transition: width 0.2s ease;
+}
+.downloads {
+    margin-top: 18px;
+    display: grid;
+    gap: 12px;
+}
+.download-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 12px;
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--accent);
+    font-weight: 600;
+    text-decoration: none;
+}
+.section {
+    margin-bottom: 96px;
+}
+.section h2 {
+    font-family: "Space Grotesk", sans-serif;
+    font-size: clamp(2rem, 3vw, 2.6rem);
+    margin-bottom: 16px;
+    color: #0f172a;
+}
+.section p.lead {
+    margin-bottom: 36px;
+    max-width: 640px;
+    color: var(--muted);
+}
+.feature-grid {
+    display: grid;
+    gap: 24px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.feature-card {
+    background: #fff;
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    padding: 26px;
+    box-shadow: 0 14px 26px rgba(15, 23, 42, 0.08);
+    display: grid;
+    gap: 12px;
+}
+.feature-card strong {
+    font-size: 1.15rem;
+}
+.steps-grid {
+    margin-top: 54px;
+    display: grid;
+    gap: 20px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.step-card {
+    background: #fff;
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    padding: 24px;
+    box-shadow: 0 18px 30px rgba(15, 23, 42, 0.08);
+    position: relative;
+}
+.step-card span {
+    position: absolute;
+    top: -16px;
+    left: 22px;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: var(--primary);
+    color: #fff;
+    font-weight: 700;
+    display: grid;
+    place-items: center;
+}
+.trust-strip {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+    background: linear-gradient(135deg, var(--primary), #f97316);
+    color: #fff;
+    padding: 32px;
+    border-radius: var(--radius-lg);
+    margin-bottom: 96px;
+}
+.trust-strip strong {
+    font-size: 2.3rem;
+    font-family: "Space Grotesk", sans-serif;
+}
+.faq-grid {
+    display: grid;
+    gap: 18px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+details {
+    background: #fff;
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    padding: 20px 24px;
+    box-shadow: 0 14px 26px rgba(15, 23, 42, 0.06);
+}
+summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1.05rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+summary::after {
+    content: "+";
+    font-size: 1.4rem;
+    color: var(--primary-dark);
+    transition: transform 0.2s ease;
+}
+summary::-webkit-details-marker {
+    display: none;
+}
+details[open] summary::after {
+    transform: rotate(45deg);
+}
+details p {
+    margin: 14px 0 0;
+    color: var(--muted);
+}
+.cta {
+    text-align: center;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(14, 211, 255, 0.12));
+    padding: 48px;
+    border-radius: var(--radius-lg);
+}
+.cta h2 {
+    font-family: "Space Grotesk", sans-serif;
+    font-size: clamp(2.2rem, 4vw, 2.8rem);
+    margin-bottom: 12px;
+}
+footer {
+    background: #0f172a;
+    color: rgba(226, 232, 240, 0.8);
+    padding: 42px 24px 54px;
+}
+.footer-inner {
+    max-width: 1160px;
+    margin: 0 auto;
+    display: grid;
+    gap: 28px;
+}
+.footer-top {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 28px;
+    justify-content: space-between;
+}
+.footer-column {
+    max-width: 320px;
+}
+.footer-links {
+    display: grid;
+    gap: 8px;
+}
+.footer-links a {
+    color: rgba(226, 232, 240, 0.8);
+}
+.footer-bottom {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    justify-content: space-between;
+    border-top: 1px solid rgba(148, 163, 184, 0.2);
+    padding-top: 18px;
+    font-size: 0.9rem;
+}
+.social {
+    display: flex;
+    gap: 14px;
+}
+.social a {
+    color: rgba(226, 232, 240, 0.85);
+}
+@media (max-width: 1024px) {
+    .nav-links {
+        display: none;
+    }
+    .hero {
+        grid-template-columns: 1fr;
+    }
+    .feature-grid,
+    .steps-grid,
+    .faq-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .trust-strip {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+}
+@media (max-width: 720px) {
+    header .cta-link {
+        display: none;
+    }
+    main {
+        padding: 48px 18px 72px;
+    }
+    .upload-card {
+        padding: 28px;
+    }
+    .upload-top {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .feature-grid,
+    .steps-grid,
+    .faq-grid {
+        grid-template-columns: 1fr;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    * {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+    }
+}
+    </style>
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "WebApplication",
+            "name": "LibreWorks PDF sang Excel",
+            "applicationCategory": "UtilitiesApplication",
+            "operatingSystem": "Any",
+            "description": "Chuyển đổi PDF sang Excel trực tuyến miễn phí, hỗ trợ tiếng Việt và nhiều trang tính.",
+            "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+            }
+        }
+    </script>
+</head>
+<body>
+<header>
+    <div class="header-inner">
+        <div class="brand" aria-label="LibreWorks PDF">
+            <span class="brand-logo">LW</span>
+            <span>LibreWorks PDF Suite</span>
+        </div>
+        <nav class="nav-links" aria-label="Điều hướng chính">
+            <a href="#tinh-nang" class="active">Tính năng</a>
+            <a href="#huong-dan">Hướng dẫn</a>
+            <a href="#faq">Câu hỏi</a>
+            <a href="#lien-he">Liên hệ</a>
+        </nav>
+        <a class="cta-link" href="#bat-dau">Bắt đầu miễn phí →</a>
+    </div>
+</header>
+<main>
+    <section class="hero" id="bat-dau">
+        <div class="hero-content">
+            <h1>Chuyển đổi PDF sang Excel nhanh chóng</h1>
+            <p>Tải tệp PDF và nhận file Excel giữ nguyên bố cục bảng chỉ trong vài giây. Hệ thống được tối ưu cho tiếng Việt, bảo mật dữ liệu và hoạt động trên mọi thiết bị.</p>
+            <ul class="hero-badges" aria-label="Điểm nổi bật">
+                <li>⚡ Xử lý trong 2-5 giây</li>
+                <li>🧠 Giữ nguyên công thức</li>
+                <li>🔒 Xóa tệp sau 2 giờ</li>
+            </ul>
+            <p>Không cần đăng ký, hoạt động trực tuyến 24/7.</p>
+        </div>
+        <div class="upload-card" role="region" aria-label="Tải PDF để chuyển đổi">
+            <div class="upload-top">
+                <div>
+                    <h2 style="margin:0; font-size:1.45rem;">PDF sang Excel</h2>
+                    <p style="margin:6px 0 0; color:var(--muted); font-size:0.95rem;">Chọn bố cục Excel phù hợp với bảng dữ liệu của bạn</p>
+                </div>
+                <div class="toggle-group" role="group" aria-label="Bố cục Excel">
+                    <label class="toggle active" id="layout-multi">
+                        <input type="radio" name="layout" value="multi" checked>
+                        Nhiều trang tính
+                    </label>
+                    <label class="toggle" id="layout-single">
+                        <input type="radio" name="layout" value="single">
+                        Một trang tính
+                    </label>
+                </div>
+            </div>
+            <form class="dropzone" id="dropzone" aria-describedby="dropzone-help">
+                <input id="file-input" type="file" accept="application/pdf" multiple hidden>
+                <h2>Tải lên hoặc kéo thả tệp PDF</h2>
+                <p id="dropzone-help">Hỗ trợ tối đa 10 tệp (tổng dung lượng 200MB). Kéo thả trực tiếp hoặc bấm nút để chọn.</p>
+                <div class="dropzone-actions">
+                    <button type="button" class="primary-btn" id="pick-files">
+                        <span aria-hidden="true">⬆</span>
+                        Chọn tệp PDF
+                    </button>
+                    <button type="button" class="secondary-btn" id="use-sample">
+                        <span aria-hidden="true">📄</span>
+                        Dùng tệp mẫu
+                    </button>
+                </div>
+            </form>
+            <div class="file-list" id="file-list" aria-live="polite"></div>
+            <div class="actions-row">
+                <button type="button" class="primary-btn" id="convert-btn" disabled>Chuyển đổi sang Excel</button>
+                <button type="button" class="secondary-btn" id="clear-btn" disabled>Xóa danh sách</button>
+            </div>
+            <div class="status-text" id="status-text" role="status"></div>
+            <div class="progress" id="progress">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+            <div class="downloads" id="downloads" aria-live="polite"></div>
+        </div>
+    </section>
+    <section class="section" id="tinh-nang">
+        <h2>Công cụ chuyển đổi PDF sang Excel toàn diện</h2>
+        <p class="lead">LibreWorks nhận diện thông minh bố cục bảng, giữ nguyên công thức và hỗ trợ cả tài liệu quét OCR. Giao diện thân thiện và tối ưu SEO giúp bạn dễ dàng tiếp cận người dùng.</p>
+        <div class="feature-grid">
+            <article class="feature-card">
+                <strong>Nhận diện bảng chính xác</strong>
+                <p>Thuật toán phân tích dòng và cột giúp giữ nguyên định dạng, giảm tối đa việc chỉnh sửa thủ công sau khi tải xuống.</p>
+            </article>
+            <article class="feature-card">
+                <strong>Hỗ trợ hàng loạt</strong>
+                <p>Kéo thả nhiều tệp một lần, chuyển đổi hàng loạt chỉ với một nút bấm. Mỗi tệp sẽ có đường dẫn tải xuống riêng.</p>
+            </article>
+            <article class="feature-card">
+                <strong>Bảo mật và riêng tư</strong>
+                <p>Tệp được mã hóa khi truyền tải, tự động xóa sau 2 giờ và không chia sẻ với bên thứ ba.</p>
+            </article>
+        </div>
+        <div class="steps-grid" id="huong-dan">
+            <article class="step-card">
+                <span>1</span>
+                <h3>Tải tệp PDF</h3>
+                <p>Chọn hoặc kéo thả tệp vào khung. Có thể tải tối đa 10 tệp trong một phiên làm việc.</p>
+            </article>
+            <article class="step-card">
+                <span>2</span>
+                <h3>Chọn bố cục</h3>
+                <p>Giữ nhiều trang tính để bảo toàn cấu trúc hoặc gộp thành một sheet duy nhất.</p>
+            </article>
+            <article class="step-card">
+                <span>3</span>
+                <h3>Tải xuống Excel</h3>
+                <p>Nhận file .xlsx tương thích Excel, Google Sheets và LibreOffice chỉ trong vài giây.</p>
+            </article>
+        </div>
+    </section>
+    <div class="trust-strip" aria-label="Chỉ số tin cậy">
+        <div>
+            <strong>4,9/5</strong>
+            <p>Điểm hài lòng trung bình từ hơn 2.500 khách hàng doanh nghiệp.</p>
+        </div>
+        <div>
+            <strong>12 triệu</strong>
+            <p>Tệp PDF đã được chuyển đổi thành công qua nền tảng LibreWorks.</p>
+        </div>
+        <div>
+            <strong>30+</strong>
+            <p>Ngôn ngữ được hỗ trợ OCR nâng cao, bao gồm tiếng Việt và tiếng Nhật.</p>
+        </div>
+    </div>
+    <section class="section" id="faq">
+        <h2>Câu hỏi thường gặp</h2>
+        <p class="lead">Tìm hiểu thêm về bảo mật, giới hạn tệp và cách sử dụng OCR khi chuyển đổi PDF sang Excel.</p>
+        <div class="faq-grid">
+            <details>
+                <summary>Tệp của tôi có được giữ bí mật không?</summary>
+                <p>Có. Tệp được mã hóa trong suốt quá trình xử lý và tự động xóa khỏi máy chủ sau tối đa 2 giờ.</p>
+            </details>
+            <details>
+                <summary>Tôi có thể chuyển đổi PDF quét (ảnh) không?</summary>
+                <p>Có thể. Bật OCR để nhận diện ký tự. Với tài liệu rõ nét, độ chính xác đạt hơn 95%.</p>
+            </details>
+            <details>
+                <summary>Giới hạn kích thước tệp là bao nhiêu?</summary>
+                <p>Tổng dung lượng cho mỗi lượt chuyển đổi là 200MB. Hãy chia nhỏ tài liệu nếu vượt quá giới hạn.</p>
+            </details>
+            <details>
+                <summary>Dịch vụ có dùng được trên di động?</summary>
+                <p>Giao diện responsive hoạt động tốt trên điện thoại, máy tính bảng và máy tính để bàn.</p>
+            </details>
+        </div>
+    </section>
+    <section class="cta" id="lien-he">
+        <h2>Tích hợp PDF sang Excel vào quy trình của bạn</h2>
+        <p style="color:var(--muted); max-width:540px; margin:0 auto 22px;">Liên hệ để được tư vấn triển khai API hoặc tùy chỉnh giao diện theo nhu cầu doanh nghiệp.</p>
+        <a href="mailto:support@libreworks.vn" class="primary-btn" style="text-decoration:none; display:inline-flex;">Kết nối ngay</a>
+    </section>
+</main>
+<footer>
+    <div class="footer-inner">
+        <div class="footer-top">
+            <div class="footer-column">
+                <div class="brand" style="color:rgba(226,232,240,0.9);">
+                    <span class="brand-logo">LW</span>
+                    <span>LibreWorks PDF Suite</span>
+                </div>
+                <p style="margin-top:12px;">Nền tảng xử lý PDF toàn diện: chuyển đổi, nén, bảo mật và cộng tác trực tuyến.</p>
+            </div>
+            <div class="footer-links">
+                <strong style="color:#fff;">Sản phẩm</strong>
+                <a href="#tinh-nang">PDF sang Excel</a>
+                <a href="#">PDF sang Word</a>
+                <a href="#">Gộp PDF</a>
+                <a href="#">Nén PDF</a>
+            </div>
+            <div class="footer-links">
+                <strong style="color:#fff;">Hỗ trợ</strong>
+                <a href="#faq">Trợ giúp</a>
+                <a href="#lien-he">Liên hệ</a>
+                <a href="#">Chính sách bảo mật</a>
+                <a href="#">Điều khoản</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span>© <span id="year"></span> LibreWorks. Đã đăng ký bản quyền.</span>
+            <div class="social">
+                <a href="https://www.facebook.com" aria-label="Facebook">Facebook</a>
+                <a href="https://www.linkedin.com" aria-label="LinkedIn">LinkedIn</a>
+                <a href="https://www.youtube.com" aria-label="YouTube">YouTube</a>
+            </div>
+        </div>
+    </div>
+</footer>
+<script>
+const fileInput = document.getElementById("file-input");
+const pickFiles = document.getElementById("pick-files");
+const useSample = document.getElementById("use-sample");
+const clearBtn = document.getElementById("clear-btn");
+const convertBtn = document.getElementById("convert-btn");
+const fileList = document.getElementById("file-list");
+const statusText = document.getElementById("status-text");
+const progress = document.getElementById("progress");
+const progressBar = document.getElementById("progress-bar");
+const downloads = document.getElementById("downloads");
+const dropzone = document.getElementById("dropzone");
+const layoutMulti = document.getElementById("layout-multi");
+const layoutSingle = document.getElementById("layout-single");
+let files = [];
+let isConverting = false;
+let layout = "multi";
+
+const formatSize = bytes => {
+    const units = ["B", "KB", "MB", "GB"];
+    if (!bytes) return "0 B";
+    const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+    return `${(bytes / Math.pow(1024, index)).toFixed(index ? 1 : 0)} ${units[index]}`;
+};
+
+const renderFiles = () => {
+    fileList.innerHTML = "";
+    files.forEach((file, index) => {
+        const card = document.createElement("div");
+        card.className = "file-card";
+        card.innerHTML = `
+            <div class="file-icon">${file.name.slice(-3).toUpperCase()}</div>
+            <div class="file-meta">
+                <h3>${file.name}</h3>
+                <span>${formatSize(file.size)}</span>
+            </div>
+            <button class="remove-btn" type="button" aria-label="Xóa ${file.name}" data-index="${index}">×</button>
+        `;
+        fileList.appendChild(card);
+    });
+    convertBtn.disabled = files.length === 0 || isConverting;
+    clearBtn.disabled = files.length === 0 || isConverting;
+};
+
+const addFiles = list => {
+    if (isConverting) return;
+    let totalSize = files.reduce((acc, file) => acc + file.size, 0);
+    Array.from(list).forEach(file => {
+        if (!/\.pdf$/i.test(file.name)) {
+            statusText.textContent = "Vui lòng chọn tệp đúng định dạng PDF.";
+            return;
+        }
+        if (files.length >= 10) {
+            statusText.textContent = "Bạn chỉ có thể tải tối đa 10 tệp mỗi lần.";
+            return;
+        }
+        totalSize += file.size;
+        if (totalSize > 200 * 1024 * 1024) {
+            statusText.textContent = "Dung lượng vượt quá giới hạn 200MB. Hãy bỏ bớt tệp.";
+            totalSize -= file.size;
+            return;
+        }
+        files.push(file);
+    });
+    if (files.length) {
+        statusText.textContent = `${files.length} tệp đã được thêm vào hàng đợi.`;
+    }
+    renderFiles();
+};
+
+const resetAll = () => {
+    files = [];
+    fileInput.value = "";
+    statusText.textContent = "";
+    downloads.innerHTML = "";
+    progress.style.display = "none";
+    progressBar.style.width = "0%";
+    isConverting = false;
+    renderFiles();
+};
+
+const simulateConversion = () => {
+    if (!files.length || isConverting) return;
+    isConverting = true;
+    convertBtn.textContent = "Đang chuyển đổi...";
+    convertBtn.disabled = true;
+    clearBtn.disabled = true;
+    progress.style.display = "block";
+    statusText.textContent = layout === "multi"
+        ? "Đang phân tích từng trang và giữ nguyên bố cục sheet..."
+        : "Đang gộp dữ liệu vào một sheet duy nhất...";
+    let progressValue = 0;
+    const timer = setInterval(() => {
+        progressValue = Math.min(progressValue + Math.random() * 18, 95);
+        progressBar.style.width = `${progressValue}%`;
+    }, 320);
+    setTimeout(() => {
+        clearInterval(timer);
+        progressBar.style.width = "100%";
+        statusText.textContent = "Hoàn tất! Tải xuống file Excel ở bên dưới.";
+        convertBtn.textContent = "Chuyển đổi lại";
+        convertBtn.disabled = false;
+        clearBtn.disabled = false;
+        isConverting = false;
+        downloads.innerHTML = "";
+        files.forEach(file => {
+            const link = document.createElement("a");
+            link.className = "download-pill";
+            link.href = "#";
+            link.setAttribute("role", "button");
+            link.textContent = file.name.replace(/\.pdf$/i, ".xlsx");
+            downloads.appendChild(link);
+        });
+    }, Math.max(1800, files.length * 750));
+};
+
+pickFiles.addEventListener("click", () => fileInput.click());
+fileInput.addEventListener("change", event => addFiles(event.target.files));
+useSample.addEventListener("click", () => {
+    const blob = new Blob(["Sample PDF content"], { type: "application/pdf" });
+    const sample = new File([blob], "Bao_cao_tai_chinh.pdf", { type: "application/pdf" });
+    addFiles([sample]);
+});
+clearBtn.addEventListener("click", resetAll);
+convertBtn.addEventListener("click", simulateConversion);
+
+fileList.addEventListener("click", event => {
+    if (event.target.matches(".remove-btn")) {
+        const index = Number(event.target.dataset.index);
+        files.splice(index, 1);
+        statusText.textContent = files.length ? "Đã xóa tệp khỏi danh sách." : "";
+        renderFiles();
+    }
+});
+
+["dragenter", "dragover"].forEach(type => {
+    dropzone.addEventListener(type, event => {
+        event.preventDefault();
+        dropzone.classList.add("dragover");
+    });
+});
+["dragleave", "drop"].forEach(type => {
+    dropzone.addEventListener(type, event => {
+        event.preventDefault();
+        dropzone.classList.remove("dragover");
+    });
+});
+dropzone.addEventListener("drop", event => {
+    event.preventDefault();
+    if (event.dataTransfer?.files?.length) {
+        addFiles(event.dataTransfer.files);
+    }
+});
+
+const selectLayout = choice => {
+    layout = choice;
+    if (choice === "multi") {
+        layoutMulti.classList.add("active");
+        layoutSingle.classList.remove("active");
+        statusText.textContent = "Chế độ nhiều trang tính giữ nguyên cấu trúc từng trang PDF.";
+    } else {
+        layoutSingle.classList.add("active");
+        layoutMulti.classList.remove("active");
+        statusText.textContent = "Chế độ một trang tính sẽ gộp tất cả dữ liệu vào một sheet.";
+    }
+};
+
+layoutMulti.addEventListener("click", () => selectLayout("multi"));
+layoutSingle.addEventListener("click", () => selectLayout("single"));
+
+document.getElementById("year").textContent = new Date().getFullYear();
+</script>
+</body>
+</html>
