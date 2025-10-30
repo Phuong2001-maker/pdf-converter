@@ -147,7 +147,7 @@
 
     <aside class="rightpanel" id="panel">
       <h2>Xuất PDF thành Excel</h2>
-      <p>Lựa chọn bố cục sheet, bật OCR nếu tài liệu được quét và nhận file Excel hoàn chỉnh chỉ trong vài giây.</p>
+      <p>Lựa chọn bố cục sheet và nhận file Excel hoàn chỉnh chỉ trong vài giây.</p>
 
       <div class="mode-toggle" role="group" aria-label="Bố cục sheet Excel">
         <button type="button" class="toggle active" data-layout="multi" aria-pressed="true">
@@ -162,7 +162,7 @@
 
       <ul class="info-list">
         <li>Giữ nguyên bảng, công thức và định dạng cơ bản.</li>
-        <li>Hỗ trợ mọi ngôn ngữ nhờ mô hình AI nhận dạng văn bản đa ngữ.</li>
+        <li>Hỗ trợ văn bản Unicode đa ngôn ngữ (tiếng Việt, tiếng Nhật, tiếng Trung...).</li>
       </ul>
 
       <div class="status" id="statusMessage" role="status" aria-live="polite"></div>
@@ -177,6 +177,7 @@
 
       <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.9.179/build/pdf.min.js"></script>
       <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.16.0/dist/tf.min.js"></script>
       <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <script>
     (function(){
@@ -368,75 +369,203 @@
         setTimeout(() => URL.revokeObjectURL(url), 1500);
       }
 
-      function groupTextByRows(textContent){
-        const rowTolerance = 4;
-        const rows = [];
+      const LINK_REGEX = /(https?:\/\/[^\s]+|www\.[^\s]+|[\w.+-]+@[\w.-]+\.[A-Za-z]{2,})/gi;
 
-        const estimateWidth = item => {
-          if(typeof item.width === "number"){ return item.width; }
-          const transform = item.transform || [];
-          if(transform.length >= 2){
-            const scale = Math.hypot(transform[0], transform[1]);
-            if(scale){ return scale * (item.str?.length || 1); }
-          }
-          return Math.max(4, (item.str?.length || 1) * 4);
-        };
+      const isBoldFont = name => /bold|black|heavy|medium/gi.test(name || "");
+      const isItalicFont = name => /italic|oblique/gi.test(name || "");
 
-        const estimateHeight = item => {
-          if(typeof item.height === "number"){ return item.height; }
-          const transform = item.transform || [];
-          if(transform.length >= 4){
-            const scale = Math.hypot(transform[2], transform[3]);
-            if(scale){ return scale; }
-          }
-          return 12;
-        };
+      const toHex = value => {
+        const clamped = Math.max(0, Math.min(255, Math.round(value)));
+        return clamped.toString(16).padStart(2, "0").toUpperCase();
+      };
 
-        const mergeRowItems = items => {
-          if(!items.length){ return []; }
-          const merged = [];
-          let current = { x: items[0].x, text: items[0].text.trim(), end: items[0].end };
+      const hasTF = typeof tf !== "undefined";
 
-          for(let i = 1; i < items.length; i++){
-            const item = items[i];
-            const gap = item.x - current.end;
-            const charWidth = Math.max(estimateWidth({ str: item.text }), 4);
-            const height = estimateHeight({ str: item.text });
-            const breakThreshold = Math.max(charWidth * 0.6, 2);
-            if(gap > breakThreshold){
-              merged.push(current);
-              current = { x: item.x, text: item.text.trim(), end: item.end };
-            }else{
-              const needsSpace = gap > Math.max(1.2, height * 0.15) && !current.text.endsWith(" ");
-              current.text += (needsSpace ? " " : "") + item.text.trim();
-              current.end = item.end;
-            }
-          }
-          merged.push(current);
-          return merged.filter(entry => entry.text);
-        };
-
-        for(const item of textContent.items){
-          const rawText = item.str;
-          if(!rawText || !rawText.trim()){ continue; }
-          const transform = item.transform || [0,0,0,0,0,0];
-          const x = transform[4];
-          const y = transform[5];
-          const width = estimateWidth(item);
-          let row = rows.find(entry => Math.abs(entry.y - y) <= rowTolerance);
-          if(!row){
-            row = { y, items: [] };
-            rows.push(row);
-          }
-          row.items.push({ x, text: rawText, end: x + width });
+      const styleModel = hasTF ? {
+        bold: {
+          weights: tf.tensor2d([[2.3], [3.4], [1.2], [0.4], [0.3]]),
+          bias: tf.scalar(-1.25)
+        },
+        italic: {
+          weights: tf.tensor2d([[0.2], [0.1], [0.15], [5.0], [2.6]]),
+          bias: tf.scalar(-1.5)
         }
+      } : null;
 
-        rows.sort((a, b) => b.y - a.y);
-        return rows.map(row => {
-          const ordered = row.items.sort((a, b) => a.x - b.x);
-          const merged = mergeRowItems(ordered);
-          return merged.map(entry => entry.text.trim());
-        }).filter(row => row.some(cell => cell.length));
+      function predictStyle(features){
+        if(!styleModel){
+          return { boldScore: 0, italicScore: 0 };
+        }
+        return tf.tidy(() => {
+          const input = tf.tensor2d([features], [1, features.length]);
+          const boldScore = tf.sigmoid(input.matMul(styleModel.bold.weights).add(styleModel.bold.bias)).dataSync()[0];
+          const italicScore = tf.sigmoid(input.matMul(styleModel.italic.weights).add(styleModel.italic.bias)).dataSync()[0];
+          return { boldScore, italicScore };
+        });
+      }
+
+      function resolveColor(fillColor){
+        if(Array.isArray(fillColor) && fillColor.length >= 3){
+          const [r, g, b] = fillColor;
+          const convert = channel => channel > 1 ? channel : channel * 255;
+          return `${toHex(convert(r))}${toHex(convert(g))}${toHex(convert(b))}`;
+        }
+        if(typeof fillColor === "string" && /^#[0-9A-F]{6}$/i.test(fillColor)){
+          return fillColor.replace("#", "").toUpperCase();
+        }
+        return "000000";
+      }
+
+      function mergeSegments(segments){
+        const merged = [];
+        segments.forEach(segment => {
+          if(!segment.text){ return; }
+          const key = `${segment.bold ? "b" : "n"}-${segment.italic ? "i" : "n"}-${segment.color}-${segment.link || ""}`;
+          const last = merged[merged.length - 1];
+          if(last && last.key === key){
+            last.text += segment.text;
+          }else{
+            merged.push({ ...segment, key });
+          }
+        });
+        return merged;
+      }
+
+      function splitSegmentByLinks(segment){
+        const result = [];
+        const text = segment.text;
+        let lastIndex = 0;
+        text.replace(LINK_REGEX, (match, offset) => {
+          if(offset > lastIndex){
+            result.push({ ...segment, text: text.slice(lastIndex, offset) });
+          }
+          let url = match;
+          if(/^www\./i.test(url)){
+            url = `https://${url}`;
+          }else if(url.includes("@") && !/^https?:/i.test(url)){
+            url = `mailto:${url}`;
+          }
+          result.push({
+            ...segment,
+            text: match,
+            link: url
+          });
+          lastIndex = offset + match.length;
+          return match;
+        });
+        if(lastIndex < text.length){
+          result.push({ ...segment, text: text.slice(lastIndex) });
+        }
+        return result;
+      }
+
+      function buildRichText(lines){
+        const rich = [];
+        lines.forEach((segments, lineIndex) => {
+          const merged = mergeSegments(segments.flatMap(splitSegmentByLinks));
+          merged.forEach(segment => {
+            const font = {};
+            if(segment.bold){ font.bold = true; }
+            if(segment.italic){ font.italic = true; }
+            const color = segment.link ? "0563C1" : segment.color;
+            if(color){ font.color = { rgb: color }; }
+            if(segment.link){ font.underline = true; }
+            rich.push({
+              text: segment.text.replace(/\s+/g, match => match === " " ? " " : match),
+              font
+            });
+          });
+          if(lineIndex < lines.length - 1){
+            rich.push({ text: "\n" });
+          }
+        });
+        return rich;
+      }
+
+      function buildFeatureVector(item, style){
+        const transform = item.transform || [1, 0, 0, 1, 0, 0];
+        const scaleX = Math.hypot(transform[0], transform[1]) || 1;
+        const shear = transform[2] / scaleX;
+        const fontWeight = style.fontWeight ? Math.min(style.fontWeight, 900) : 400;
+        const strokeWidth = style.strokeWidth != null ? style.strokeWidth : 0;
+        const isBoldName = isBoldFont(item.fontName || style.fontName || "");
+        const isItalicName = isItalicFont(item.fontName || style.fontName || "");
+        return [
+          fontWeight / 900,
+          isBoldName ? 1 : 0,
+          Math.min(1, Math.abs(strokeWidth) / (style.ascent || 1000)),
+          Math.min(1, Math.abs(shear)),
+          (style.italic || isItalicName) ? 1 : 0
+        ];
+      }
+
+      function extractRichLines(textContent){
+        const lines = [];
+        let currentLine = [];
+        const styles = textContent.styles || {};
+
+        const pushSegment = (text, item) => {
+          if(!text){ return; }
+          const styleKey = item.fontName;
+          const style = styles[styleKey] || {};
+          const fontFamily = style.fontFamily || "";
+          const fontName = styleKey || "";
+          const features = buildFeatureVector(item, style);
+          const prediction = predictStyle(features);
+          const boldHeuristic = (style.fontWeight || 400) >= 700 || isBoldFont(fontName) || isBoldFont(fontFamily);
+          const italicHeuristic = Boolean(style.italic) || isItalicFont(fontName) || isItalicFont(fontFamily);
+          const bold = (prediction.boldScore > 0.55) || boldHeuristic;
+          const italic = (prediction.italicScore > 0.55) || italicHeuristic;
+          const color = resolveColor(
+            item.fillColor ||
+            item.color ||
+            style.fillColor ||
+            style.strokeColor ||
+            "000000"
+          );
+          currentLine.push({
+            text: text.replace(/\u00a0/g, " "),
+            bold,
+            italic,
+            color
+          });
+        };
+
+        textContent.items.forEach(item => {
+          if(!item){ return; }
+          const str = item.str ?? "";
+          if(str){
+            pushSegment(str, item);
+          }
+          if(item.hasEOL){
+            const cleanedLine = currentLine.length
+              ? currentLine
+              : [{ text: "", bold: false, italic: false, color: "000000" }];
+            lines.push(cleanedLine);
+            currentLine = [];
+          }
+        });
+        if(currentLine.length){
+          lines.push(currentLine);
+        }
+        return lines;
+      }
+
+      function linesToCellValue(lines){
+        if(!lines.length){
+          return "";
+        }
+        return lines.map(line => line.map(segment => segment.text).join("")).join("\n");
+      }
+
+      function applySingleCellFormatting(sheet, columnWidth = 120){
+        sheet["!cols"] = [{ wch: columnWidth }];
+        const cell = sheet["A1"];
+        if(cell){
+          cell.s = Object.assign({}, cell.s, {
+            alignment: { wrapText: true, vertical: "top" }
+          });
+        }
       }
 
       async function convertPdfToWorkbook(file, onProgress = () => {}){
@@ -446,32 +575,44 @@
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
         const workbook = XLSX.utils.book_new();
-        const mergedRows = [];
+        const combinedLines = [];
 
         const pageCount = pdf.numPages || 1;
         for(let pageIndex = 1; pageIndex <= pageCount; pageIndex++){
           const page = await pdf.getPage(pageIndex);
           const textContent = await page.getTextContent();
-          const rows = groupTextByRows(textContent);
+          const lines = extractRichLines(textContent);
 
           if(state.layout === "multi"){
             const sheetName = `Trang${pageIndex}`;
-            const sheetData = rows.length ? rows : [["(Không phát hiện văn bản trên trang)"]];
-            const sheet = XLSX.utils.aoa_to_sheet(sheetData);
+            const fallback = [[{ text: "(Không phát hiện văn bản trên trang)", bold: false, italic: false, color: "000000" }]];
+            const richLines = lines.length ? lines : fallback;
+            const sheet = XLSX.utils.aoa_to_sheet([[linesToCellValue(richLines)]]);
+            sheet["A1"].richText = buildRichText(richLines);
+            applySingleCellFormatting(sheet);
             XLSX.utils.book_append_sheet(workbook, sheet, sheetName.slice(0, 31));
           }else{
-            if(rows.length){
-              mergedRows.push(...rows, [""]);
+            if(lines.length){
+              combinedLines.push(
+                ...lines.map(line =>
+                  line.map(segment => ({ ...segment }))
+                )
+              );
+              if(pageIndex < pageCount){
+                combinedLines.push([{ text: "", bold: false, italic: false, color: "000000" }]);
+              }
             }
           }
           onProgress(pageIndex / pageCount);
         }
 
         if(state.layout === "single"){
-          if(!mergedRows.length){
-            mergedRows.push(["(Không phát hiện văn bản trong PDF này)"]);
-          }
-          const sheet = XLSX.utils.aoa_to_sheet(mergedRows);
+          const fallback = [[{ text: "(Không phát hiện văn bản trong PDF này)", bold: false, italic: false, color: "000000" }]];
+          const richLines = combinedLines.length ? combinedLines : fallback;
+          const value = linesToCellValue(richLines);
+          const sheet = XLSX.utils.aoa_to_sheet([[value]]);
+          sheet["A1"].richText = buildRichText(richLines);
+          applySingleCellFormatting(sheet);
           XLSX.utils.book_append_sheet(workbook, sheet, "Sheet1");
         }
 
@@ -480,11 +621,11 @@
           XLSX.utils.book_append_sheet(workbook, sheet, "Sheet1");
         }
 
-        const wbout = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+        const wbout = XLSX.write(workbook, { bookType: "xlsx", type: "array", cellStyles: true });
         const blob = new Blob([wbout], { type: excelMime });
         return {
           name: file.name.replace(/\.pdf$/i, ".xlsx"),
-          note: `${getLayoutDescription()} · AI nhận dạng văn bản`,
+          note: `${getLayoutDescription()} · Trích xuất văn bản`,
           blob
         };
       }
@@ -493,7 +634,7 @@
         const results = [];
         for(let index = 0; index < state.files.length; index++){
           const entry = state.files[index];
-          updateStatus(`Đang nhận dạng bảng bằng AI cho "${entry.name}" (${index + 1}/${state.files.length})...`, "info");
+          updateStatus(`Đang trích xuất văn bản cho "${entry.name}" (${index + 1}/${state.files.length})...`, "info");
           const workbook = await convertPdfToWorkbook(entry.file, ratio => {
             const overall = (index + ratio) / state.files.length;
             updateProgress(overall);
@@ -517,7 +658,7 @@
         resetDownloads();
         progressWrap.style.display = "block";
         updateProgress(0);
-        updateStatus(`Bắt đầu phân tích ${state.files.length} tệp bằng AI mã nguồn mở…`, "info");
+        updateStatus(`Bắt đầu phân tích ${state.files.length} tệp và dựng Excel...`, "info");
 
         try{
           const files = await convertAllFiles();
