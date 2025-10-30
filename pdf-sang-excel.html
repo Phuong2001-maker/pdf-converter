@@ -1,947 +1,653 @@
-<!DOCTYPE html>
+﻿<!doctype html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Chuyển đổi PDF sang Excel trực tuyến | LibreWorks</title>
-    <meta name="description" content="Chuyển đổi PDF sang Excel trực tuyến miễn phí, tối ưu cho tiếng Việt, giữ nguyên định dạng bảng và tương thích mọi thiết bị.">
-    <meta name="keywords" content="pdf sang excel, chuyển pdf sang excel, pdf to excel online">
-    <meta name="robots" content="index,follow">
-    <meta property="og:title" content="Công cụ PDF sang Excel trực tuyến">
-    <meta property="og:description" content="Tải PDF lên và tải xuống Excel đã tối ưu chỉ trong vài giây. Giao diện responsive, bảo mật cao.">
-    <meta property="og:type" content="website">
-    <meta property="og:image" content="https://www.libreworks.vn/assets/pdf-sang-excel-preview.png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
-    <style>
-:root {
-    --primary: #e11937;
-    --primary-dark: #c2102c;
-    --primary-light: #ffe6ea;
-    --accent: #2563eb;
-    --text: #1f2937;
-    --muted: #556375;
-    --bg: #f5f7fb;
-    --surface: #ffffff;
-    --radius-lg: 28px;
-    --radius-md: 18px;
-    --radius-sm: 12px;
-    --shadow: 0 18px 38px rgba(15, 23, 42, 0.12);
-}
-*,
-*::before,
-*::after {
-    box-sizing: border-box;
-}
-body {
-    margin: 0;
-    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background: linear-gradient(180deg, #ffffff 0%, var(--bg) 100%);
-    color: var(--text);
-    line-height: 1.6;
-    -webkit-font-smoothing: antialiased;
-}
-a {
-    color: var(--accent);
-    text-decoration: none;
-}
-a:hover {
-    text-decoration: underline;
-}
-header {
-    position: sticky;
-    top: 0;
-    backdrop-filter: blur(14px);
-    background: rgba(255, 255, 255, 0.9);
-    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
-    z-index: 20;
-}
-.header-inner {
-    max-width: 1160px;
-    margin: 0 auto;
-    padding: 18px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 24px;
-}
-.brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-weight: 700;
-    color: var(--primary-dark);
-}
-.brand-logo {
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #ff6b81, var(--primary));
-    color: #fff;
-    display: grid;
-    place-items: center;
-    font-family: "Space Grotesk", sans-serif;
-    font-size: 1.1rem;
-}
-.nav-links {
-    display: flex;
-    gap: 20px;
-    align-items: center;
-}
-.nav-links a {
-    font-weight: 500;
-    color: var(--muted);
-}
-.nav-links a.active {
-    color: var(--primary);
-    position: relative;
-}
-.nav-links a.active::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    bottom: -8px;
-    width: 100%;
-    height: 2px;
-    background: var(--primary);
-    border-radius: 999px;
-}
-.cta-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 18px;
-    border-radius: 999px;
-    background: var(--primary);
-    color: #fff;
-    font-weight: 600;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-.cta-link:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 24px rgba(225, 25, 55, 0.25);
-}
-main {
-    max-width: 1160px;
-    margin: 0 auto;
-    padding: 64px 24px 96px;
-}
-.hero {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
-    gap: 48px;
-    align-items: center;
-    margin-bottom: 96px;
-}
-.hero h1 {
-    font-family: "Space Grotesk", sans-serif;
-    font-size: clamp(2.6rem, 4vw, 3.4rem);
-    margin: 0 0 18px;
-    color: #0f172a;
-}
-.hero p {
-    margin: 0 0 22px;
-    color: var(--muted);
-    font-size: 1.05rem;
-}
-.hero-badges {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 28px;
-    padding: 0;
-    list-style: none;
-}
-.hero-badges li {
-    background: var(--primary-light);
-    color: var(--primary-dark);
-    padding: 10px 16px;
-    border-radius: var(--radius-sm);
-    font-weight: 500;
-}
-.upload-card {
-    background: var(--surface);
-    border-radius: var(--radius-lg);
-    padding: 36px;
-    box-shadow: var(--shadow);
-    position: relative;
-    overflow: hidden;
-}
-.upload-card::after {
-    content: "";
-    position: absolute;
-    inset: 12px;
-    border-radius: calc(var(--radius-lg) - 12px);
-    background: linear-gradient(135deg, rgba(225, 25, 55, 0.08), rgba(37, 99, 235, 0.08));
-    pointer-events: none;
-}
-.upload-card > * {
-    position: relative;
-    z-index: 1;
-}
-.upload-top {
-    display: flex;
-    justify-content: space-between;
-    gap: 24px;
-    align-items: flex-start;
-    margin-bottom: 24px;
-}
-.toggle-group {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-.toggle {
-    border: 1px solid rgba(203, 213, 225, 0.8);
-    padding: 6px 14px;
-    border-radius: 999px;
-    font-weight: 500;
-    color: var(--muted);
-    background: #f8fafc;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-.toggle input {
-    display: none;
-}
-.toggle.active {
-    background: var(--primary);
-    color: #fff;
-    border-color: var(--primary);
-    box-shadow: 0 12px 28px rgba(225, 25, 55, 0.2);
-}
-.dropzone {
-    border: 2px dashed rgba(148, 163, 184, 0.7);
-    border-radius: calc(var(--radius-lg) - 10px);
-    padding: 34px 24px;
-    text-align: center;
-    background: rgba(248, 250, 252, 0.9);
-    transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
-}
-.dropzone.dragover {
-    border-color: var(--primary);
-    transform: scale(1.01);
-    background: #fff1f4;
-}
-.dropzone h2 {
-    margin: 0 0 10px;
-    font-size: 1.4rem;
-}
-.dropzone p {
-    margin: 0 auto 22px;
-    max-width: 430px;
-    color: var(--muted);
-    font-size: 0.95rem;
-}
-.dropzone-actions {
-    display: flex;
-    justify-content: center;
-    gap: 12px;
-    flex-wrap: wrap;
-}
-.primary-btn,
-.secondary-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    border: none;
-    border-radius: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
-}
-.primary-btn {
-    background: var(--primary);
-    color: #fff;
-    padding: 14px 24px;
-}
-.primary-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 16px 32px rgba(225, 25, 55, 0.25);
-    background: var(--primary-dark);
-}
-.secondary-btn {
-    padding: 12px 20px;
-    border: 1px solid rgba(203, 213, 225, 0.9);
-    background: #fff;
-    color: var(--muted);
-}
-.secondary-btn:hover {
-    color: var(--text);
-    border-color: rgba(148, 163, 184, 0.9);
-    background: #f8fafc;
-}
-.file-list {
-    margin-top: 26px;
-    display: grid;
-    gap: 16px;
-}
-.file-card {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    gap: 16px;
-    align-items: center;
-    border-radius: var(--radius-md);
-    border: 1px solid rgba(226, 232, 240, 0.9);
-    padding: 16px 18px;
-    background: linear-gradient(135deg, #fff, rgba(248, 250, 252, 0.96));
-}
-.file-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    background: rgba(225, 25, 55, 0.12);
-    color: var(--primary);
-    display: grid;
-    place-items: center;
-    font-weight: 700;
-}
-.file-meta h3 {
-    margin: 0;
-    font-size: 1rem;
-    color: var(--text);
-}
-.file-meta span {
-    color: var(--muted);
-    font-size: 0.85rem;
-}
-.remove-btn {
-    border: none;
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    background: rgba(225, 25, 55, 0.12);
-    color: var(--primary-dark);
-    cursor: pointer;
-}
-.actions-row {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-top: 26px;
-}
-.actions-row button[disabled] {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-}
-.status-text {
-    min-height: 26px;
-    margin-top: 12px;
-    font-size: 0.92rem;
-    color: var(--muted);
-}
-.progress {
-    display: none;
-    height: 8px;
-    border-radius: 999px;
-    background: rgba(203, 213, 225, 0.7);
-    overflow: hidden;
-    margin-top: 14px;
-}
-.progress-bar {
-    height: 100%;
-    width: 0;
-    background: linear-gradient(90deg, var(--primary), #f97316);
-    transition: width 0.2s ease;
-}
-.downloads {
-    margin-top: 18px;
-    display: grid;
-    gap: 12px;
-}
-.download-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 16px;
-    border-radius: 12px;
-    background: rgba(37, 99, 235, 0.1);
-    color: var(--accent);
-    font-weight: 600;
-    text-decoration: none;
-}
-.section {
-    margin-bottom: 96px;
-}
-.section h2 {
-    font-family: "Space Grotesk", sans-serif;
-    font-size: clamp(2rem, 3vw, 2.6rem);
-    margin-bottom: 16px;
-    color: #0f172a;
-}
-.section p.lead {
-    margin-bottom: 36px;
-    max-width: 640px;
-    color: var(--muted);
-}
-.feature-grid {
-    display: grid;
-    gap: 24px;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-.feature-card {
-    background: #fff;
-    border-radius: var(--radius-md);
-    border: 1px solid rgba(226, 232, 240, 0.8);
-    padding: 26px;
-    box-shadow: 0 14px 26px rgba(15, 23, 42, 0.08);
-    display: grid;
-    gap: 12px;
-}
-.feature-card strong {
-    font-size: 1.15rem;
-}
-.steps-grid {
-    margin-top: 54px;
-    display: grid;
-    gap: 20px;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-.step-card {
-    background: #fff;
-    border-radius: var(--radius-md);
-    border: 1px solid rgba(226, 232, 240, 0.8);
-    padding: 24px;
-    box-shadow: 0 18px 30px rgba(15, 23, 42, 0.08);
-    position: relative;
-}
-.step-card span {
-    position: absolute;
-    top: -16px;
-    left: 22px;
-    width: 38px;
-    height: 38px;
-    border-radius: 12px;
-    background: var(--primary);
-    color: #fff;
-    font-weight: 700;
-    display: grid;
-    place-items: center;
-}
-.trust-strip {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 24px;
-    background: linear-gradient(135deg, var(--primary), #f97316);
-    color: #fff;
-    padding: 32px;
-    border-radius: var(--radius-lg);
-    margin-bottom: 96px;
-}
-.trust-strip strong {
-    font-size: 2.3rem;
-    font-family: "Space Grotesk", sans-serif;
-}
-.faq-grid {
-    display: grid;
-    gap: 18px;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-details {
-    background: #fff;
-    border-radius: var(--radius-md);
-    border: 1px solid rgba(226, 232, 240, 0.8);
-    padding: 20px 24px;
-    box-shadow: 0 14px 26px rgba(15, 23, 42, 0.06);
-}
-summary {
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 1.05rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-}
-summary::after {
-    content: "+";
-    font-size: 1.4rem;
-    color: var(--primary-dark);
-    transition: transform 0.2s ease;
-}
-summary::-webkit-details-marker {
-    display: none;
-}
-details[open] summary::after {
-    transform: rotate(45deg);
-}
-details p {
-    margin: 14px 0 0;
-    color: var(--muted);
-}
-.cta {
-    text-align: center;
-    background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(14, 211, 255, 0.12));
-    padding: 48px;
-    border-radius: var(--radius-lg);
-}
-.cta h2 {
-    font-family: "Space Grotesk", sans-serif;
-    font-size: clamp(2.2rem, 4vw, 2.8rem);
-    margin-bottom: 12px;
-}
-footer {
-    background: #0f172a;
-    color: rgba(226, 232, 240, 0.8);
-    padding: 42px 24px 54px;
-}
-.footer-inner {
-    max-width: 1160px;
-    margin: 0 auto;
-    display: grid;
-    gap: 28px;
-}
-.footer-top {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 28px;
-    justify-content: space-between;
-}
-.footer-column {
-    max-width: 320px;
-}
-.footer-links {
-    display: grid;
-    gap: 8px;
-}
-.footer-links a {
-    color: rgba(226, 232, 240, 0.8);
-}
-.footer-bottom {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 18px;
-    justify-content: space-between;
-    border-top: 1px solid rgba(148, 163, 184, 0.2);
-    padding-top: 18px;
-    font-size: 0.9rem;
-}
-.social {
-    display: flex;
-    gap: 14px;
-}
-.social a {
-    color: rgba(226, 232, 240, 0.85);
-}
-@media (max-width: 1024px) {
-    .nav-links {
-        display: none;
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PDF sang Excel — Chuyển đổi giữ nguyên bảng</title>
+  <meta name="description" content="Chuyển đổi PDF sang Excel trực tuyến, giữ nguyên cấu trúc bảng. Chọn xuất mỗi trang PDF thành một sheet riêng hoặc gộp tất cả vào cùng một sheet.">
+  <meta name="robots" content="index,follow" />
+  <meta property="og:title" content="PDF sang Excel — Công cụ chuyển đổi trực tuyến" />
+  <meta property="og:description" content="Kéo thả PDF và chuyển sang Excel .xlsx chỉ với vài giây. Chọn chế độ nhiều sheet hoặc một sheet tùy nhu cầu." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#f2f6f4;
+      --surface:#ffffff;
+      --muted:#6b7280;
+      --text:#0f172a;
+      --primary:#0f9d58;
+      --primary-dark:#0b8043;
+      --ring:rgba(15,157,88,.28);
+      --shadow:0 20px 40px rgba(15,23,42,.08), 0 10px 20px rgba(15,23,42,.05);
+      --radius:18px;
     }
-    .hero {
-        grid-template-columns: 1fr;
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:var(--text);background:var(--bg);}
+
+    .app{display:grid;grid-template-columns:1fr 360px;gap:28px;min-height:100vh;padding:28px;}
+    @media (max-width:1100px){
+      .app{grid-template-columns:1fr;padding:16px 16px 90px;gap:16px;}
     }
-    .feature-grid,
-    .steps-grid,
-    .faq-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    .board{background:linear-gradient(180deg,#f7faf9 0%,#eef5f1 100%);border-radius:var(--radius);box-shadow:var(--shadow);padding:28px;display:flex;flex-direction:column;gap:24px;position:relative;overflow:hidden;}
+    @media (max-width:600px){.board{padding:20px;}}
+
+    .board-header h1{margin:0;font-size:28px;font-weight:700;color:#0b182f;}
+    .board-header p{margin:8px 0 0;font-size:15px;color:var(--muted);line-height:1.5;}
+
+    .dropzone{border:2px dashed #d1d9d4;border-radius:22px;background:rgba(255,255,255,.9);backdrop-filter:blur(3px);padding:56px 30px;text-align:center;color:#4b5563;display:flex;flex-direction:column;align-items:center;gap:14px;transition:border-color .2s,box-shadow .2s,transform .2s;background-image:linear-gradient(135deg,rgba(15,157,88,.08),rgba(255,255,255,0));}
+    .dropzone.dragover{border-color:var(--primary);box-shadow:0 0 0 6px var(--ring);transform:translateY(-2px);}
+    .dropzone button{background:var(--primary);color:#fff;border:none;border-radius:14px;padding:14px 20px;font-weight:600;cursor:pointer;box-shadow:0 12px 24px rgba(15,157,88,.22);transition:background .2s,transform .2s;}
+    .dropzone button:hover{background:var(--primary-dark);transform:translateY(-1px);}
+    .muted{color:#6b7280;font-size:13px;}
+
+    .selection-bar{display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.85);border-radius:16px;padding:14px 18px;font-weight:600;color:#1f2937;box-shadow:0 12px 24px rgba(17,24,39,.06);backdrop-filter:blur(2px);}
+    .selection-bar span{color:var(--muted);font-weight:500;}
+    .clear-btn{border:none;background:transparent;color:var(--primary);font-weight:600;cursor:pointer;}
+    .clear-btn:hover{text-decoration:underline;}
+    .clear-btn:disabled{opacity:.4;cursor:not-allowed;text-decoration:none;}
+
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:18px;}
+    .card{background:var(--surface);border-radius:16px;box-shadow:0 10px 30px rgba(17,24,39,.08);padding:16px;display:flex;flex-direction:column;gap:12px;position:relative;transition:transform .18s ease,box-shadow .18s ease;}
+    .card:hover{transform:translateY(-4px);box-shadow:0 14px 36px rgba(17,24,39,.12);}
+    .thumb{width:100%;aspect-ratio:3/4;border-radius:13px;background:#edf5ef;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;}
+    .thumb::after{content:attr(data-pages);position:absolute;bottom:10px;right:10px;background:rgba(15,23,42,.82);color:#fff;font-size:12px;font-weight:600;padding:4px 8px;border-radius:999px;}
+    .thumb-icon{width:56px;height:56px;border-radius:18px;background:rgba(15,157,88,.2);color:var(--primary-dark);display:flex;align-items:center;justify-content:center;font-weight:700;letter-spacing:.4px;}
+    .filename{font-size:13px;font-weight:600;color:#1f2937;text-align:center;word-break:break-word;line-height:1.4;}
+    .meta{font-size:12px;color:#6b7280;text-align:center;}
+    .remove{position:absolute;top:10px;right:10px;border:none;background:#fff;color:#ef4444;border-radius:10px;padding:6px 9px;font-weight:700;cursor:pointer;box-shadow:0 6px 16px rgba(239,68,68,.3);}
+    .remove:focus{outline:2px solid var(--primary);}
+    .empty{border:1px dashed #cbd5d8;border-radius:16px;padding:32px 20px;text-align:center;color:#94a3af;font-size:14px;}
+
+    .download-list{display:grid;gap:12px;margin-top:6px;}
+    .download-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:14px;background:#eaf5ee;color:var(--primary-dark);text-decoration:none;font-weight:600;box-shadow:0 10px 24px rgba(15,157,88,.14);}
+    .download-item small{display:block;font-weight:500;color:#4b5563;font-size:12px;}
+    .download-icon{width:32px;height:32px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;}
+
+    .rightpanel{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:26px;display:flex;flex-direction:column;gap:22px;position:sticky;top:26px;align-self:flex-start;}
+    .rightpanel h2{margin:0;font-size:22px;font-weight:700;}
+    .rightpanel p{margin:0;color:var(--muted);line-height:1.5;font-size:14px;}
+
+    .mode-toggle{display:grid;grid-template-columns:1fr 1fr;background:#f1f5f3;border-radius:14px;padding:6px;gap:6px;}
+    .mode-toggle button{border:none;border-radius:12px;padding:12px;font-weight:600;background:transparent;color:#4b5563;display:flex;flex-direction:column;gap:6px;align-items:flex-start;cursor:pointer;transition:all .2s;}
+    .mode-toggle button.active{background:#fff;box-shadow:0 10px 24px rgba(15,157,88,.16);color:var(--primary);}
+    .mode-toggle button span{font-size:12px;color:var(--muted);}
+
+    .toggle-list{display:grid;gap:12px;}
+    .toggle-pill{border:1px solid #e1e5e3;border-radius:16px;padding:14px 16px;background:#fff;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:12px;cursor:pointer;transition:border-color .2s,box-shadow .2s;}
+    .toggle-pill strong{display:block;font-size:14px;color:#1f2937;}
+    .toggle-pill small{display:block;font-size:12px;color:var(--muted);font-weight:500;margin-top:4px;}
+    .toggle-pill .pill-indicator{width:44px;height:24px;border-radius:999px;background:#d1d9d4;position:relative;transition:background .2s;}
+    .toggle-pill .pill-indicator::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(15,23,42,.2);transition:transform .2s;}
+    .toggle-pill.active{border-color:var(--primary);box-shadow:0 0 0 4px var(--ring);}
+    .toggle-pill.active .pill-indicator{background:var(--primary);}
+    .toggle-pill.active .pill-indicator::after{transform:translateX(20px);}
+
+    .info-list{margin:0;padding-left:18px;color:#4b5563;font-size:13px;line-height:1.65;}
+    .info-list li{margin-bottom:6px;}
+
+    .status{min-height:32px;border-radius:12px;padding:10px 14px;font-size:13px;line-height:1.5;display:none;}
+    .status.show{display:block;}
+    .status.info{background:#ebf5ff;color:#0f172a;}
+    .status.success{background:#dcfce7;color:#047857;}
+    .status.warn{background:#fef3c7;color:#b45309;}
+    .status.error{background:#fee2e2;color:#b91c1c;}
+
+    .progress{height:6px;background:#edf1ee;border-radius:999px;overflow:hidden;display:none;}
+    .progress span{display:block;height:100%;width:0;background:var(--primary);transition:width .2s ease;}
+
+    .convert{border:none;border-radius:15px;padding:16px;font-weight:700;background:var(--primary);color:#fff;display:flex;justify-content:center;align-items:center;gap:10px;letter-spacing:.1px;font-size:15px;cursor:pointer;transition:background .2s,transform .2s;box-shadow:0 18px 32px rgba(15,157,88,.28);}
+    .convert:hover{background:var(--primary-dark);transform:translateY(-1px);}
+    .convert:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none;}
+
+    .options-toggle{display:none;position:fixed;right:16px;bottom:20px;z-index:40;background:var(--primary);color:#fff;border:none;padding:14px 18px;border-radius:999px;font-weight:600;box-shadow:0 14px 28px rgba(15,157,88,.32);cursor:pointer;}
+    @media (max-width:1100px){
+      .rightpanel{position:fixed;left:0;right:0;bottom:0;top:auto;border-radius:22px 22px 0 0;padding:22px 20px 96px;transform:translateY(110%);transition:transform .34s ease;z-index:39;max-height:85vh;overflow-y:auto;}
+      .rightpanel.open{transform:translateY(0);}
+      .options-toggle{display:inline-flex;gap:8px;align-items:center;}
     }
-    .trust-strip {
-        grid-template-columns: 1fr;
-        text-align: center;
-    }
-}
-@media (max-width: 720px) {
-    header .cta-link {
-        display: none;
-    }
-    main {
-        padding: 48px 18px 72px;
-    }
-    .upload-card {
-        padding: 28px;
-    }
-    .upload-top {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    .feature-grid,
-    .steps-grid,
-    .faq-grid {
-        grid-template-columns: 1fr;
-    }
-}
-@media (prefers-reduced-motion: reduce) {
-    * {
-        transition-duration: 0.01ms !important;
-        animation-duration: 0.01ms !important;
-    }
-}
-    </style>
-    <script type="application/ld+json">
-        {
-            "@context": "https://schema.org",
-            "@type": "WebApplication",
-            "name": "LibreWorks PDF sang Excel",
-            "applicationCategory": "UtilitiesApplication",
-            "operatingSystem": "Any",
-            "description": "Chuyển đổi PDF sang Excel trực tuyến miễn phí, hỗ trợ tiếng Việt và nhiều trang tính.",
-            "offers": {
-                "@type": "Offer",
-                "price": "0",
-                "priceCurrency": "USD"
-            }
-        }
-    </script>
+
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+  </style>
 </head>
 <body>
-<header>
-    <div class="header-inner">
-        <div class="brand" aria-label="LibreWorks PDF">
-            <span class="brand-logo">LW</span>
-            <span>LibreWorks PDF Suite</span>
-        </div>
-        <nav class="nav-links" aria-label="Điều hướng chính">
-            <a href="#tinh-nang" class="active">Tính năng</a>
-            <a href="#huong-dan">Hướng dẫn</a>
-            <a href="#faq">Câu hỏi</a>
-            <a href="#lien-he">Liên hệ</a>
-        </nav>
-        <a class="cta-link" href="#bat-dau">Bắt đầu miễn phí →</a>
-    </div>
-</header>
-<main>
-    <section class="hero" id="bat-dau">
-        <div class="hero-content">
-            <h1>Chuyển đổi PDF sang Excel nhanh chóng</h1>
-            <p>Tải tệp PDF và nhận file Excel giữ nguyên bố cục bảng chỉ trong vài giây. Hệ thống được tối ưu cho tiếng Việt, bảo mật dữ liệu và hoạt động trên mọi thiết bị.</p>
-            <ul class="hero-badges" aria-label="Điểm nổi bật">
-                <li>⚡ Xử lý trong 2-5 giây</li>
-                <li>🧠 Giữ nguyên công thức</li>
-                <li>🔒 Xóa tệp sau 2 giờ</li>
-            </ul>
-            <p>Không cần đăng ký, hoạt động trực tuyến 24/7.</p>
-        </div>
-        <div class="upload-card" role="region" aria-label="Tải PDF để chuyển đổi">
-            <div class="upload-top">
-                <div>
-                    <h2 style="margin:0; font-size:1.45rem;">PDF sang Excel</h2>
-                    <p style="margin:6px 0 0; color:var(--muted); font-size:0.95rem;">Chọn bố cục Excel phù hợp với bảng dữ liệu của bạn</p>
-                </div>
-                <div class="toggle-group" role="group" aria-label="Bố cục Excel">
-                    <label class="toggle active" id="layout-multi">
-                        <input type="radio" name="layout" value="multi" checked>
-                        Nhiều trang tính
-                    </label>
-                    <label class="toggle" id="layout-single">
-                        <input type="radio" name="layout" value="single">
-                        Một trang tính
-                    </label>
-                </div>
-            </div>
-            <form class="dropzone" id="dropzone" aria-describedby="dropzone-help">
-                <input id="file-input" type="file" accept="application/pdf" multiple hidden>
-                <h2>Tải lên hoặc kéo thả tệp PDF</h2>
-                <p id="dropzone-help">Hỗ trợ tối đa 10 tệp (tổng dung lượng 200MB). Kéo thả trực tiếp hoặc bấm nút để chọn.</p>
-                <div class="dropzone-actions">
-                    <button type="button" class="primary-btn" id="pick-files">
-                        <span aria-hidden="true">⬆</span>
-                        Chọn tệp PDF
-                    </button>
-                    <button type="button" class="secondary-btn" id="use-sample">
-                        <span aria-hidden="true">📄</span>
-                        Dùng tệp mẫu
-                    </button>
-                </div>
-            </form>
-            <div class="file-list" id="file-list" aria-live="polite"></div>
-            <div class="actions-row">
-                <button type="button" class="primary-btn" id="convert-btn" disabled>Chuyển đổi sang Excel</button>
-                <button type="button" class="secondary-btn" id="clear-btn" disabled>Xóa danh sách</button>
-            </div>
-            <div class="status-text" id="status-text" role="status"></div>
-            <div class="progress" id="progress">
-                <div class="progress-bar" id="progress-bar"></div>
-            </div>
-            <div class="downloads" id="downloads" aria-live="polite"></div>
-        </div>
-    </section>
-    <section class="section" id="tinh-nang">
-        <h2>Công cụ chuyển đổi PDF sang Excel toàn diện</h2>
-        <p class="lead">LibreWorks nhận diện thông minh bố cục bảng, giữ nguyên công thức và hỗ trợ cả tài liệu quét OCR. Giao diện thân thiện và tối ưu SEO giúp bạn dễ dàng tiếp cận người dùng.</p>
-        <div class="feature-grid">
-            <article class="feature-card">
-                <strong>Nhận diện bảng chính xác</strong>
-                <p>Thuật toán phân tích dòng và cột giúp giữ nguyên định dạng, giảm tối đa việc chỉnh sửa thủ công sau khi tải xuống.</p>
-            </article>
-            <article class="feature-card">
-                <strong>Hỗ trợ hàng loạt</strong>
-                <p>Kéo thả nhiều tệp một lần, chuyển đổi hàng loạt chỉ với một nút bấm. Mỗi tệp sẽ có đường dẫn tải xuống riêng.</p>
-            </article>
-            <article class="feature-card">
-                <strong>Bảo mật và riêng tư</strong>
-                <p>Tệp được mã hóa khi truyền tải, tự động xóa sau 2 giờ và không chia sẻ với bên thứ ba.</p>
-            </article>
-        </div>
-        <div class="steps-grid" id="huong-dan">
-            <article class="step-card">
-                <span>1</span>
-                <h3>Tải tệp PDF</h3>
-                <p>Chọn hoặc kéo thả tệp vào khung. Có thể tải tối đa 10 tệp trong một phiên làm việc.</p>
-            </article>
-            <article class="step-card">
-                <span>2</span>
-                <h3>Chọn bố cục</h3>
-                <p>Giữ nhiều trang tính để bảo toàn cấu trúc hoặc gộp thành một sheet duy nhất.</p>
-            </article>
-            <article class="step-card">
-                <span>3</span>
-                <h3>Tải xuống Excel</h3>
-                <p>Nhận file .xlsx tương thích Excel, Google Sheets và LibreOffice chỉ trong vài giây.</p>
-            </article>
-        </div>
-    </section>
-    <div class="trust-strip" aria-label="Chỉ số tin cậy">
-        <div>
-            <strong>4,9/5</strong>
-            <p>Điểm hài lòng trung bình từ hơn 2.500 khách hàng doanh nghiệp.</p>
-        </div>
-        <div>
-            <strong>12 triệu</strong>
-            <p>Tệp PDF đã được chuyển đổi thành công qua nền tảng LibreWorks.</p>
-        </div>
-        <div>
-            <strong>30+</strong>
-            <p>Ngôn ngữ được hỗ trợ OCR nâng cao, bao gồm tiếng Việt và tiếng Nhật.</p>
-        </div>
-    </div>
-    <section class="section" id="faq">
-        <h2>Câu hỏi thường gặp</h2>
-        <p class="lead">Tìm hiểu thêm về bảo mật, giới hạn tệp và cách sử dụng OCR khi chuyển đổi PDF sang Excel.</p>
-        <div class="faq-grid">
-            <details>
-                <summary>Tệp của tôi có được giữ bí mật không?</summary>
-                <p>Có. Tệp được mã hóa trong suốt quá trình xử lý và tự động xóa khỏi máy chủ sau tối đa 2 giờ.</p>
-            </details>
-            <details>
-                <summary>Tôi có thể chuyển đổi PDF quét (ảnh) không?</summary>
-                <p>Có thể. Bật OCR để nhận diện ký tự. Với tài liệu rõ nét, độ chính xác đạt hơn 95%.</p>
-            </details>
-            <details>
-                <summary>Giới hạn kích thước tệp là bao nhiêu?</summary>
-                <p>Tổng dung lượng cho mỗi lượt chuyển đổi là 200MB. Hãy chia nhỏ tài liệu nếu vượt quá giới hạn.</p>
-            </details>
-            <details>
-                <summary>Dịch vụ có dùng được trên di động?</summary>
-                <p>Giao diện responsive hoạt động tốt trên điện thoại, máy tính bảng và máy tính để bàn.</p>
-            </details>
-        </div>
-    </section>
-    <section class="cta" id="lien-he">
-        <h2>Tích hợp PDF sang Excel vào quy trình của bạn</h2>
-        <p style="color:var(--muted); max-width:540px; margin:0 auto 22px;">Liên hệ để được tư vấn triển khai API hoặc tùy chỉnh giao diện theo nhu cầu doanh nghiệp.</p>
-        <a href="mailto:support@libreworks.vn" class="primary-btn" style="text-decoration:none; display:inline-flex;">Kết nối ngay</a>
-    </section>
-</main>
-<footer>
-    <div class="footer-inner">
-        <div class="footer-top">
-            <div class="footer-column">
-                <div class="brand" style="color:rgba(226,232,240,0.9);">
-                    <span class="brand-logo">LW</span>
-                    <span>LibreWorks PDF Suite</span>
-                </div>
-                <p style="margin-top:12px;">Nền tảng xử lý PDF toàn diện: chuyển đổi, nén, bảo mật và cộng tác trực tuyến.</p>
-            </div>
-            <div class="footer-links">
-                <strong style="color:#fff;">Sản phẩm</strong>
-                <a href="#tinh-nang">PDF sang Excel</a>
-                <a href="#">PDF sang Word</a>
-                <a href="#">Gộp PDF</a>
-                <a href="#">Nén PDF</a>
-            </div>
-            <div class="footer-links">
-                <strong style="color:#fff;">Hỗ trợ</strong>
-                <a href="#faq">Trợ giúp</a>
-                <a href="#lien-he">Liên hệ</a>
-                <a href="#">Chính sách bảo mật</a>
-                <a href="#">Điều khoản</a>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            <span>© <span id="year"></span> LibreWorks. Đã đăng ký bản quyền.</span>
-            <div class="social">
-                <a href="https://www.facebook.com" aria-label="Facebook">Facebook</a>
-                <a href="https://www.linkedin.com" aria-label="LinkedIn">LinkedIn</a>
-                <a href="https://www.youtube.com" aria-label="YouTube">YouTube</a>
-            </div>
-        </div>
-    </div>
-</footer>
-<script>
-const fileInput = document.getElementById("file-input");
-const pickFiles = document.getElementById("pick-files");
-const useSample = document.getElementById("use-sample");
-const clearBtn = document.getElementById("clear-btn");
-const convertBtn = document.getElementById("convert-btn");
-const fileList = document.getElementById("file-list");
-const statusText = document.getElementById("status-text");
-const progress = document.getElementById("progress");
-const progressBar = document.getElementById("progress-bar");
-const downloads = document.getElementById("downloads");
-const dropzone = document.getElementById("dropzone");
-const layoutMulti = document.getElementById("layout-multi");
-const layoutSingle = document.getElementById("layout-single");
-let files = [];
-let isConverting = false;
-let layout = "multi";
+  <button class="options-toggle" id="optionsToggle" type="button" aria-expanded="false">⚙️ Tùy chọn chuyển đổi</button>
+  <div class="app">
+    <section class="board" aria-label="Trình chuyển đổi PDF sang Excel">
+      <header class="board-header">
+        <h1>Chuyển PDF sang Excel</h1>
+        <p>Kéo thả tệp PDF để chuyển thành Excel .xlsx. Chọn xuất mỗi trang thành một sheet riêng hoặc gộp vào một sheet duy nhất.</p>
+      </header>
 
-const formatSize = bytes => {
-    const units = ["B", "KB", "MB", "GB"];
-    if (!bytes) return "0 B";
-    const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
-    return `${(bytes / Math.pow(1024, index)).toFixed(index ? 1 : 0)} ${units[index]}`;
-};
+      <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Kéo thả hoặc lựa chọn tệp PDF">
+        <div style="font-size:48px">📄 ➜ 📊</div>
+        <strong style="font-size:20px">Thả PDF vào đây</strong>
+        <span>hoặc</span>
+        <button type="button" id="chooseBtn">Chọn tệp PDF</button>
+        <div class="muted">Hỗ trợ kéo thả nhiều tệp PDF cùng lúc trên mọi trình duyệt</div>
+        <input type="file" id="fileInput" accept="application/pdf" multiple hidden>
+      </div>
 
-const renderFiles = () => {
-    fileList.innerHTML = "";
-    files.forEach((file, index) => {
-        const card = document.createElement("div");
-        card.className = "file-card";
-        card.innerHTML = `
-            <div class="file-icon">${file.name.slice(-3).toUpperCase()}</div>
-            <div class="file-meta">
-                <h3>${file.name}</h3>
-                <span>${formatSize(file.size)}</span>
-            </div>
-            <button class="remove-btn" type="button" aria-label="Xóa ${file.name}" data-index="${index}">×</button>
-        `;
-        fileList.appendChild(card);
-    });
-    convertBtn.disabled = files.length === 0 || isConverting;
-    clearBtn.disabled = files.length === 0 || isConverting;
-};
+      <div class="selection-bar" id="selectionBar" style="display:none;">
+        <div><strong id="selectionCount">0 tệp</strong> <span id="sizeTotal">0 B</span></div>
+        <button class="clear-btn" id="clearAll" type="button" disabled>Xóa tất cả</button>
+      </div>
 
-const addFiles = list => {
-    if (isConverting) return;
-    let totalSize = files.reduce((acc, file) => acc + file.size, 0);
-    Array.from(list).forEach(file => {
-        if (!/\.pdf$/i.test(file.name)) {
-            statusText.textContent = "Vui lòng chọn tệp đúng định dạng PDF.";
-            return;
+      <div class="grid" id="fileGrid"></div>
+      <div class="empty" id="emptyState">Chưa có tệp. Kéo PDF của bạn vào khung bên trên hoặc bấm “Chọn tệp PDF”.</div>
+
+      <div class="download-list" id="downloadList" aria-live="polite"></div>
+    </section>
+
+    <aside class="rightpanel" id="panel">
+      <h2>Xuất PDF thành Excel</h2>
+      <p>Lựa chọn bố cục sheet, bật OCR nếu tài liệu được quét và nhận file Excel hoàn chỉnh chỉ trong vài giây.</p>
+
+      <div class="mode-toggle" role="group" aria-label="Bố cục sheet Excel">
+        <button type="button" class="toggle active" data-layout="multi" aria-pressed="true">
+          Nhiều sheet
+          <span>Mỗi trang PDF thành 1 sheet</span>
+        </button>
+        <button type="button" class="toggle" data-layout="single" aria-pressed="false">
+          Một sheet
+          <span>Gộp tất cả nội dung</span>
+        </button>
+      </div>
+
+      <ul class="info-list">
+        <li>Giữ nguyên bảng, công thức và định dạng cơ bản.</li>
+        <li>Hỗ trợ mọi ngôn ngữ nhờ mô hình AI nhận dạng văn bản đa ngữ.</li>
+      </ul>
+
+      <div class="status" id="statusMessage" role="status" aria-live="polite"></div>
+
+      <div class="progress" id="progressWrap" aria-hidden="true">
+        <span id="progressBar"></span>
+      </div>
+
+      <button class="convert" id="convertBtn" type="button" disabled><span>Chuyển sang Excel</span></button>
+    </aside>
+  </div>
+
+      <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.9.179/build/pdf.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script>
+    (function(){
+      const state = {
+        files: [],
+        layout: "multi",
+        converting: false
+      };
+
+      const excelMime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+      let downloadCache = [];
+
+      if(window.pdfjsLib){
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.9.179/build/pdf.worker.min.js";
+      }
+
+      const $ = (selector, scope = document) => scope.querySelector(selector);
+      const $$ = (selector, scope = document) => Array.from(scope.querySelectorAll(selector));
+
+      const dropzone = $("#dropzone");
+      const fileInput = $("#fileInput");
+      const chooseBtn = $("#chooseBtn");
+      const selectionBar = $("#selectionBar");
+      const selectionCount = $("#selectionCount");
+      const sizeTotal = $("#sizeTotal");
+      const clearAll = $("#clearAll");
+      const fileGrid = $("#fileGrid");
+      const emptyState = $("#emptyState");
+      const convertBtn = $("#convertBtn");
+      const statusMessage = $("#statusMessage");
+      const progressWrap = $("#progressWrap");
+      const progressBar = $("#progressBar");
+      const downloadList = $("#downloadList");
+      const layoutButtons = $$('[data-layout]');
+      const optionsToggle = $("#optionsToggle");
+      const panel = $("#panel");
+
+      const libsReady = () => {
+        return window.pdfjsLib && window.XLSX;
+      };
+
+      function formatBytes(bytes){
+        if(!bytes) return "0 B";
+        const units = ["B","KB","MB","GB","TB"];
+        const power = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+        const value = bytes / Math.pow(1024, power);
+        return `${power === 0 ? value.toFixed(0) : value.toFixed(1)} ${units[power]}`;
+      }
+
+      function getLayoutDescription(){
+        return state.layout === "multi" ? "Sheet cho từng trang" : "Một sheet duy nhất";
+      }
+
+      function updateStatus(text = "", tone = "info"){
+        if(!text){
+          statusMessage.className = "status";
+          statusMessage.textContent = "";
+          return;
         }
-        if (files.length >= 10) {
-            statusText.textContent = "Bạn chỉ có thể tải tối đa 10 tệp mỗi lần.";
-            return;
+        statusMessage.textContent = text;
+        statusMessage.className = `status show ${tone}`;
+      }
+
+      function updateSelection(){
+        const totalFiles = state.files.length;
+        const totalBytes = state.files.reduce((sum, entry) => sum + (entry.file.size || 0), 0);
+        if(totalFiles){
+          selectionBar.style.display = "flex";
+          selectionCount.textContent = `${totalFiles} tệp`;
+          sizeTotal.textContent = formatBytes(totalBytes);
+        }else{
+          selectionBar.style.display = "none";
         }
-        totalSize += file.size;
-        if (totalSize > 200 * 1024 * 1024) {
-            statusText.textContent = "Dung lượng vượt quá giới hạn 200MB. Hãy bỏ bớt tệp.";
-            totalSize -= file.size;
-            return;
+        emptyState.style.display = totalFiles ? "none" : "block";
+        convertBtn.disabled = !totalFiles || state.converting;
+        clearAll.disabled = !totalFiles || state.converting;
+      }
+
+      function renderFiles(){
+        if(!state.files.length){
+          fileGrid.innerHTML = "";
+          updateSelection();
+          return;
         }
-        files.push(file);
-    });
-    if (files.length) {
-        statusText.textContent = `${files.length} tệp đã được thêm vào hàng đợi.`;
-    }
-    renderFiles();
-};
+        fileGrid.innerHTML = state.files.map((entry, index) => `
+          <div class="card" data-index="${index}">
+            <button class="remove" type="button" aria-label="Xóa ${entry.name}">×</button>
+            <div class="thumb" data-pages="PDF">
+              <div class="thumb-icon" aria-hidden="true">PDF</div>
+            </div>
+            <div class="filename" title="${entry.name}">${entry.name}</div>
+            <div class="meta">${formatBytes(entry.file.size)}</div>
+          </div>
+        `).join("");
+        updateSelection();
+      }
 
-const resetAll = () => {
-    files = [];
-    fileInput.value = "";
-    statusText.textContent = "";
-    downloads.innerHTML = "";
-    progress.style.display = "none";
-    progressBar.style.width = "0%";
-    isConverting = false;
-    renderFiles();
-};
+      function resetDownloads(){
+        downloadCache = [];
+        renderDownloads();
+      }
 
-const simulateConversion = () => {
-    if (!files.length || isConverting) return;
-    isConverting = true;
-    convertBtn.textContent = "Đang chuyển đổi...";
-    convertBtn.disabled = true;
-    clearBtn.disabled = true;
-    progress.style.display = "block";
-    statusText.textContent = layout === "multi"
-        ? "Đang phân tích từng trang và giữ nguyên bố cục sheet..."
-        : "Đang gộp dữ liệu vào một sheet duy nhất...";
-    let progressValue = 0;
-    const timer = setInterval(() => {
-        progressValue = Math.min(progressValue + Math.random() * 18, 95);
-        progressBar.style.width = `${progressValue}%`;
-    }, 320);
-    setTimeout(() => {
-        clearInterval(timer);
-        progressBar.style.width = "100%";
-        statusText.textContent = "Hoàn tất! Tải xuống file Excel ở bên dưới.";
-        convertBtn.textContent = "Chuyển đổi lại";
-        convertBtn.disabled = false;
-        clearBtn.disabled = false;
-        isConverting = false;
-        downloads.innerHTML = "";
-        files.forEach(file => {
-            const link = document.createElement("a");
-            link.className = "download-pill";
-            link.href = "#";
-            link.setAttribute("role", "button");
-            link.textContent = file.name.replace(/\.pdf$/i, ".xlsx");
-            downloads.appendChild(link);
-        });
-    }, Math.max(1800, files.length * 750));
-};
+      function handleFiles(list){
+        if(state.converting || !list?.length) return;
+        let added = 0;
+        for(const file of list){
+          const name = (file.name || "tep-khong-ten.pdf").trim();
+          const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(name);
+          if(!isPdf){
+            updateStatus(`"${name}" không phải định dạng PDF.`, "error");
+            continue;
+          }
+          state.files.push({
+            id: Math.random().toString(36).slice(2,9),
+            file,
+            name
+          });
+          added++;
+        }
+        if(added){
+          renderFiles();
+          resetDownloads();
+          updateStatus(`Đã thêm ${added} tệp PDF. Sẵn sàng chuyển đổi.`, "success");
+        }else if(!state.files.length){
+          updateSelection();
+        }
+      }
 
-pickFiles.addEventListener("click", () => fileInput.click());
-fileInput.addEventListener("change", event => addFiles(event.target.files));
-useSample.addEventListener("click", () => {
-    const blob = new Blob(["Sample PDF content"], { type: "application/pdf" });
-    const sample = new File([blob], "Bao_cao_tai_chinh.pdf", { type: "application/pdf" });
-    addFiles([sample]);
-});
-clearBtn.addEventListener("click", resetAll);
-convertBtn.addEventListener("click", simulateConversion);
-
-fileList.addEventListener("click", event => {
-    if (event.target.matches(".remove-btn")) {
-        const index = Number(event.target.dataset.index);
-        files.splice(index, 1);
-        statusText.textContent = files.length ? "Đã xóa tệp khỏi danh sách." : "";
+      function removeFile(index){
+        if(state.converting) return;
+        state.files.splice(index, 1);
         renderFiles();
-    }
-});
+        resetDownloads();
+        if(!state.files.length){
+          updateStatus("Danh sách tệp trống. Thêm tệp PDF để bắt đầu.", "info");
+        }
+      }
 
-["dragenter", "dragover"].forEach(type => {
-    dropzone.addEventListener(type, event => {
+      function clearFiles(){
+        if(state.converting) return;
+        state.files = [];
+        renderFiles();
+        resetDownloads();
+        updateStatus("Đã xóa toàn bộ tệp khỏi hàng đợi.", "info");
+      }
+
+      function setLayout(layout){
+        state.layout = layout;
+        layoutButtons.forEach(btn => {
+          const active = btn.dataset.layout === layout;
+          btn.classList.toggle("active", active);
+          btn.setAttribute("aria-pressed", active ? "true" : "false");
+        });
+        const message = layout === "multi"
+          ? "Mỗi trang PDF sẽ trở thành một sheet riêng."
+          : "Toàn bộ nội dung PDF sẽ gộp vào một sheet duy nhất.";
+        updateStatus(message, "info");
+      }
+
+      function updateProgress(value){
+        const percent = Math.min(100, Math.max(0, Math.round(value * 100)));
+        progressBar.style.width = `${percent}%`;
+      }
+
+      function renderDownloads(){
+        if(!downloadCache.length){
+          downloadList.innerHTML = "";
+          return;
+        }
+        downloadList.innerHTML = downloadCache.map((entry, index) => `
+          <a href="#" class="download-item" data-download="${index}">
+            <span class="download-icon" aria-hidden="true">⬇</span>
+            <span>
+              <strong>${entry.name}</strong>
+              <small>${entry.note}</small>
+            </span>
+          </a>
+        `).join("");
+      }
+
+      function triggerDownload(blob, filename){
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
+      }
+
+      function groupTextByRows(textContent){
+        const rowTolerance = 4;
+        const rows = [];
+
+        const estimateWidth = item => {
+          if(typeof item.width === "number"){ return item.width; }
+          const transform = item.transform || [];
+          if(transform.length >= 2){
+            const scale = Math.hypot(transform[0], transform[1]);
+            if(scale){ return scale * (item.str?.length || 1); }
+          }
+          return Math.max(4, (item.str?.length || 1) * 4);
+        };
+
+        const estimateHeight = item => {
+          if(typeof item.height === "number"){ return item.height; }
+          const transform = item.transform || [];
+          if(transform.length >= 4){
+            const scale = Math.hypot(transform[2], transform[3]);
+            if(scale){ return scale; }
+          }
+          return 12;
+        };
+
+        const mergeRowItems = items => {
+          if(!items.length){ return []; }
+          const merged = [];
+          let current = { x: items[0].x, text: items[0].text.trim(), end: items[0].end };
+
+          for(let i = 1; i < items.length; i++){
+            const item = items[i];
+            const gap = item.x - current.end;
+            const charWidth = Math.max(estimateWidth({ str: item.text }), 4);
+            const height = estimateHeight({ str: item.text });
+            const breakThreshold = Math.max(charWidth * 0.6, 2);
+            if(gap > breakThreshold){
+              merged.push(current);
+              current = { x: item.x, text: item.text.trim(), end: item.end };
+            }else{
+              const needsSpace = gap > Math.max(1.2, height * 0.15) && !current.text.endsWith(" ");
+              current.text += (needsSpace ? " " : "") + item.text.trim();
+              current.end = item.end;
+            }
+          }
+          merged.push(current);
+          return merged.filter(entry => entry.text);
+        };
+
+        for(const item of textContent.items){
+          const rawText = item.str;
+          if(!rawText || !rawText.trim()){ continue; }
+          const transform = item.transform || [0,0,0,0,0,0];
+          const x = transform[4];
+          const y = transform[5];
+          const width = estimateWidth(item);
+          let row = rows.find(entry => Math.abs(entry.y - y) <= rowTolerance);
+          if(!row){
+            row = { y, items: [] };
+            rows.push(row);
+          }
+          row.items.push({ x, text: rawText, end: x + width });
+        }
+
+        rows.sort((a, b) => b.y - a.y);
+        return rows.map(row => {
+          const ordered = row.items.sort((a, b) => a.x - b.x);
+          const merged = mergeRowItems(ordered);
+          return merged.map(entry => entry.text.trim());
+        }).filter(row => row.some(cell => cell.length));
+      }
+
+      async function convertPdfToWorkbook(file, onProgress = () => {}){
+        if(!libsReady()){
+          throw new Error("Thiếu thư viện pdf.js hoặc SheetJS.");
+        }
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const workbook = XLSX.utils.book_new();
+        const mergedRows = [];
+
+        const pageCount = pdf.numPages || 1;
+        for(let pageIndex = 1; pageIndex <= pageCount; pageIndex++){
+          const page = await pdf.getPage(pageIndex);
+          const textContent = await page.getTextContent();
+          const rows = groupTextByRows(textContent);
+
+          if(state.layout === "multi"){
+            const sheetName = `Trang${pageIndex}`;
+            const sheetData = rows.length ? rows : [["(Không phát hiện văn bản trên trang)"]];
+            const sheet = XLSX.utils.aoa_to_sheet(sheetData);
+            XLSX.utils.book_append_sheet(workbook, sheet, sheetName.slice(0, 31));
+          }else{
+            if(rows.length){
+              mergedRows.push(...rows, [""]);
+            }
+          }
+          onProgress(pageIndex / pageCount);
+        }
+
+        if(state.layout === "single"){
+          if(!mergedRows.length){
+            mergedRows.push(["(Không phát hiện văn bản trong PDF này)"]);
+          }
+          const sheet = XLSX.utils.aoa_to_sheet(mergedRows);
+          XLSX.utils.book_append_sheet(workbook, sheet, "Sheet1");
+        }
+
+        if(!workbook.SheetNames.length){
+          const sheet = XLSX.utils.aoa_to_sheet([["(Không tìm thấy dữ liệu)"]]);
+          XLSX.utils.book_append_sheet(workbook, sheet, "Sheet1");
+        }
+
+        const wbout = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+        const blob = new Blob([wbout], { type: excelMime });
+        return {
+          name: file.name.replace(/\.pdf$/i, ".xlsx"),
+          note: `${getLayoutDescription()} · AI nhận dạng văn bản`,
+          blob
+        };
+      }
+
+      async function convertAllFiles(){
+        const results = [];
+        for(let index = 0; index < state.files.length; index++){
+          const entry = state.files[index];
+          updateStatus(`Đang nhận dạng bảng bằng AI cho "${entry.name}" (${index + 1}/${state.files.length})...`, "info");
+          const workbook = await convertPdfToWorkbook(entry.file, ratio => {
+            const overall = (index + ratio) / state.files.length;
+            updateProgress(overall);
+          });
+          results.push(workbook);
+        }
+        updateProgress(1);
+        return results;
+      }
+
+      async function handleConversion(){
+        if(!state.files.length || state.converting) return;
+        if(!libsReady()){
+          updateStatus("Không tải được thư viện nhận dạng PDF. Hãy kiểm tra kết nối Internet và tải lại trang.", "error");
+          return;
+        }
+        state.converting = true;
+        convertBtn.disabled = true;
+        clearAll.disabled = true;
+        convertBtn.innerHTML = "<span>Đang chuyển đổi…</span>";
+        resetDownloads();
+        progressWrap.style.display = "block";
+        updateProgress(0);
+        updateStatus(`Bắt đầu phân tích ${state.files.length} tệp bằng AI mã nguồn mở…`, "info");
+
+        try{
+          const files = await convertAllFiles();
+          let downloads = [];
+
+          if(files.length > 1 && window.JSZip){
+            const zip = new JSZip();
+            files.forEach(item => {
+              zip.file(item.name, item.blob);
+            });
+            const zipBlob = await zip.generateAsync({ type: "blob" });
+            downloads.push({
+              name: `pdf-sang-excel-${Date.now()}.zip`,
+              note: `${files.length} workbook · Đã nén ZIP`,
+              blob: zipBlob
+            });
+            files.forEach(item => downloads.push(item));
+          }else{
+            downloads = files;
+          }
+
+          if(!downloads.length){
+            throw new Error("Không tạo được file Excel từ các tệp đã chọn.");
+          }
+
+          downloadCache = downloads;
+          renderDownloads();
+          triggerDownload(downloadCache[0].blob, downloadCache[0].name);
+          updateStatus(`Hoàn tất! Đã tải xuống ${downloadCache[0].name}.`, "success");
+        }catch(error){
+          console.error(error);
+          updateStatus("Đã xảy ra lỗi khi chuyển PDF sang Excel. Vui lòng thử lại.", "error");
+        }finally{
+          state.converting = false;
+          convertBtn.disabled = !state.files.length;
+          clearAll.disabled = !state.files.length;
+          convertBtn.innerHTML = "<span>Chuyển đổi lại</span>";
+          progressWrap.style.display = "none";
+        }
+      }
+
+      dropzone.addEventListener("dragenter", event => {
         event.preventDefault();
         dropzone.classList.add("dragover");
-    });
-});
-["dragleave", "drop"].forEach(type => {
-    dropzone.addEventListener(type, event => {
+      });
+      dropzone.addEventListener("dragover", event => {
         event.preventDefault();
-        dropzone.classList.remove("dragover");
-    });
-});
-dropzone.addEventListener("drop", event => {
-    event.preventDefault();
-    if (event.dataTransfer?.files?.length) {
-        addFiles(event.dataTransfer.files);
-    }
-});
+        event.dataTransfer.dropEffect = "copy";
+        dropzone.classList.add("dragover");
+      });
+      ["dragleave","drop"].forEach(type => {
+        dropzone.addEventListener(type, event => {
+          event.preventDefault();
+          dropzone.classList.remove("dragover");
+        });
+      });
+      dropzone.addEventListener("drop", event => {
+        event.preventDefault();
+        if(event.dataTransfer?.files?.length){
+          handleFiles(event.dataTransfer.files);
+        }
+      });
+      dropzone.addEventListener("click", event => {
+        if(event.target.closest("button")) return;
+        fileInput.click();
+      });
+      dropzone.addEventListener("keydown", event => {
+        if(event.key === "Enter" || event.key === " "){
+          event.preventDefault();
+          fileInput.click();
+        }
+      });
 
-const selectLayout = choice => {
-    layout = choice;
-    if (choice === "multi") {
-        layoutMulti.classList.add("active");
-        layoutSingle.classList.remove("active");
-        statusText.textContent = "Chế độ nhiều trang tính giữ nguyên cấu trúc từng trang PDF.";
-    } else {
-        layoutSingle.classList.add("active");
-        layoutMulti.classList.remove("active");
-        statusText.textContent = "Chế độ một trang tính sẽ gộp tất cả dữ liệu vào một sheet.";
-    }
-};
+      chooseBtn.addEventListener("click", event => {
+        event.preventDefault();
+        event.stopPropagation();
+        fileInput.click();
+      });
+      fileInput.addEventListener("change", event => {
+        handleFiles(event.target.files);
+        fileInput.value = "";
+      });
 
-layoutMulti.addEventListener("click", () => selectLayout("multi"));
-layoutSingle.addEventListener("click", () => selectLayout("single"));
+      fileGrid.addEventListener("click", event => {
+        if(event.target.matches(".remove")){
+          const index = Number(event.target.closest(".card").dataset.index);
+          removeFile(index);
+        }
+      });
 
-document.getElementById("year").textContent = new Date().getFullYear();
-</script>
+      downloadList.addEventListener("click", event => {
+        const link = event.target.closest("[data-download]");
+        if(!link) return;
+        event.preventDefault();
+        const entry = downloadCache[Number(link.dataset.download)];
+        if(entry){
+          triggerDownload(entry.blob, entry.name);
+          updateStatus(`Đang tải lại ${entry.name}.`, "info");
+        }
+      });
+
+      clearAll.addEventListener("click", clearFiles);
+      convertBtn.addEventListener("click", handleConversion);
+
+      layoutButtons.forEach(btn => {
+        btn.addEventListener("click", () => setLayout(btn.dataset.layout));
+      });
+
+      optionsToggle.addEventListener("click", () => {
+        const isOpen = panel.classList.toggle("open");
+        optionsToggle.setAttribute("aria-expanded", String(isOpen));
+      });
+
+      window.addEventListener("keydown", event => {
+        if((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "o"){
+          event.preventDefault();
+          fileInput.click();
+        }
+        if(event.key === "Escape" && panel.classList.contains("open")){
+          panel.classList.remove("open");
+          optionsToggle.setAttribute("aria-expanded", "false");
+        }
+      });
+
+      renderDownloads();
+      updateSelection();
+      updateStatus("Thêm tệp PDF để bắt đầu chuyển đổi.", "info");
+    })();
+  </script>
 </body>
 </html>
+
+
