@@ -241,6 +241,28 @@
       const optionsToggle = $("#optionsToggle");
       const panel = $("#panel");
 
+      const compactLabel = "⚙️ Tùy chọn chuyển đổi";
+      const desktopLabel = "Tùy chọn";
+
+      const closePanel = () => {
+        if(!panel || !optionsToggle) return;
+        panel.classList.remove("open");
+        optionsToggle.setAttribute("aria-expanded", "false");
+      };
+
+      const breakpoint = window.matchMedia("(max-width:1100px)");
+      const syncResponsiveState = () => {
+        if(!optionsToggle) return;
+        const isCompact = breakpoint.matches;
+        optionsToggle.style.display = isCompact ? "inline-flex" : "none";
+        optionsToggle.textContent = isCompact ? compactLabel : desktopLabel;
+        if(!isCompact){
+          closePanel();
+        }
+      };
+      syncResponsiveState();
+      breakpoint.addEventListener("change", syncResponsiveState);
+
       const libsReady = () => {
         return window.pdfjsLib && window.XLSX;
       };
@@ -793,9 +815,19 @@
         btn.addEventListener("click", () => setLayout(btn.dataset.layout));
       });
 
-      optionsToggle.addEventListener("click", () => {
-        const isOpen = panel.classList.toggle("open");
-        optionsToggle.setAttribute("aria-expanded", String(isOpen));
+      if(optionsToggle && panel){
+        optionsToggle.addEventListener("click", () => {
+          const isOpen = panel.classList.toggle("open");
+          optionsToggle.setAttribute("aria-expanded", String(isOpen));
+        });
+      }
+
+      document.addEventListener("click", event => {
+        if(!panel || !optionsToggle) return;
+        if(!panel.classList.contains("open") || !breakpoint.matches) return;
+        if(panel.contains(event.target)) return;
+        if(optionsToggle.contains(event.target)) return;
+        closePanel();
       });
 
       window.addEventListener("keydown", event => {
@@ -804,8 +836,7 @@
           fileInput.click();
         }
         if(event.key === "Escape" && panel.classList.contains("open")){
-          panel.classList.remove("open");
-          optionsToggle.setAttribute("aria-expanded", "false");
+          closePanel();
         }
       });
 

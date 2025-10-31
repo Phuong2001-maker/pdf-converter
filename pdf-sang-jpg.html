@@ -178,7 +178,7 @@
       <button class="convert" id="convertBtn" type="button" disabled><span>Chuyển sang JPG</span></button>
     </aside>
 
-    <button class="options-toggle" id="optsToggle" type="button">Tùy chọn</button>
+    <button class="options-toggle" id="optsToggle" type="button">⚙️ Tùy chọn chuyển đổi</button>
   </div>
 
   <script src="./libs/pdfjs/pdf.min.js"></script>
@@ -213,13 +213,25 @@
     const pdfjs = window.pdfjsLib || null;
 
     const mql = window.matchMedia('(max-width:1100px)');
+    const compactLabel = '⚙️ Tùy chọn chuyển đổi';
+    const desktopLabel = 'Tùy chọn';
+
     const handleResponsive = () => {
-      optsToggle.style.display = mql.matches ? 'inline-flex' : 'none';
-      if(!mql.matches){panel.classList.remove('open');}
+      const isCompact = mql.matches;
+      optsToggle.style.display = isCompact ? 'inline-flex' : 'none';
+      optsToggle.textContent = isCompact ? compactLabel : desktopLabel;
+      if(!isCompact){panel.classList.remove('open');}
     };
     handleResponsive();
     mql.addEventListener('change', handleResponsive);
     optsToggle.addEventListener('click', () => panel.classList.toggle('open'));
+
+    document.addEventListener('click', event => {
+      if(!panel.classList.contains('open') || !mql.matches) return;
+      if(panel.contains(event.target)) return;
+      if(optsToggle && optsToggle.contains(event.target)) return;
+      panel.classList.remove('open');
+    });
 
     function updateStatus(text='', tone='info'){
       if(!text){statusMessage.className = 'status'; statusMessage.textContent=''; return;}

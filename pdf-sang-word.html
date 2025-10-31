@@ -470,6 +470,9 @@
       const progressLabel = $("#progressLabel");
       const progressBar = $("#progressBar");
 
+      const compactLabel = "⚙️ Tùy chọn chuyển đổi";
+      const desktopLabel = "Tùy chọn";
+
       const closeOptionsPanel = () => {
         if(!aside || !optionsToggle) return;
         aside.classList.remove("open");
@@ -487,8 +490,10 @@
       const breakpoint = window.matchMedia("(max-width:1100px)");
       const syncResponsiveState = () => {
         if(!optionsToggle) return;
-        optionsToggle.style.display = breakpoint.matches ? "inline-flex" : "none";
-        if(!breakpoint.matches){
+        const isCompact = breakpoint.matches;
+        optionsToggle.style.display = isCompact ? "inline-flex" : "none";
+        optionsToggle.textContent = isCompact ? compactLabel : desktopLabel;
+        if(!isCompact){
           closeOptionsPanel();
         }
       };
@@ -497,6 +502,13 @@
       if(optionsToggle){
         optionsToggle.addEventListener("click", toggleOptionsPanel);
       }
+      document.addEventListener("click", event => {
+        if(!aside || !optionsToggle) return;
+        if(!aside.classList.contains("open") || !breakpoint.matches) return;
+        if(aside.contains(event.target)) return;
+        if(optionsToggle.contains(event.target)) return;
+        closeOptionsPanel();
+      });
 
       const formatBytes = bytes => {
         if(!bytes) return "0 B";
