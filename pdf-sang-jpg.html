@@ -91,10 +91,10 @@
     .rightpanel h2{margin:0;font-size:22px;font-weight:700;}
     .rightpanel p{margin:0;color:var(--muted);line-height:1.5;font-size:14px;}
 
-    .mode-toggle{display:grid;grid-template-columns:1fr 1fr;background:#f3f4f6;border-radius:14px;padding:6px;gap:6px;}
-    .mode-toggle button{border:none;border-radius:12px;padding:12px;font-weight:600;background:transparent;color:#4b5563;display:flex;flex-direction:column;gap:6px;align-items:center;cursor:pointer;transition:all .2s;}
-    .mode-toggle button.active{background:#fff;box-shadow:0 10px 24px rgba(229,57,53,.18);color:var(--primary);}
-    .mode-toggle button span{font-size:12px;color:var(--muted);}
+    .mode-card{display:flex;align-items:center;gap:16px;background:#fff;border-radius:16px;padding:18px;box-shadow:0 12px 32px rgba(17,24,39,.08);}
+    .mode-card .icon{font-size:34px;line-height:1;}
+    .mode-card strong{display:block;font-size:16px;color:#1f2937;margin-bottom:4px;}
+    .mode-card p{margin:0;font-size:14px;color:var(--muted);line-height:1.5;}
 
     .quality{display:flex;gap:12px;}
     .qitem{flex:1;border:2px solid #e5e7eb;border-radius:14px;padding:16px;text-align:center;font-weight:600;cursor:pointer;transition:border-color .2s,box-shadow .2s;background:#fff;}
@@ -150,15 +150,12 @@
       <h2>Chuyển PDF sang JPG</h2>
       <p>Tải nhiều tệp PDF, chuyển từng trang sang JPG chất lượng cao và tải về gói ZIP trong vài thao tác.</p>
 
-      <div class="mode-toggle" role="group" aria-label="Chế độ chuyển đổi">
-        <button type="button" class="toggle active" data-mode="pages">
-          Trang sang JPG
-          <span>Mỗi trang thành 1 ảnh</span>
-        </button>
-        <button type="button" class="toggle" data-mode="images">
-          Xuất ảnh
-          <span>Lấy ảnh trong PDF</span>
-        </button>
+      <div class="mode-card" role="note" aria-label="Chế độ chuyển đổi">
+        <div class="icon">🖼️</div>
+        <div>
+          <strong>Trang sang JPG</strong>
+          <p>Mỗi trang PDF sẽ được chuyển thành ảnh JPG chất lượng cao.</p>
+        </div>
       </div>
 
       <div>
@@ -188,7 +185,6 @@
   <script>
     const state = {
       files: [], // {id, file, name, pdf, pages, thumb}
-      mode: 'pages',
       quality: 'normal',
       converting: false
     };
@@ -373,22 +369,6 @@
       updateStatus('Đã loại bỏ tệp khỏi danh sách.', 'info');
     });
 
-    $$('.mode-toggle .toggle').forEach(btn => {
-      btn.addEventListener('click', () => setMode(btn.dataset.mode));
-    });
-    function setMode(mode){
-      state.mode = mode;
-      $$('.mode-toggle .toggle').forEach(btn => {
-        const isActive = btn.dataset.mode === mode;
-        btn.classList.toggle('active', isActive);
-      });
-      if(mode === 'images'){
-        updateStatus('Chế độ "Xuất ảnh" sẽ cố gắng trích ảnh; nếu không khả dụng sẽ xuất trang.', 'info');
-      } else {
-        updateStatus('Chế độ "Trang sang JPG" đã được chọn.', 'info');
-      }
-    }
-
     $$('.qitem').forEach(item => {
       item.addEventListener('click', () => setQuality(item.dataset.quality));
       item.addEventListener('keydown', e => {
@@ -449,11 +429,7 @@
           const folder = zip.folder(folderName);
           const pageCount = pdf.numPages;
 
-          if(state.mode === 'images'){
-            updateStatus(`Đang trích ảnh từ "${entry.name}"…`, 'info');
-          } else {
-            updateStatus(`Đang chuyển đổi "${entry.name}"…`, 'info');
-          }
+          updateStatus(`Đang chuyển đổi "${entry.name}" sang JPG…`, 'info');
 
           const dpi = state.quality === 'high' ? 220 : 150;
           const scale = dpi / 72;
