@@ -96,17 +96,25 @@
     .mode-card strong{display:block;font-size:16px;color:#1f2937;margin-bottom:4px;}
     .mode-card p{margin:0;font-size:14px;color:var(--muted);line-height:1.5;}
 
-    .quality{display:flex;gap:12px;}
-    .qitem{flex:1;border:2px solid #e5e7eb;border-radius:14px;padding:16px;text-align:center;font-weight:600;cursor:pointer;transition:border-color .2s,box-shadow .2s;background:#fff;}
-    .qitem small{display:block;font-weight:500;color:var(--muted);margin-top:4px;}
-    .qitem.active{border-color:var(--primary);box-shadow:0 0 0 4px var(--ring);}
+    .quality{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
+    @media (max-width:600px){.quality{grid-template-columns:1fr;}}
+    .qitem{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:10px;min-height:140px;padding:18px;border-radius:18px;background:#ffffff;border:1px solid #e2e8f0;box-shadow:0 8px 18px rgba(15,23,42,.07);cursor:pointer;transition:transform .18s ease,box-shadow .22s ease,border-color .22s ease,background .22s ease;}
+    .qitem strong{font-size:17px;color:#1f2937;line-height:1.25;font-weight:600;}
+    .qitem small{font-size:13px;font-weight:500;color:#475569;letter-spacing:.01em;}
+    .qitem .badge{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;padding:5px 12px;border-radius:999px;background:#eef2ff;color:#3b82f6;}
+    .qitem[data-quality="high"] .badge{background:#ecfdf5;color:#0f766e;}
+    .qitem[data-quality="ultra"] .badge{background:#fef2f2;color:#dc2626;}
+    .qitem.active{background:linear-gradient(180deg,#fff7f7 0%,#ffe6e6 100%);border-color:rgba(229,57,53,.6);box-shadow:0 20px 36px rgba(229,57,53,.18);transform:translateY(-2px);}
+    .qitem.active strong{color:var(--primary-dark);}
+    .qitem.active small{color:#991b1b;}
+    .qitem:focus-visible{outline:none;box-shadow:0 0 0 4px rgba(229,57,53,.22);}
 
-    .status{min-height:32px;border-radius:12px;padding:10px 14px;font-size:13px;line-height:1.5;display:none;}
+    .status{border-radius:16px;padding:14px 16px;font-size:13px;line-height:1.6;display:none;box-shadow:0 12px 30px rgba(15,23,42,.08);border:1px solid transparent;margin-bottom:18px;}
     .status.show{display:block;}
-    .status.info{background:#f1f5f9;color:#1e293b;}
-    .status.success{background:#ecfdf5;color:#047857;}
-    .status.warn{background:#fef3c7;color:#b45309;}
-    .status.error{background:#fee2e2;color:#b91c1c;}
+    .status.info{background:#eef2ff;color:#312e81;border-color:#c7d2fe;}
+    .status.success{background:#ecfdf5;color:#047857;border-color:#bbf7d0;}
+    .status.warn{background:#fff7ed;color:#b45309;border-color:#fde68a;}
+    .status.error{background:#fef2f2;color:#b91c1c;border-color:#fecaca;}
 
     .progress{height:6px;background:#f3f4f6;border-radius:999px;overflow:hidden;display:none;}
     .progress span{display:block;height:100%;width:0;background:var(--primary);transition:width .2s ease;}
@@ -161,8 +169,21 @@
       <div>
         <p style="font-weight:600;margin-bottom:10px;color:#1f2937;">Chất lượng ảnh</p>
         <div class="quality" role="radiogroup">
-          <div class="qitem active" tabindex="0" role="radio" data-quality="normal" aria-checked="true">Bình thường<small>Khuyên dùng</small></div>
-          <div class="qitem" tabindex="0" role="radio" data-quality="high" aria-checked="false">Cao<small>Rõ nét hơn</small></div>
+          <div class="qitem active" tabindex="0" role="radio" data-quality="normal" aria-checked="true">
+            <span class="badge">Khuyên dùng</span>
+            <strong>Bình thường</strong>
+            <small>150 DPI</small>
+          </div>
+          <div class="qitem" tabindex="0" role="radio" data-quality="high" aria-checked="false">
+            <span class="badge">Cân bằng</span>
+            <strong>Cao</strong>
+            <small>220 DPI</small>
+          </div>
+          <div class="qitem" tabindex="0" role="radio" data-quality="ultra" aria-checked="false">
+            <span class="badge">MAX DPI</span>
+            <strong>Siêu nét</strong>
+            <small>600 DPI</small>
+          </div>
         </div>
       </div>
 
@@ -207,6 +228,29 @@
     const panel = $('#panel');
     const chooseBtn = $('#chooseBtn');
     const pdfjs = window.pdfjsLib || null;
+    const QUALITY_PRESETS = {
+      normal: {
+        label: 'bình thường',
+        dpi: 150,
+        jpegQuality: 0.82,
+        message: 'Chế độ bình thường (150 DPI) giúp chuyển đổi nhanh và dung lượng nhẹ.',
+        tone: 'info'
+      },
+      high: {
+        label: 'cao',
+        dpi: 220,
+        jpegQuality: 0.92,
+        message: 'Chế độ cao (220 DPI) cân bằng giữa độ nét và dung lượng tệp.',
+        tone: 'info'
+      },
+      ultra: {
+        label: 'siêu nét',
+        dpi: 600,
+        jpegQuality: 1,
+        message: 'Chế độ siêu nét (600 DPI) tiêu tốn nhiều tài nguyên; hãy dùng với PDF ít trang và máy đủ mạnh.',
+        tone: 'warn'
+      }
+    };
 
     const mql = window.matchMedia('(max-width:1100px)');
     const compactLabel = '⚙️ Tùy chọn chuyển đổi';
@@ -376,13 +420,15 @@
       });
     });
     function setQuality(quality){
-      state.quality = quality;
+      const key = QUALITY_PRESETS[quality] ? quality : 'normal';
+      state.quality = key;
       $$('.qitem').forEach(el => {
-        const active = el.dataset.quality === quality;
+        const active = el.dataset.quality === key;
         el.classList.toggle('active', active);
         el.setAttribute('aria-checked', active);
       });
-      updateStatus(`Đã chọn chất lượng ${quality === 'high' ? 'cao' : 'bình thường'}.`, 'info');
+      const preset = QUALITY_PRESETS[key];
+      updateStatus(preset.message, preset.tone);
     }
 
     async function loadPdf(entry){
@@ -409,7 +455,12 @@
       }
       state.converting = true;
       convertBtn.disabled = true;
-      updateStatus('Bắt đầu chuyển đổi…', 'info');
+      const preset = QUALITY_PRESETS[state.quality] || QUALITY_PRESETS.normal;
+      const tone = preset.tone === 'warn' ? 'warn' : 'info';
+      const scale = preset.dpi / 72;
+      const jpegQuality = preset.jpegQuality;
+
+      updateStatus(tone === 'warn' ? 'Bắt đầu chuyển đổi ở chế độ siêu nét. Tiến trình có thể lâu hơn bình thường…' : 'Bắt đầu chuyển đổi…', tone);
       progressWrap.style.display = 'block';
       progressBar.style.width = '0%';
 
@@ -429,10 +480,7 @@
           const folder = zip.folder(folderName);
           const pageCount = pdf.numPages;
 
-          updateStatus(`Đang chuyển đổi "${entry.name}" sang JPG…`, 'info');
-
-          const dpi = state.quality === 'high' ? 220 : 150;
-          const scale = dpi / 72;
+          updateStatus(`Đang chuyển đổi "${entry.name}" sang JPG…`, tone);
 
           for(let i=1; i<=pageCount; i++){
             const page = await pdf.getPage(i);
@@ -444,7 +492,7 @@
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0,0,canvas.width,canvas.height);
             await page.render({canvasContext:ctx, viewport}).promise;
-            const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', state.quality === 'high' ? 0.92 : 0.82));
+            const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', jpegQuality));
             if(!blob){throw new Error('Không tạo được ảnh JPG.');}
             const buffer = await blob.arrayBuffer();
             folder.file(`page-${String(i).padStart(3,'0')}.jpg`, buffer);
