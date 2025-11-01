@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <title>Ký tên Ảnh — Studio chữ ký số</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Ứng dụng ký chữ, ký tay, watermark, QR, làm mờ và xuất hàng loạt hoàn toàn client-side.">
+  <meta name="theme-color" content="#2563EB">
+  <meta name="color-scheme" content="light dark">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%232563EB' d='M6 26.5 4 28l1.5-4 14-14a3.5 3.5 0 0 1 5 5l-14 14z'/%3E%3Cpath fill='%230B1021' d='M22.5 9.5 28 4l-4.5 5.5-5.5 5.5z'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Great+Vibes&family=Pacifico&display=swap" rel="stylesheet">
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem('signapp:theme');
+        var resolved = stored || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.dataset.theme = resolved;
+      } catch (error) {
+        document.documentElement.dataset.theme = 'light';
+      }
+      try {
+        var locale = localStorage.getItem('signapp:locale');
+        if (locale) {
+          document.documentElement.dataset.locale = locale;
+        }
+      } catch (error) {
+        document.documentElement.dataset.locale = 'vi';
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-locale="vi">
+  <noscript class="no-script">Ứng dụng cần JavaScript để hoạt động. Vui lòng bật JavaScript.</noscript>
+
+  <svg aria-hidden="true" class="svg-sprite">
+    <symbol id="icon-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4.5 19.5 3 21l1.5-4.5L15 6l3 3L7.5 19.5z"></path>
+      <path d="M16 5 20.5 3 19 7.5"></path>
+    </symbol>
+    <symbol id="icon-type" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 7h16"></path>
+      <path d="M12 7v13"></path>
+      <path d="M7 20h10"></path>
+    </symbol>
+    <symbol id="icon-pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m3 21 2.5-.5L19.5 6.5a2.5 2.5 0 0 0-3.5-3.5L2 17.5z"></path>
+      <path d="M14 4l6 6"></path>
+    </symbol>
+    <symbol id="icon-sticker" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M7 3h7l7 7v7a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4z"></path>
+      <path d="M14 3v5a2 2 0 0 0 2 2h5"></path>
+      <circle cx="9.5" cy="10.5" r="1.5"></circle>
+      <path d="m7 17 3-3 2.5 2.5L14.5 14 17 17"></path>
+    </symbol>
+    <symbol id="icon-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 8h16"></path>
+      <path d="M4 16h16"></path>
+      <path d="M8 4v16"></path>
+      <path d="M16 4v16"></path>
+    </symbol>
+    <symbol id="icon-qr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="6" height="6"></rect>
+      <rect x="15" y="3" width="6" height="6"></rect>
+      <rect x="3" y="15" width="6" height="6"></rect>
+      <path d="M15 15h2v2h-2z"></path>
+      <path d="M19 15h2v6h-6v-2h4z"></path>
+    </symbol>
+    <symbol id="icon-blur" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 4s6 6 6 9a6 6 0 0 1-12 0c0-3 6-9 6-9z"></path>
+    </symbol>
+    <symbol id="icon-export" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 5v12"></path>
+      <path d="m6 11 6-6 6 6"></path>
+      <path d="M5 19h14"></path>
+    </symbol>
+    <symbol id="icon-batch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="4" width="15" height="14" rx="3"></rect>
+      <path d="M7 20h11a3 3 0 0 0 3-3V8"></path>
+    </symbol>
+    <symbol id="icon-help" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"></circle>
+      <path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2.5-3 4.5"></path>
+      <circle cx="12" cy="18" r=".5" fill="currentColor"></circle>
+    </symbol>
+    <symbol id="icon-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 4v10"></path>
+      <path d="m6 10 6 6 6-6"></path>
+      <path d="M5 20h14"></path>
+    </symbol>
+    <symbol id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="4"></circle>
+      <path d="M12 2v2"></path>
+      <path d="M12 20v2"></path>
+      <path d="m4.2 4.2 1.4 1.4"></path>
+      <path d="m18.4 18.4 1.4 1.4"></path>
+      <path d="M2 12h2"></path>
+      <path d="M20 12h2"></path>
+      <path d="m4.2 19.8 1.4-1.4"></path>
+      <path d="m18.4 5.6 1.4-1.4"></path>
+    </symbol>
+    <symbol id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path>
+    </symbol>
+    <symbol id="icon-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m9 18 6-6-6-6"></path>
+    </symbol>
+    <symbol id="icon-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 5v14"></path>
+      <path d="M5 12h14"></path>
+    </symbol>
+    <symbol id="icon-minus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+      <path d="M5 12h14"></path>
+    </symbol>
+    <symbol id="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m5 13 4 4L19 7"></path>
+    </symbol>
+    <symbol id="icon-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 19V5"></path>
+      <path d="m5 12 7-7 7 7"></path>
+      <path d="M5 19h14"></path>
+    </symbol>
+    <symbol id="icon-undo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 14 4 9l5-5"></path>
+      <path d="M20 20a9 9 0 0 0-9-9H4"></path>
+    </symbol>
+    <symbol id="icon-redo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m15 4 5 5-5 5"></path>
+      <path d="M4 20a9 9 0 0 1 9-9h7"></path>
+    </symbol>
+    <symbol id="icon-eraser" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M19 19h-8l-5.5-5.5a3 3 0 0 1 0-4.2l5.3-5.3a3 3 0 0 1 4.2 0L21 10"></path>
+      <path d="M11 19h8"></path>
+    </symbol>
+    <symbol id="icon-rotate" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2 12a10 10 0 1 1 2.93 7.07"></path>
+      <path d="M2 12h5"></path>
+      <path d="M5 9 2 12l3 3"></path>
+    </symbol>
+    <symbol id="icon-align-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+      <path d="M3 6h18"></path>
+      <path d="M3 12h12"></path>
+      <path d="M3 18h18"></path>
+    </symbol>
+    <symbol id="icon-align-center" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+      <path d="M4 6h16"></path>
+      <path d="M8 12h8"></path>
+      <path d="M4 18h16"></path>
+    </symbol>
+    <symbol id="icon-align-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+      <path d="M3 6h18"></path>
+      <path d="M9 12h12"></path>
+      <path d="M3 18h18"></path>
+    </symbol>
+    <symbol id="icon-bold" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M7 5h6a3 3 0 0 1 0 6H7z"></path>
+      <path d="M7 11h7a3 3 0 0 1 0 6H7z"></path>
+    </symbol>
+    <symbol id="icon-italic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+      <path d="M14 5h6"></path>
+      <path d="M4 19h6"></path>
+      <path d="M15 5 9 19"></path>
+    </symbol>
+    <symbol id="icon-shadow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+      <rect x="4" y="4" width="10" height="10" rx="2"></rect>
+      <path d="M10 10h10v10H10z"></path>
+    </symbol>
+    <symbol id="icon-stroke" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+      <circle cx="12" cy="12" r="6"></circle>
+      <circle cx="12" cy="12" r="9"></circle>
+    </symbol>
+    <symbol id="icon-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 6h18"></path>
+      <path d="M8 6V4h8v2"></path>
+      <path d="M6 6v14h12V6"></path>
+    </symbol>
+    <symbol id="icon-zoom-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="6"></circle>
+      <path d="M11 8v6"></path>
+      <path d="M8 11h6"></path>
+      <path d="m21 21-4.3-4.3"></path>
+    </symbol>
+    <symbol id="icon-zoom-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="6"></circle>
+      <path d="M8 11h6"></path>
+      <path d="m21 21-4.3-4.3"></path>
+    </symbol>
+    <symbol id="icon-fit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 8V5a2 2 0 0 1 2-2h3"></path>
+      <path d="M16 3h3a2 2 0 0 1 2 2v3"></path>
+      <path d="M21 16v3a2 2 0 0 1-2 2h-3"></path>
+      <path d="M8 21H5a2 2 0 0 1-2-2v-3"></path>
+    </symbol>
+    <symbol id="icon-fill" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m2 7 7-4 7 4v10l-7 4-7-4z"></path>
+      <path d="M9 3v18"></path>
+      <path d="M2 12h14"></path>
+    </symbol>
+    <symbol id="icon-center" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+      <rect x="5" y="7" width="14" height="10" rx="2"></rect>
+      <path d="M12 3v4"></path>
+      <path d="M12 21v-4"></path>
+    </symbol>
+    <symbol id="icon-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+      <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+      <path d="M3 9h18"></path>
+      <path d="M3 15h18"></path>
+      <path d="M9 3v18"></path>
+      <path d="M15 3v18"></path>
+    </symbol>
+    <symbol id="icon-snap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+      <path d="M4 4h6v6H4z"></path>
+      <path d="M14 14h6v6h-6z"></path>
+      <path d="M20 4h-6v6h6z"></path>
+      <path d="M4 14h6v6H4z"></path>
+    </symbol>
+    <symbol id="icon-ruler" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+      <path d="m4 14 10-10 6 6-10 10H4z"></path>
+      <path d="m7 14 3-3"></path>
+      <path d="m10 17 3-3"></path>
+      <path d="m13 8 3 3"></path>
+    </symbol>
+    <symbol id="icon-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+      <circle cx="12" cy="12" r="10"></circle>
+      <path d="M12 10v6"></path>
+      <circle cx="12" cy="7" r=".5" fill="currentColor"></circle>
+    </symbol>
+    <symbol id="icon-template" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+      <rect x="3" y="3" width="18" height="18" rx="3"></rect>
+      <path d="M8 7h8"></path>
+      <path d="M8 12h8"></path>
+      <path d="M8 17h4"></path>
+    </symbol>
+    <symbol id="icon-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 12h14"></path>
+      <path d="m13 6 6 6-6 6"></path>
+    </symbol>
+    <symbol id="icon-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+      <path d="M12 9v4"></path>
+      <circle cx="12" cy="17" r=".5" fill="currentColor"></circle>
+      <path d="M10.3 3.8 2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 3.8a2 2 0 0 0-3.4 0z"></path>
+    </symbol>
+    <symbol id="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+      <path d="M6 6l12 12"></path>
+      <path d="M18 6 6 18"></path>
+    </symbol>
+    <symbol id="icon-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+      <path d="M4 7h3l2-2h6l2 2h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z"></path>
+      <circle cx="12" cy="13" r="3"></circle>
+    </symbol>
+    <symbol id="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+      <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path>
+      <circle cx="12" cy="12" r="3"></circle>
+    </symbol>
+    <symbol id="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+      <path d="m1 1 22 22"></path>
+      <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a21.77 21.77 0 0 1 5.14-5.94"></path>
+      <path d="M9.88 9.88A3 3 0 0 0 12 15a3 3 0 0 0 2.12-5.12"></path>
+    </symbol>
+  </svg>
+
+  <div id="offlineBanner" class="offline-banner" hidden>
+    <div class="offline-content">
+      <svg class="icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+      <div>
+        <p class="offline-title">Bạn đang offline</p>
+        <p class="offline-text">Các thay đổi vẫn lưu cục bộ. Một số tính năng tải về sẽ tạm ẩn.</p>
+      </div>
+    </div>
+    <button type="button" class="icon-btn" data-action="dismiss-offline" aria-label="Đóng thông báo offline">
+      <svg class="icon"><use href="#icon-close"></use></svg>
+    </button>
+  </div>
+
+  <div id="appShell" class="app-shell">
+    <main class="app-main" id="mainLayout">
+      <aside class="app-sidebar" id="toolSidebar">
+        <div class="sidebar-scroll">
+          <nav class="tool-tabs" id="toolTabs" role="tablist" aria-orientation="vertical">
+            <p class="tab-placeholder">Đang tải công cụ…</p>
+          </nav>
+          <div class="sidebar-meta">
+            <p>Privacy-first • 100% client-side</p>
+            <p class="sidebar-tip">Kéo ảnh vào hoặc dùng nút nhanh để bắt đầu.</p>
+          </div>
+        </div>
+      </aside>
+      <section class="workspace" id="workspace" aria-labelledby="workspaceTitle">
+        <div class="workspace-toolbar">
+          <div class="workspace-info">
+            <h1 id="workspaceTitle">Canvas</h1>
+            <div class="workspace-status">
+              <span id="activeFileName">Chưa có ảnh</span>
+              <span class="dot" aria-hidden="true"></span>
+              <span id="activeZoom">100%</span>
+            </div>
+          </div>
+          <div class="canvas-toolbar" role="toolbar" aria-label="Điều khiển canvas">
+            <button type="button" class="icon-btn" data-action="zoom-out" aria-label="Thu nhỏ">
+              <svg class="icon"><use href="#icon-zoom-out"></use></svg>
+            </button>
+            <button type="button" class="icon-btn" data-action="zoom-in" aria-label="Phóng to">
+              <svg class="icon"><use href="#icon-zoom-in"></use></svg>
+            </button>
+            <div class="toolbar-divider" aria-hidden="true"></div>
+            <button type="button" class="icon-btn" data-action="fit" aria-label="Fit vào khung">
+              <svg class="icon"><use href="#icon-fit"></use></svg>
+            </button>
+            <button type="button" class="icon-btn" data-action="fill" aria-label="Fill toàn khung">
+              <svg class="icon"><use href="#icon-fill"></use></svg>
+            </button>
+            <button type="button" class="icon-btn" data-action="center" aria-label="Căn giữa canvas">
+              <svg class="icon"><use href="#icon-center"></use></svg>
+            </button>
+            <div class="toolbar-divider" aria-hidden="true"></div>
+            <button type="button" class="icon-btn" data-action="toggle-grid" aria-pressed="false" aria-label="Bật/tắt grid">
+              <svg class="icon"><use href="#icon-grid"></use></svg>
+            </button>
+            <button type="button" class="icon-btn" data-action="toggle-snap" aria-pressed="true" aria-label="Bật/tắt snap lưới">
+              <svg class="icon"><use href="#icon-snap"></use></svg>
+            </button>
+            <button type="button" class="icon-btn" data-action="toggle-ruler" aria-pressed="false" aria-label="Bật/tắt thước">
+              <svg class="icon"><use href="#icon-ruler"></use></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="canvas-board" id="canvasBoard" data-state="empty">
+          <div class="canvas-dropzone" id="canvasDropzone" role="button" tabindex="0" aria-describedby="dropHint">
+            <div class="drop-card">
+              <div class="drop-icon" aria-hidden="true">
+                <svg class="icon"><use href="#icon-upload"></use></svg>
+              </div>
+              <h2>Kéo-thả hoặc chọn ảnh để bắt đầu</h2>
+              <p id="dropHint">Kéo &amp; thả ảnh vào đây hoặc bấm để chọn. Hỗ trợ chọn nhiều ảnh cùng lúc.</p>
+              <div class="drop-actions">
+                <button type="button" class="btn primary" data-action="select-files">
+                  <svg class="icon"><use href="#icon-plus"></use></svg>
+                  <span>Chọn ảnh</span>
+                </button>
+                <button type="button" class="btn secondary" data-action="use-sample">Dùng ảnh mẫu</button>
+              </div>
+              <p class="drop-footnote">Ảnh &gt;20MP sẽ được hỏi giảm 50% để thao tác mượt hơn.</p>
+            </div>
+          </div>
+
+          <div class="canvas-wrapper" id="canvasWrapper" aria-hidden="true">
+            <div class="canvas-background"></div>
+            <canvas id="editorCanvas" width="1200" height="800" role="img" aria-label="Khu vực chỉnh sửa ảnh"></canvas>
+            <canvas id="overlayCanvas" width="1200" height="800" class="overlay-canvas" aria-hidden="true"></canvas>
+            <div class="selection-overlay" id="selectionOverlay" aria-hidden="true"></div>
+            <div class="canvas-loading" id="canvasLoading" hidden>
+              <div class="spinner" aria-hidden="true"></div>
+              <p>Đang xử lý ảnh…</p>
+            </div>
+          </div>
+
+          <div class="canvas-status" role="status" aria-live="polite">
+            <span id="statusDimensions">Kích thước: —</span>
+            <span id="statusScale">Zoom: 100%</span>
+            <span id="statusMemory">RAM ước tính: —</span>
+          </div>
+        </div>
+
+        <div class="workspace-tips" id="workspaceTips" hidden>
+          <div class="tip-card">
+            <p><strong>Mẹo:</strong> Giữ phím <kbd>Space</kbd> để kéo canvas, <kbd>Ctrl/Cmd + Z</kbd> để Undo.</p>
+          </div>
+        </div>
+      </section>
+
+      <aside class="properties-panel" id="propertiesPanel" aria-label="Thuộc tính công cụ">
+        <header class="panel-header">
+          <div class="panel-heading">
+            <h2>Thuộc tính</h2>
+            <p id="panelSubtitle">Chọn một công cụ để tinh chỉnh.</p>
+          </div>
+          <div class="panel-actions">
+            <button type="button" class="chip small" data-action="toggle-presets">
+              <svg class="icon"><use href="#icon-template"></use></svg>
+              <span>Preset</span>
+            </button>
+            <button type="button" class="icon-btn panel-close" data-action="collapse-panel" aria-label="Thu gọn bảng thuộc tính">
+              <svg class="icon"><use href="#icon-chevron"></use></svg>
+            </button>
+          </div>
+        </header>
+
+        <div class="panel-body">
+          <section class="panel-block">
+            <header class="block-header">
+              <div>
+                <h3>Layer &amp; vị trí</h3>
+                <p>Quản lý các layer chữ ký trên ảnh hiện tại.</p>
+              </div>
+              <div class="block-actions">
+                <button type="button" class="icon-btn" data-action="layer-up" aria-label="Đưa layer lên trên" disabled>
+                  <svg class="icon"><use href="#icon-arrow-right"></use></svg>
+                </button>
+                <button type="button" class="icon-btn" data-action="layer-down" aria-label="Đưa layer xuống dưới" disabled>
+                  <svg class="icon"><use href="#icon-arrow-right"></use></svg>
+                </button>
+              </div>
+            </header>
+            <div class="layer-toolbar">
+              <button type="button" class="btn ghost" data-action="add-layer-text">
+                <svg class="icon"><use href="#icon-type"></use></svg>
+                <span>Thêm layer chữ</span>
+              </button>
+              <button type="button" class="btn ghost" data-action="duplicate-layer" disabled>Nhân bản</button>
+              <button type="button" class="btn ghost danger" data-action="delete-layer" disabled>
+                <svg class="icon"><use href="#icon-trash"></use></svg>
+                <span>Xóa</span>
+              </button>
+            </div>
+            <div class="layer-list-wrapper">
+              <ul id="layerList" class="layer-list" role="listbox" aria-label="Danh sách layer"></ul>
+              <p class="empty-hint" id="layerEmptyHint">Chưa có layer nào. Thêm layer để bắt đầu.</p>
+            </div>
+          </section>
+
+          <section class="panel-block" id="toolPanelHost">
+            <header class="block-header">
+              <div>
+                <h3 id="toolPanelTitle">Công cụ</h3>
+                <p id="toolPanelDescription">Chọn một công cụ bên trái để hiển thị điều khiển.</p>
+              </div>
+            </header>
+            <div id="toolPanelContent" class="tool-panel-content"></div>
+          </section>
+
+          <section class="panel-block preset-block" id="presetBlock" hidden>
+            <header class="block-header">
+              <div>
+                <h3>Template &amp; Preset</h3>
+                <p>Lưu các cấu hình thường dùng để áp dụng nhanh.</p>
+              </div>
+              <div class="block-actions">
+                <button type="button" class="btn ghost" data-action="save-preset">
+                  <svg class="icon"><use href="#icon-plus"></use></svg>
+                  <span>Lưu preset</span>
+                </button>
+              </div>
+            </header>
+            <div class="preset-body">
+              <ul id="presetList" class="preset-list"></ul>
+              <p class="empty-hint" id="presetEmpty">Chưa có preset nào. Lưu cấu hình hiện tại để dùng lại.</p>
+            </div>
+          </section>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <div id="toastStack" class="toast-stack" aria-live="polite" aria-atomic="false"></div>
+  <div id="panelBackdrop" class="panel-backdrop" hidden></div>
+
+  <dialog id="qrPreviewDialog" class="modal" aria-labelledby="qrPreviewTitle">
+    <form method="dialog" class="modal-content">
+      <header class="modal-header">
+        <h2 id="qrPreviewTitle">Quét thử QR</h2>
+        <button type="submit" class="icon-btn" aria-label="Đóng">
+          <svg class="icon"><use href="#icon-close"></use></svg>
+        </button>
+      </header>
+      <div class="modal-body">
+        <canvas id="qrPreviewCanvas" width="320" height="320" aria-label="Preview QR"></canvas>
+        <p>Quét QR bằng điện thoại để kiểm tra nội dung chữ ký.</p>
+      </div>
+      <footer class="modal-footer">
+        <button type="submit" class="btn primary">Đóng</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog id="confirmDialog" class="modal" aria-labelledby="confirmTitle">
+    <form method="dialog" class="modal-content" id="confirmForm">
+      <header class="modal-header">
+        <h2 id="confirmTitle">Xác nhận</h2>
+        <button type="submit" value="cancel" class="icon-btn" aria-label="Đóng">
+          <svg class="icon"><use href="#icon-close"></use></svg>
+        </button>
+      </header>
+      <div class="modal-body">
+        <p id="confirmMessage">Bạn có chắc chắn?</p>
+      </div>
+      <footer class="modal-footer">
+        <button type="submit" value="cancel" class="btn secondary">Hủy</button>
+        <button type="submit" value="confirm" class="btn danger">Xác nhận</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <template id="layer-item-template">
+    <li class="layer-item" role="option" tabindex="-1">
+      <span class="layer-handle" aria-hidden="true"><span></span><span></span><span></span></span>
+      <div class="layer-meta">
+        <p class="layer-name"></p>
+        <p class="layer-desc"></p>
+      </div>
+      <div class="layer-actions">
+        <button type="button" class="icon-btn layer-visibility" aria-label="Ẩn layer">
+          <svg class="icon"><use href="#icon-eye"></use></svg>
+        </button>
+      </div>
+    </li>
+  </template>
+
+  <template id="toast-template">
+    <div class="toast" role="status" data-tone="neutral">
+      <div class="toast-icon">
+        <svg class="icon"><use href="#icon-info"></use></svg>
+      </div>
+      <div class="toast-copy">
+        <p class="toast-title"></p>
+        <p class="toast-message"></p>
+      </div>
+      <button type="button" class="icon-btn toast-close" aria-label="Đóng thông báo">
+        <svg class="icon"><use href="#icon-close"></use></svg>
+      </button>
+    </div>
+  </template>
+
+  <template id="tooltip-template">
+    <div class="coachmark" role="dialog" aria-modal="false">
+      <div class="coachmark-body">
+        <h4 class="coachmark-title"></h4>
+        <p class="coachmark-text"></p>
+        <div class="coachmark-actions">
+          <button type="button" class="btn secondary" data-action="skip-tour">Bỏ qua</button>
+          <button type="button" class="btn primary" data-action="next-tour">Tiếp tục</button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <input type="file" id="imageInput" accept="image/*,.heic,.heif" multiple hidden>
+  <input type="file" id="logoInput" accept="image/*,.svg" hidden>
+
+  <script src="vendor/qrcode.min.js"></script>
+  <script src="libs/jszip/jszip.min.js"></script>
+  <script src="libs/filesaver/FileSaver.min.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
