@@ -137,6 +137,29 @@ const TOOL_DEFINITIONS = [
   { id: 'batch', icon: 'icon-batch' },
 ];
 
+function scheduleRendererResize(image = null) {
+  const container = canvas.parentElement;
+  if (!container) return;
+  let attempts = 0;
+  const attemptResize = () => {
+    const rect = container.getBoundingClientRect();
+    const hasSize = rect.width > 0 && rect.height > 0;
+    if (!hasSize && attempts < 10) {
+      attempts += 1;
+      requestAnimationFrame(attemptResize);
+      return;
+    }
+    if (!hasSize) {
+      return;
+    }
+    renderer.resize(rect.width, rect.height);
+    if (image) {
+      renderer.fitToBounds(image.width, image.height);
+    }
+  };
+  requestAnimationFrame(attemptResize);
+}
+
 function init() {
   initUI();
   loadPresets();
@@ -149,8 +172,9 @@ function init() {
   const container = canvas.parentElement;
   if (container) {
     const rect = container.getBoundingClientRect();
-    renderer.resize(rect.width, rect.height);
-    renderer.fitToBounds(rect.width - 64, rect.height - 64);
+    if (rect.width > 0 && rect.height > 0) {
+      renderer.resize(rect.width, rect.height);
+    }
   }
   toggleTips(true);
   registerOfflineBanner(() => toggleOfflineBanner(false));
@@ -213,6 +237,7 @@ function registerEvents() {
         zoom: `Zoom: ${(image.zoom * 100).toFixed(0)}%`,
         memory: estimateMemoryUsage(image),
       });
+      scheduleRendererResize(image);
     } else {
       updateStatusBar({
         dimensions: 'Kích thước: —',
@@ -234,6 +259,7 @@ function registerEvents() {
         zoom: `Zoom: ${(image.zoom * 100).toFixed(0)}%`,
         memory: estimateMemoryUsage(image),
       });
+      scheduleRendererResize(image);
     }
     renderer.render();
   });
@@ -1425,4 +1451,5 @@ async function handleExportZip() {
     tone: 'success',
   });
 }
-\ndocument.addEventListener('DOMContentLoaded', init);
+
+document.addEventListener('DOMContentLoaded', init);
