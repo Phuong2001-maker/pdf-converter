@@ -96,6 +96,11 @@ const pointerCache = new Map();
 let pinchState = null;
 let activeSignaturePresetId = null;
 
+const syncCanvasCursor = (toolId = state.activeTool) => {
+  const isPenTool = toolId === layerTypes.PEN;
+  canvasBoard?.classList.toggle('is-pen-mode', isPenTool);
+};
+
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 const isEditableTarget = target => {
   if (!target) return false;
@@ -774,6 +779,7 @@ function init() {
   renderToolTabs(TOOL_DEFINITIONS);
   renderToolPanel(state.activeTool);
   updateToolSelection(state.activeTool);
+  syncCanvasCursor(state.activeTool);
   bindLayerReorder(handleLayerReorder);
   registerEvents();
   updateDropzoneVisibility(getActiveImage());
@@ -824,10 +830,16 @@ function registerEvents() {
   logoInput?.addEventListener('change', handleLogoSelection);
 
   canvas.addEventListener('pointerdown', handleCanvasPointerDown);
+  canvas.addEventListener('pointermove', handleCanvasPointerMove);
+  canvas.addEventListener('pointerup', handleCanvasPointerUp);
+  canvas.addEventListener('pointerleave', handleCanvasPointerUp);
+  canvas.addEventListener('pointercancel', handleCanvasPointerUp);
+
   overlayCanvas.addEventListener('pointerdown', handleCanvasPointerDown);
   overlayCanvas.addEventListener('pointermove', handleCanvasPointerMove);
   overlayCanvas.addEventListener('pointerup', handleCanvasPointerUp);
   overlayCanvas.addEventListener('pointerleave', handleCanvasPointerUp);
+  overlayCanvas.addEventListener('pointercancel', handleCanvasPointerUp);
 
   workspaceToolbar?.addEventListener('click', handleToolbarAction);
   layerAddTextButton?.addEventListener('click', createTextLayer);
@@ -963,6 +975,7 @@ events.addEventListener('toolchange', event => {
   const toolId = event.detail?.toolId ?? state.activeTool;
   updateToolSelection(toolId);
   renderToolPanel(toolId);
+  syncCanvasCursor(toolId);
   queueOverlaySync();
 });
 
