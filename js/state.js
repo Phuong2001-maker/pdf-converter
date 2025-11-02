@@ -293,7 +293,7 @@ export function savePresets() {
 export function addPreset(preset) {
   const presetState = {
     id: preset.id || randomId('preset'),
-    name: preset.name || 'Preset',
+    name: preset.name || (state.locale === 'vi' ? 'Thiết lập' : 'Preset'),
     createdAt: Date.now(),
     tool: preset.tool || state.activeTool,
     payload: preset.payload || {},
@@ -324,7 +324,7 @@ export function removePreset(presetId) {
 export function ensureDefaultPreset() {
   if (state.presets.length) return;
   addPreset({
-    name: 'Signature vàng góc phải',
+    name: state.locale === 'vi' ? 'Chữ ký vàng góc phải' : 'Golden corner signature',
     tool: layerTypes.TEXT,
     payload: {
       content: 'Dr. Huỳnh – Implant',

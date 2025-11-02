@@ -112,6 +112,21 @@ const isEditableTarget = target => {
 const MIN_TEXT_FONT = 12;
 const MAX_TEXT_FONT = 640;
 const MIN_TEXT_BOUNDS = 24;
+const localize = value => {
+  if (value == null) return '';
+  if (typeof value === 'string') return value;
+  const locale = state.locale || 'vi';
+  if (typeof value === 'object') {
+    if (value[locale]) return value[locale];
+    if (value.en) return value.en;
+    if (value.vi) return value.vi;
+    const firstKey = Object.keys(value)[0];
+    if (firstKey) {
+      return value[firstKey];
+    }
+  }
+  return String(value);
+};
 const getLayerBounds = (layer, image) => {
   if (!layer?.bounds || !image) return null;
   return {
@@ -247,8 +262,8 @@ const FONT_SUGGESTIONS = [
 const SIGNATURE_PRESETS = [
   {
     id: 'royal-blue',
-    name: 'Royal Blue',
-    tagline: 'Elegant',
+    name: { vi: 'Xanh Hoàng Gia', en: 'Royal Blue' },
+    tagline: { vi: 'Thanh lịch', en: 'Elegant' },
     previewText: 'Nguyễn Văn A',
     fontFamily: "'Great Vibes', cursive",
     fontWeight: 400,
@@ -269,8 +284,8 @@ const SIGNATURE_PRESETS = [
   },
   {
     id: 'sunset-rose',
-    name: 'Sunset Rose',
-    tagline: 'Romantic',
+    name: { vi: 'Hồng Hoàng Hôn', en: 'Sunset Rose' },
+    tagline: { vi: 'Lãng mạn', en: 'Romantic' },
     previewText: 'Trần Bảo Ngọc',
     fontFamily: "'Dancing Script', cursive",
     fontWeight: 600,
@@ -291,8 +306,8 @@ const SIGNATURE_PRESETS = [
   },
   {
     id: 'midnight-gold',
-    name: 'Midnight Gold',
-    tagline: 'Luxury',
+    name: { vi: 'Vàng Ánh Đêm', en: 'Midnight Gold' },
+    tagline: { vi: 'Sang trọng', en: 'Luxury' },
     previewText: 'Lê Gia Huy',
     fontFamily: "'Sacramento', cursive",
     fontWeight: 400,
@@ -316,8 +331,8 @@ const SIGNATURE_PRESETS = [
   },
   {
     id: 'silver-stream',
-    name: 'Silver Stream',
-    tagline: 'Modern',
+    name: { vi: 'Dòng Bạc', en: 'Silver Stream' },
+    tagline: { vi: 'Hiện đại', en: 'Modern' },
     previewText: 'Phạm Thu Hà',
     fontFamily: "'Allura', cursive",
     fontWeight: 400,
@@ -338,8 +353,8 @@ const SIGNATURE_PRESETS = [
   },
   {
     id: 'sport-vibe',
-    name: 'Sport Vibe',
-    tagline: 'Bold',
+    name: { vi: 'Phong Cách Thể Thao', en: 'Sport Vibe' },
+    tagline: { vi: 'Mạnh mẽ', en: 'Bold' },
     previewText: 'Ngô Quang Vũ',
     fontFamily: "'Playball', cursive",
     fontWeight: 400,
@@ -417,7 +432,7 @@ const toolDefaults = {
     position: { x: 0.85, y: 0.8 },
   },
   [layerTypes.WATERMARK]: {
-    text: 'Ký ảnh • Client-side',
+    text: 'Ký ảnh • Xử lý cục bộ',
     fontFamily: 'Inter',
     fontSize: 36,
     opacity: 0.22,
@@ -892,14 +907,14 @@ function registerEvents() {
     if (image) {
       updateStatusBar({
         dimensions: `${image.width} × ${image.height}px`,
-        zoom: `Zoom: ${(image.zoom * 100).toFixed(0)}%`,
+        zoom: `Thu phóng: ${(image.zoom * 100).toFixed(0)}%`,
         memory: estimateMemoryUsage(image),
       });
       scheduleRendererResize(image);
     } else {
       updateStatusBar({
         dimensions: 'Kích thước: —',
-        zoom: 'Zoom: 100%',
+        zoom: 'Thu phóng: 100%',
         memory: 'RAM ước tính: —',
       });
     }
@@ -920,7 +935,7 @@ events.addEventListener('imagechange', () => {
   if (image) {
     updateStatusBar({
       dimensions: `${image.width} × ${image.height}px`,
-      zoom: `Zoom: ${(image.zoom * 100).toFixed(0)}%`,
+      zoom: `Thu phóng: ${(image.zoom * 100).toFixed(0)}%`,
       memory: estimateMemoryUsage(image),
     });
     scheduleRendererResize(image);
@@ -971,6 +986,12 @@ events.addEventListener('toolchange', event => {
   renderToolPanel(toolId);
   syncCanvasCursor(toolId);
   queueOverlaySync();
+});
+
+events.addEventListener('localechange', () => {
+  renderSignatureStyles(SIGNATURE_PRESETS);
+  markActiveSignaturePreset(activeSignaturePresetId);
+  renderToolPanel(state.activeTool);
 });
 
   window.addEventListener('online', () => toggleOfflineBanner(false));
@@ -1078,7 +1099,7 @@ async function createImageStateFromFile(file) {
 
     updateStatusBar({
       dimensions: `${width} × ${height}px`,
-      zoom: 'Zoom: 100%',
+      zoom: 'Thu phóng: 100%',
       memory: estimateMemoryUsage(imageState),
     });
 
@@ -1327,7 +1348,7 @@ function startPenStroke(pointer) {
   if (!activeLayer || activeLayer.type !== layerTypes.PEN) {
     const newLayer = addLayer(image.id, {
       type: layerTypes.PEN,
-      name: 'Pen',
+      name: state.locale === 'vi' ? 'Ký tay' : 'Pen',
       strokes: [],
       opacity: 1,
       cap: toolDefaults[layerTypes.PEN].cap || (toolDefaults[layerTypes.PEN].roundCap ? 'round' : 'butt'),
@@ -1845,7 +1866,7 @@ function computeFillZoom(image) {
 
 function updateZoomLabel(image) {
   if (!image || typeof image.zoom !== 'number') return;
-  updateStatusBar({ zoom: `Zoom: ${(image.zoom * 100).toFixed(0)}%` });
+  updateStatusBar({ zoom: `Thu phóng: ${(image.zoom * 100).toFixed(0)}%` });
 }
 
 async function handleDeleteLayer() {
@@ -1853,7 +1874,7 @@ async function handleDeleteLayer() {
   if (!image || !state.activeLayerId) return;
   const confirmed = await showConfirm({
     message: state.locale === 'vi'
-      ? 'Xoá layer này? Thao tác không thể hoàn tác.'
+      ? 'Xoá lớp này? Thao tác không thể hoàn tác.'
       : 'Delete this layer? This cannot be undone.',
   });
   if (!confirmed) return;
@@ -1868,13 +1889,13 @@ async function handleSavePreset() {
     showToast({
       title: state.locale === 'vi' ? 'Không có cấu hình' : 'No configuration',
       message: state.locale === 'vi'
-        ? 'Chọn công cụ và thiết lập thông số trước khi lưu preset.'
+        ? 'Chọn công cụ và thiết lập thông số trước khi lưu.'
         : 'Pick a tool and configure it before saving a preset.',
       tone: 'warn',
     });
     return;
   }
-  const name = prompt(state.locale === 'vi' ? 'Đặt tên preset' : 'Preset name', payload.name || '');
+  const name = prompt(state.locale === 'vi' ? 'Đặt tên thiết lập' : 'Preset name', payload.name || '');
   if (!name) return;
   addPreset({
     name,
@@ -1882,7 +1903,7 @@ async function handleSavePreset() {
     payload,
   });
   showToast({
-    title: state.locale === 'vi' ? 'Preset đã lưu' : 'Preset saved',
+    title: state.locale === 'vi' ? 'Đã lưu thiết lập' : 'Preset saved',
     tone: 'success',
   });
 }
@@ -1934,6 +1955,7 @@ function createTextLayer() {
 
 function applySignaturePreset(preset) {
   if (!preset) return;
+  const presetName = localize(preset.name);
   const updates = {
     content: preset.text,
     fontFamily: preset.fontFamily,
@@ -1955,7 +1977,7 @@ function applySignaturePreset(preset) {
   }
   Object.assign(toolDefaults[layerTypes.TEXT], updates);
   toolDefaults[layerTypes.TEXT].signaturePresetId = preset.id;
-  toolDefaults[layerTypes.TEXT].signaturePresetName = preset.name;
+  toolDefaults[layerTypes.TEXT].signaturePresetName = presetName;
   const image = getActiveImage();
   if (!image) {
     activeSignaturePresetId = preset.id;
@@ -1971,14 +1993,14 @@ function applySignaturePreset(preset) {
       ...toolDefaults[layerTypes.TEXT],
       ...updates,
       signaturePresetId: preset.id,
-      signaturePresetName: preset.name,
+      signaturePresetName: presetName,
     });
     setActiveLayer(targetLayer.id);
   } else {
     updateLayer(image.id, targetLayer.id, {
       ...updates,
       signaturePresetId: preset.id,
-      signaturePresetName: preset.name,
+      signaturePresetName: presetName,
     });
   }
   activeSignaturePresetId = preset.id;
@@ -2389,7 +2411,7 @@ function renderLogoPanel(container) {
     </div>
     <form id="logoForm" class="form-grid">
       <label class="field">
-        <span>${state.locale === 'vi' ? 'Scale (%)' : 'Scale (%)'}</span>
+        <span>${state.locale === 'vi' ? 'Tỷ lệ (%)' : 'Scale (%)'}</span>
         <input type="range" name="scale" min="10" max="200" value="${Math.round((layer?.scale ?? toolDefaults[layerTypes.LOGO].scale) * 100)}" ${disabled ? 'disabled' : ''}>
       </label>
       <label class="field">
@@ -2437,7 +2459,7 @@ function renderWatermarkPanel(container) {
   container.innerHTML = `
     <form id="watermarkForm" class="form-grid">
       <label class="field">
-        <span>${state.locale === 'vi' ? 'Nội dung watermark' : 'Watermark text'}</span>
+        <span>${state.locale === 'vi' ? 'Nội dung dấu mờ' : 'Watermark text'}</span>
         <textarea name="text" rows="2" ${disabled ? 'disabled' : ''}>${current.text}</textarea>
       </label>
       <div class="field two-col">
@@ -2459,17 +2481,17 @@ function renderWatermarkPanel(container) {
           </select>
         </label>
         <label>
-          <span>${state.locale === 'vi' ? 'Cách ngang' : 'Spacing X'}</span>
+          <span>${state.locale === 'vi' ? 'Khoảng cách ngang' : 'Spacing X'}</span>
           <input type="number" name="spacingX" min="60" max="400" value="${current.spacingX}" ${disabled ? 'disabled' : ''}>
         </label>
       </div>
       <label class="field">
-        <span>${state.locale === 'vi' ? 'Cách dọc' : 'Spacing Y'}</span>
+        <span>${state.locale === 'vi' ? 'Khoảng cách dọc' : 'Spacing Y'}</span>
         <input type="number" name="spacingY" min="40" max="400" value="${current.spacingY}" ${disabled ? 'disabled' : ''}>
       </label>
     </form>
     <button type="button" class="btn primary" data-action="add-watermark"${disabled ? '' : ' hidden'}>
-      ${state.locale === 'vi' ? 'Thêm watermark' : 'Add watermark'}
+      ${state.locale === 'vi' ? 'Thêm dấu mờ' : 'Add watermark'}
     </button>
   `;
   const form = container.querySelector('#watermarkForm');
@@ -2526,7 +2548,7 @@ function renderQrPanel(container) {
           <input type="number" name="size" min="80" max="480" value="${current.size}" ${disabled ? 'disabled' : ''}>
         </label>
         <label>
-          <span>Margin</span>
+          <span>${state.locale === 'vi' ? 'Lề' : 'Margin'}</span>
           <input type="number" name="margin" min="0" max="40" value="${current.margin}" ${disabled ? 'disabled' : ''}>
         </label>
       </div>
@@ -2628,15 +2650,15 @@ function renderBlurPanel(container) {
       <label class="field">
         <span>${state.locale === 'vi' ? 'Chế độ' : 'Mode'}</span>
         <select name="mode"${disabled ? ' disabled' : ''}>
-          <option value="blur"${current.mode === 'blur' ? ' selected' : ''}>Blur</option>
-          <option value="pixelate"${current.mode === 'pixelate' ? ' selected' : ''}>Pixelate</option>
+          <option value="blur"${current.mode === 'blur' ? ' selected' : ''}>${state.locale === 'vi' ? 'Làm mờ' : 'Blur'}</option>
+          <option value="pixelate"${current.mode === 'pixelate' ? ' selected' : ''}>${state.locale === 'vi' ? 'Pixel hóa' : 'Pixelate'}</option>
         </select>
       </label>
       <label class="field">
         <span>${state.locale === 'vi' ? 'Cường độ' : 'Intensity'}</span>
         <input type="range" name="intensity" min="2" max="40" value="${current.intensity}" ${disabled ? 'disabled' : ''}>
       </label>
-      <p class="empty-hint">${state.locale === 'vi' ? 'Kéo trên canvas để chọn vùng cần làm mờ.' : 'Drag on canvas to select region.'}</p>
+      <p class="empty-hint">${state.locale === 'vi' ? 'Kéo trên khung vẽ để chọn vùng cần làm mờ.' : 'Drag on canvas to select region.'}</p>
     </form>
   `;
   const form = container.querySelector('#blurForm');
@@ -2674,11 +2696,11 @@ function renderExportPanel(container) {
         </select>
       </label>
       <label class="field">
-        <span>${state.locale === 'vi' ? 'Scale (%)' : 'Scale (%)'}</span>
+        <span>${state.locale === 'vi' ? 'Tỷ lệ (%)' : 'Scale (%)'}</span>
         <input type="range" name="scale" min="25" max="200" value="100">
       </label>
       <label class="field">
-        <span>${state.locale === 'vi' ? 'Quality' : 'Quality'}</span>
+        <span>${state.locale === 'vi' ? 'Chất lượng' : 'Quality'}</span>
         <input type="range" name="quality" min="60" max="100" value="92">
       </label>
       <button type="button" class="btn primary" data-action="download"${image ? '' : ' disabled'}>

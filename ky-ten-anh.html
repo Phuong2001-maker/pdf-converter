@@ -381,19 +381,19 @@
             </div>
           </div>
           <div class="sidebar-meta">
-            <p>Privacy-first • 100% client-side</p>
+            <p>Ưu tiên riêng tư • 100% xử lý trên thiết bị của bạn</p>
             <p class="sidebar-tip">Kéo ảnh vào hoặc dùng nút nhanh để bắt đầu.</p>
           </div>
         </div>
       </aside>
       <section class="workspace" id="workspace" aria-labelledby="workspaceTitle">
-        <h1 id="workspaceTitle" class="visually-hidden">Canvas</h1>
-        <div class="workspace-toolbar" id="workspaceToolbar" role="toolbar" aria-label="Điều khiển canvas">
+        <h1 id="workspaceTitle" class="visually-hidden">Không gian làm việc</h1>
+        <div class="workspace-toolbar" id="workspaceToolbar" role="toolbar" aria-label="Điều khiển khung vẽ">
           <div class="visually-hidden" aria-live="polite">
             <span id="activeFileName">Chưa có ảnh</span>
             <span id="activeZoom">100%</span>
           </div>
-          <div class="toolbar-group" id="viewToolbar" role="group" aria-label="Điều hướng canvas">
+          <div class="toolbar-group" id="viewToolbar" role="group" aria-label="Điều hướng khung vẽ">
             <span class="toolbar-label">Điều hướng</span>
             <button type="button" class="icon-btn" data-action="zoom-out" aria-label="Thu nhỏ" data-tooltip="Thu nhỏ">
               <svg class="icon"><use href="#icon-zoom-out"></use></svg>
@@ -402,20 +402,20 @@
               <svg class="icon"><use href="#icon-zoom-in"></use></svg>
             </button>
             <div class="toolbar-divider" aria-hidden="true"></div>
-            <button type="button" class="icon-btn" data-action="fit" aria-label="Fit vào khung" data-tooltip="Fit vào khung">
+            <button type="button" class="icon-btn" data-action="fit" aria-label="Vừa khung" data-tooltip="Vừa khung">
               <svg class="icon"><use href="#icon-fit"></use></svg>
             </button>
-            <button type="button" class="icon-btn" data-action="fill" aria-label="Fill toàn khung" data-tooltip="Fill toàn khung">
+            <button type="button" class="icon-btn" data-action="fill" aria-label="Phủ đầy khung" data-tooltip="Phủ đầy khung">
               <svg class="icon"><use href="#icon-fill"></use></svg>
             </button>
-            <button type="button" class="icon-btn" data-action="center" aria-label="Căn giữa canvas" data-tooltip="Căn giữa canvas">
+            <button type="button" class="icon-btn" data-action="center" aria-label="Căn giữa khung vẽ" data-tooltip="Căn giữa khung vẽ">
               <svg class="icon"><use href="#icon-center"></use></svg>
             </button>
             <div class="toolbar-divider" aria-hidden="true"></div>
-            <button type="button" class="icon-btn" data-action="toggle-grid" aria-pressed="false" aria-label="Bật/tắt grid" data-tooltip="Bật/tắt grid">
+            <button type="button" class="icon-btn" data-action="toggle-grid" aria-pressed="false" aria-label="Bật/tắt lưới" data-tooltip="Bật/tắt lưới">
               <svg class="icon"><use href="#icon-grid"></use></svg>
             </button>
-            <button type="button" class="icon-btn" data-action="toggle-snap" aria-pressed="true" aria-label="Bật/tắt snap lưới" data-tooltip="Bật/tắt snap lưới">
+            <button type="button" class="icon-btn" data-action="toggle-snap" aria-pressed="true" aria-label="Bật/tắt bám lưới" data-tooltip="Bật/tắt bám lưới">
               <svg class="icon"><use href="#icon-snap"></use></svg>
             </button>
             <button type="button" class="icon-btn" data-action="toggle-ruler" aria-pressed="false" aria-label="Bật/tắt thước" data-tooltip="Bật/tắt thước">
@@ -511,7 +511,7 @@
 
           <div class="canvas-status" role="status" aria-live="polite">
             <span id="statusDimensions">Kích thước: —</span>
-            <span id="statusScale">Zoom: 100%</span>
+            <span id="statusScale">Thu phóng: 100%</span>
             <span id="statusMemory">RAM ước tính: —</span>
           </div>
         </div>
@@ -523,14 +523,14 @@
           <section class="panel-block" id="layerPanel">
             <header class="block-header">
               <div>
-                <h3>Layer &amp; vị trí</h3>
-                <p>Quản lý các layer chữ ký trên ảnh hiện tại.</p>
+                <h3>Lớp &amp; vị trí</h3>
+                <p>Quản lý các lớp chữ ký trên ảnh hiện tại.</p>
               </div>
             </header>
             <div class="layer-toolbar">
               <button type="button" class="btn ghost" data-action="add-layer-text">
                 <svg class="icon"><use href="#icon-type"></use></svg>
-                <span>Thêm layer chữ</span>
+                <span>Thêm lớp chữ</span>
               </button>
               <button type="button" class="btn ghost danger" data-action="delete-layer" disabled>
                 <svg class="icon"><use href="#icon-trash"></use></svg>
@@ -538,8 +538,8 @@
               </button>
             </div>
             <div class="layer-list-wrapper">
-              <ul id="layerList" class="layer-list" role="listbox" aria-label="Danh sách layer"></ul>
-              <p class="empty-hint" id="layerEmptyHint">Chưa có layer nào. Thêm layer để bắt đầu.</p>
+              <ul id="layerList" class="layer-list" role="listbox" aria-label="Danh sách lớp"></ul>
+              <p class="empty-hint" id="layerEmptyHint">Chưa có lớp nào. Thêm lớp để bắt đầu.</p>
             </div>
           </section>
 
@@ -556,13 +556,13 @@
           <section class="panel-block preset-block" id="presetBlock" hidden>
             <header class="block-header">
               <div>
-                <h3>Template &amp; Preset</h3>
+                <h3>Mẫu &amp; thiết lập lưu</h3>
                 <p>Lưu các cấu hình thường dùng để áp dụng nhanh.</p>
               </div>
             </header>
             <div class="preset-body">
               <ul id="presetList" class="preset-list"></ul>
-              <p class="empty-hint" id="presetEmpty">Chưa có preset nào. Lưu cấu hình hiện tại để dùng lại.</p>
+              <p class="empty-hint" id="presetEmpty">Chưa có thiết lập lưu nào. Lưu cấu hình hiện tại để dùng lại.</p>
             </div>
           </section>
         </div>
@@ -582,7 +582,7 @@
         </button>
       </header>
       <div class="modal-body">
-        <canvas id="qrPreviewCanvas" width="320" height="320" aria-label="Preview QR"></canvas>
+        <canvas id="qrPreviewCanvas" width="320" height="320" aria-label="Xem trước QR"></canvas>
         <p>Quét QR bằng điện thoại để kiểm tra nội dung chữ ký.</p>
       </div>
       <footer class="modal-footer">
@@ -616,7 +616,7 @@
         <p class="layer-desc"></p>
       </div>
       <div class="layer-actions">
-        <button type="button" class="icon-btn layer-visibility" aria-label="Ẩn layer">
+        <button type="button" class="icon-btn layer-visibility" aria-label="Ẩn lớp">
           <svg class="icon"><use href="#icon-eye"></use></svg>
         </button>
       </div>

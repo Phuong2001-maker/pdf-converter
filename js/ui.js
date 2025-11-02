@@ -38,30 +38,30 @@ const localeStrings = {
     tools: {
       text: 'Chữ',
       pen: 'Ký tay',
-      logo: 'Logo/Sticker',
-      watermark: 'Watermark',
+      logo: 'Logo/Nhãn dán',
+      watermark: 'Dấu mờ',
       qr: 'QR chữ ký',
-      blur: 'Blur/Pixelate',
+      blur: 'Làm mờ/Pixel hóa',
       export: 'Xuất ảnh',
     },
     toolDescriptions: {
       text: 'Nhập nội dung chữ ký, font chữ, hiệu ứng.',
-      pen: 'Vẽ chữ ký tay, undo/redo và chuyển thành sticker.',
-      logo: 'Chèn logo PNG/SVG, chỉnh kích thước & vị trí.',
-      watermark: 'Tạo watermark lặp theo góc và khoảng cách.',
+      pen: 'Vẽ chữ ký tay, hoàn tác/làm lại và chuyển thành nhãn dán.',
+      logo: 'Chèn logo PNG/SVG, chỉnh kích thước và vị trí.',
+      watermark: 'Tạo dấu mờ lặp theo góc và khoảng cách.',
       qr: 'Sinh QR chứa nội dung chữ ký và đặt vào ảnh.',
-      blur: 'Chọn vùng để làm mờ hoặc pixelate.',
-      export: 'Chọn định dạng, chất lượng, scale và tải xuống.',
+      blur: 'Chọn vùng để làm mờ hoặc pixel hóa.',
+      export: 'Chọn định dạng, chất lượng, kích thước và tải xuống.',
     },
-    emptyLayers: 'Chưa có layer nào. Thêm layer để bắt đầu.',
-    emptyPresets: 'Chưa có preset nào. Lưu cấu hình hiện tại để dùng lại.',
+    emptyLayers: 'Chưa có lớp nào. Thêm lớp để bắt đầu.',
+    emptyPresets: 'Chưa có thiết lập lưu nào. Lưu cấu hình hiện tại để dùng lại.',
     toast: {
-      presetSaved: 'Preset đã lưu',
-      presetDeleted: 'Preset đã xoá',
+      presetSaved: 'Đã lưu thiết lập',
+      presetDeleted: 'Đã xoá thiết lập',
       exportReady: 'Ảnh đã sẵn sàng tải',
       offline: 'Bạn đang làm việc offline',
     },
-    confirmDeleteLayer: 'Xoá layer này? Thao tác không thể hoàn tác.',
+    confirmDeleteLayer: 'Xoá lớp này? Thao tác không thể hoàn tác.',
   },
   en: {
     tools: {
@@ -175,41 +175,45 @@ export function renderLayerList(image) {
 }
 
 function buildLayerName(layer, fallbackIndex) {
+  const isVi = state.locale === 'vi';
   switch (layer.type) {
     case layerTypes.TEXT:
-      return layer.name || `Text ${fallbackIndex}`;
+      return layer.name || (isVi ? `Chữ ${fallbackIndex}` : `Text ${fallbackIndex}`);
     case layerTypes.PEN:
-      return layer.name || `Pen ${fallbackIndex}`;
+      return layer.name || (isVi ? `Ký tay ${fallbackIndex}` : `Pen ${fallbackIndex}`);
     case layerTypes.LOGO:
-      return layer.name || `Logo ${fallbackIndex}`;
+      return layer.name || (isVi ? `Biểu trưng ${fallbackIndex}` : `Logo ${fallbackIndex}`);
     case layerTypes.WATERMARK:
-      return layer.name || `Watermark`;
+      return layer.name || (isVi ? 'Dấu mờ' : 'Watermark');
     case layerTypes.QR:
-      return layer.name || `QR`;
+      return layer.name || (isVi ? 'QR' : 'QR');
     case layerTypes.BLUR:
-      return layer.name || `Blur ${fallbackIndex}`;
+      return layer.name || (isVi ? `Làm mờ ${fallbackIndex}` : `Blur ${fallbackIndex}`);
     default:
-      return `Layer ${fallbackIndex}`;
+      return isVi ? `Lớp ${fallbackIndex}` : `Layer ${fallbackIndex}`;
   }
 }
 
 function describeLayer(layer) {
+  const isVi = state.locale === 'vi';
   switch (layer.type) {
     case layerTypes.TEXT:
       if (layer.signaturePresetName) {
         return layer.signaturePresetName;
       }
-      return (layer.content || '').slice(0, 32) || 'Text';
+      return (layer.content || '').slice(0, 32) || (isVi ? 'Chữ' : 'Text');
     case layerTypes.PEN:
-      return `${layer.strokes?.length || 0} strokes`;
+      return `${layer.strokes?.length || 0} ${isVi ? 'nét' : 'strokes'}`;
     case layerTypes.LOGO:
-      return layer.assetName || 'Graphic layer';
+      return layer.assetName || (isVi ? 'Logo hoặc nhãn dán' : 'Graphic layer');
     case layerTypes.WATERMARK:
-      return 'Repeated watermark';
+      return isVi ? 'Dấu mờ lặp' : 'Repeated watermark';
     case layerTypes.QR:
-      return 'QR signature';
+      return isVi ? 'QR chữ ký' : 'QR signature';
     case layerTypes.BLUR:
-      return layer.mode === 'pixelate' ? 'Pixelated region' : 'Blurred region';
+      return layer.mode === 'pixelate'
+        ? (isVi ? 'Vùng làm mờ điểm ảnh' : 'Pixelated region')
+        : (isVi ? 'Vùng làm mờ' : 'Blurred region');
     default:
       return '';
   }
@@ -347,7 +351,7 @@ export function updateStatusBar({ dimensions, zoom, memory }) {
       dom.statusScale.textContent = zoom;
     }
     if (dom.activeZoom) {
-      dom.activeZoom.textContent = zoom.replace('Zoom:', '').trim();
+      dom.activeZoom.textContent = zoom.replace(/^[^:]+:/, '').trim();
     }
   }
   if (memory && dom.statusMemory) {
@@ -463,6 +467,13 @@ export function renderSignatureStyles(styles = []) {
   if (!dom.signatureStyleList) return;
   dom.signatureStyleList.innerHTML = '';
   const fragment = document.createDocumentFragment();
+  const resolveText = value => {
+    if (value == null) return '';
+    if (typeof value === 'string') return value;
+    const locale = state.locale || 'vi';
+    return value[locale] || value.en || value.vi || value[Object.keys(value)[0]] || '';
+  };
+  const isVi = state.locale === 'vi';
   styles.forEach(style => {
     const button = document.createElement('button');
     button.type = 'button';
@@ -470,12 +481,14 @@ export function renderSignatureStyles(styles = []) {
     button.dataset.preset = style.id;
     button.setAttribute('role', 'option');
     button.setAttribute('aria-pressed', 'false');
-    button.setAttribute('aria-label', `${style.name} – ${style.tagline || 'Signature'}`);
+    const name = resolveText(style.name);
+    const tagline = resolveText(style.tagline) || (isVi ? 'Chữ ký' : 'Signature');
+    button.setAttribute('aria-label', `${name} – ${tagline}`);
     button.innerHTML = `
       <span class="signature-preview" style="font-family: ${style.fontFamily}; font-weight: ${style.fontWeight ?? 400}; color: ${style.previewColor || style.color};">${style.previewText}</span>
       <div class="signature-meta">
-        <span>${style.name}</span>
-        <span>${style.tagline || 'Signature'}</span>
+        <span>${name}</span>
+        <span>${tagline}</span>
       </div>
     `;
     if (style.background) {
