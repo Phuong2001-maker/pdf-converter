@@ -332,59 +332,92 @@ button:disabled {
 .workspace-toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-}
-
-.workspace-info {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.workspace-status {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--color-subtext);
-  font-size: 0.9rem;
-}
-
-.workspace-status .dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--color-border-strong);
-  display: inline-flex;
-}
-
-.canvas-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 16px;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding: 12px 20px;
   border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--color-surface) 80%, var(--color-bg) 20%);
-  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-surface) 90%, var(--color-bg) 10%);
+  border: 1px solid color-mix(in srgb, var(--color-border) 86%, transparent 14%);
   box-shadow: var(--shadow-sm);
   width: 100%;
-  flex: 1;
   overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
 }
 
-.canvas-toolbar .toolbar-group {
-  display: inline-flex;
+.workspace-toolbar .toolbar-group {
+  display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.workspace-toolbar .toolbar-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-subtext);
+  margin-right: 2px;
+  white-space: nowrap;
 }
 
 .toolbar-divider--group {
-  margin: 0 12px;
-  align-self: stretch;
+  display: none;
+}
+
+.workspace-toolbar .toolbar-divider--group:not([hidden]) {
+  display: inline-block;
+  width: 1px;
+  height: 30px;
+  background: color-mix(in srgb, var(--color-border) 80%, transparent 20%);
+}
+
+.workspace-toolbar .toolbar-group .toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: color-mix(in srgb, var(--color-border) 70%, transparent 30%);
+  margin: 0 4px;
 }
 
 .text-style-toolbar {
-  gap: 12px;
-  flex-wrap: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.workspace-toolbar .text-style-toolbar {
+  flex: 1 1 auto;
+  justify-content: flex-start;
+}
+
+.text-toolbar-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.text-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.text-toggle .icon,
+.text-align-btn .icon,
+.text-toolbar-actions .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.text-toolbar-actions .text-toggle,
+.text-toolbar-actions .text-align-btn {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 8px;
 }
 
 .text-style-toolbar[hidden] {
@@ -401,8 +434,86 @@ button:disabled {
   border: 1px solid var(--color-border);
   background: color-mix(in srgb, var(--color-surface) 92%, transparent 8%);
   height: 40px;
-  min-width: 82px;
+  min-width: 72px;
 }
+
+.workspace-toolbar [data-tooltip] {
+  position: relative;
+}
+
+.workspace-toolbar [data-tooltip]::after,
+.workspace-toolbar [data-tooltip]::before {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
+}
+
+.workspace-toolbar [data-tooltip]::after {
+  content: attr(data-tooltip);
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translate(-50%, -4px);
+  background: var(--color-paper-strong, #0B1021);
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.76rem;
+  box-shadow: var(--shadow-sm);
+  white-space: nowrap;
+  z-index: 10;
+}
+
+.workspace-toolbar [data-tooltip]::before {
+  content: '';
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translate(-50%, -4px);
+  border-width: 6px;
+  border-style: solid;
+  border-color: var(--color-paper-strong, #0B1021) transparent transparent transparent;
+  z-index: 9;
+}
+
+.workspace-toolbar [data-tooltip]:hover::after,
+.workspace-toolbar [data-tooltip]:focus-visible::after,
+.workspace-toolbar [data-tooltip]:hover::before,
+.workspace-toolbar [data-tooltip]:focus-visible::before {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.workspace-toolbar .icon-btn[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--color-primary) 20%, var(--color-surface) 80%);
+  border-color: color-mix(in srgb, var(--color-primary) 32%, transparent);
+  color: var(--color-primary);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 25%, transparent);
+}
+
+.workspace-toolbar .icon-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  background: color-mix(in srgb, var(--color-surface) 94%, transparent 6%);
+  color: var(--color-subtext);
+  pointer-events: none;
+}
+
+.workspace-toolbar .icon-btn:disabled::after,
+.workspace-toolbar .icon-btn:disabled::before {
+  display: none;
+}
+
+.workspace-toolbar .icon-btn {
+  min-width: 36px;
+  padding: 0 10px;
+  gap: 6px;
+}
+
+.workspace-toolbar .icon-label {
+  display: none;
+}
+
 
 .text-tool .icon {
   width: 20px;

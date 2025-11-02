@@ -225,7 +225,8 @@ export class CanvasRenderer {
       const text = line || ' ';
       const metrics = ctx.measureText(text);
       const effectiveWidth = this.calculateLineWidth(line, metrics.width, letterSpacing);
-      const startX = this.computeAlignedStart(x, effectiveWidth, align);
+      const startX = this.computeAlignedStart(x, effectiveWidth);
+      const anchorX = this.computeAnchorX(x, effectiveWidth, align);
       const ascent = metrics.actualBoundingBoxAscent ?? fontSize * 0.72;
       const descent = metrics.actualBoundingBoxDescent ?? fontSize * 0.28;
       const top = lineY - ascent;
@@ -238,17 +239,17 @@ export class CanvasRenderer {
       maxY = Math.max(maxY, bottom);
 
       if (letterSpacing) {
-        this.drawWithLetterSpacing(ctx, text, x, lineY, letterSpacing, align, strokeWidth, strokeColor, effectiveWidth);
+        this.drawWithLetterSpacing(ctx, text, startX, lineY, letterSpacing, strokeWidth, strokeColor);
       } else {
         if (strokeWidth > 0) {
           ctx.lineWidth = strokeWidth;
           ctx.strokeStyle = strokeColor;
-          ctx.strokeText(text, x, lineY, maxWidth);
+          ctx.strokeText(text, anchorX, lineY, maxWidth);
         }
-        ctx.fillText(text, x, lineY, maxWidth);
+        ctx.fillText(text, anchorX, lineY, maxWidth);
       }
       if (underline && text.trim().length) {
-        this.drawUnderline(ctx, x, lineY, effectiveWidth, align, fontSize, metrics, color, strokeWidth);
+        this.drawUnderline(ctx, startX, lineY, effectiveWidth, fontSize, metrics, color, strokeWidth);
       }
     });
 
@@ -306,20 +307,25 @@ export class CanvasRenderer {
     return measuredWidth + letterSpacing * (characters.length - 1);
   }
 
-  computeAlignedStart(x, width, align) {
-    if (align === 'center') {
-      return x - width / 2;
-    }
-    if (align === 'right') {
-      return x - width;
-    }
-    return x;
+  computeAlignedStart(centerX, width) {
+    return centerX - width / 2;
   }
 
-  drawWithLetterSpacing(ctx, text, x, y, letterSpacing, align, strokeWidth, strokeColor, lineWidth) {
+  computeAnchorX(centerX, width, align) {
+    const half = width / 2;
+    switch (align) {
+      case 'left':
+        return centerX - half;
+      case 'right':
+        return centerX + half;
+      default:
+        return centerX;
+    }
+  }
+
+  drawWithLetterSpacing(ctx, text, startX, y, letterSpacing, strokeWidth, strokeColor) {
     const characters = [...text];
-    const totalWidth = lineWidth ?? this.calculateLineWidth(text, ctx.measureText(text).width, letterSpacing);
-    let cursor = this.computeAlignedStart(x, totalWidth, align);
+    let cursor = startX;
     characters.forEach(char => {
       if (strokeWidth > 0) {
         ctx.lineWidth = strokeWidth;
@@ -331,12 +337,11 @@ export class CanvasRenderer {
     });
   }
 
-  drawUnderline(ctx, x, y, width, align, fontSize, metrics, color, strokeWidth) {
+  drawUnderline(ctx, startX, y, width, fontSize, metrics, color, strokeWidth) {
     if (!width) return;
     const descent = metrics?.actualBoundingBoxDescent ?? fontSize * 0.25;
     const offset = fontSize * 0.08;
     const underlineY = y + descent + offset;
-    const startX = this.computeAlignedStart(x, width, align);
     ctx.save();
     ctx.shadowColor = 'transparent';
     ctx.beginPath();

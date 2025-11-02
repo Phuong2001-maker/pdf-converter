@@ -50,7 +50,7 @@ const fileInput = document.getElementById('imageInput');
 const logoInput = document.getElementById('logoInput');
 const canvasBoard = document.getElementById('canvasBoard');
 const selectionOverlay = document.getElementById('selectionOverlay');
-const toolbarButtons = document.querySelectorAll('.canvas-toolbar [data-action]');
+const workspaceToolbar = document.getElementById('workspaceToolbar');
 const selectFilesButton = document.querySelector('[data-action="select-files"]');
 const useSampleButton = document.querySelector('[data-action="use-sample"]');
 const layerAddTextButton = document.querySelector('[data-action="add-layer-text"]');
@@ -287,6 +287,36 @@ function applyTextStyleUpdates(updates = {}) {
       ...(style.shadow || {}),
       ...(nextUpdates.shadow || {}),
     };
+  }
+  if (layer && Object.prototype.hasOwnProperty.call(nextUpdates, 'align') && image) {
+    const normalizedBounds = layer.bounds;
+    const bounds = normalizedBounds
+      ? {
+          width: normalizedBounds.width * image.width,
+          height: normalizedBounds.height * image.height,
+        }
+      : getLayerBounds(layer, image);
+    const widthRatio = bounds && image.width ? clamp((bounds.width || 0) / image.width, 0, 1) : 0;
+    if (widthRatio > 0 && widthRatio < 1) {
+      let targetX = layer.position?.x ?? 0.5;
+      if (nextUpdates.align === 'left') {
+        targetX = widthRatio / 2;
+      } else if (nextUpdates.align === 'right') {
+        targetX = 1 - widthRatio / 2;
+      } else {
+        targetX = 0.5;
+      }
+      const clampedX = clamp(targetX, widthRatio / 2, 1 - widthRatio / 2);
+      nextUpdates.position = {
+        ...(layer.position || {}),
+        x: clampedX,
+      };
+    } else if (nextUpdates.align === 'center') {
+      nextUpdates.position = {
+        ...(layer.position || {}),
+        x: 0.5,
+      };
+    }
   }
   if (layer) {
     updateLayer(image.id, layer.id, nextUpdates);
@@ -531,6 +561,7 @@ function init() {
   updateToolSelection(state.activeTool);
   registerEvents();
   updateDropzoneVisibility(getActiveImage());
+  syncWorkspaceToolbarState(getActiveImage());
   setupSelectionOverlay();
   queueOverlaySync();
   const container = canvas.parentElement;
@@ -582,7 +613,7 @@ function registerEvents() {
   overlayCanvas.addEventListener('pointerup', handleCanvasPointerUp);
   overlayCanvas.addEventListener('pointerleave', handleCanvasPointerUp);
 
-  toolbarButtons.forEach(button => button.addEventListener('click', handleToolbarAction));
+  workspaceToolbar?.addEventListener('click', handleToolbarAction);
   layerAddTextButton?.addEventListener('click', createTextLayer);
   duplicateLayerButton?.addEventListener('click', handleDuplicateLayer);
   deleteLayerButton?.addEventListener('click', handleDeleteLayer);
@@ -611,11 +642,12 @@ function registerEvents() {
     updateActiveFileName(image?.name || null);
     canvasBoard.dataset.state = image ? 'loaded' : 'empty';
     updateDropzoneVisibility(image);
-  if (image) {
-    updateStatusBar({
-      dimensions: `${image.width} × ${image.height}px`,
-      zoom: `Zoom: ${(image.zoom * 100).toFixed(0)}%`,
-      memory: estimateMemoryUsage(image),
+    syncWorkspaceToolbarState(image);
+    if (image) {
+      updateStatusBar({
+        dimensions: `${image.width} × ${image.height}px`,
+        zoom: `Zoom: ${(image.zoom * 100).toFixed(0)}%`,
+        memory: estimateMemoryUsage(image),
       });
       scheduleRendererResize(image);
     } else {
@@ -624,20 +656,21 @@ function registerEvents() {
         zoom: 'Zoom: 100%',
         memory: 'RAM ước tính: —',
       });
-  }
-  renderer.render();
-  if (state.activeTool === layerTypes.TEXT) {
-    syncTextStyleControls();
-  }
-  queueOverlaySync();
-});
+    }
+    renderer.render();
+    if (state.activeTool === layerTypes.TEXT) {
+      syncTextStyleControls();
+    }
+    queueOverlaySync();
+  });
 
 events.addEventListener('imagechange', () => {
   const image = getActiveImage();
   renderLayerList(image);
-    updateActiveFileName(image?.name || null);
-    canvasBoard.dataset.state = image ? 'loaded' : 'empty';
-    updateDropzoneVisibility(image);
+  updateActiveFileName(image?.name || null);
+  canvasBoard.dataset.state = image ? 'loaded' : 'empty';
+  updateDropzoneVisibility(image);
+  syncWorkspaceToolbarState(image);
   if (image) {
     updateStatusBar({
       dimensions: `${image.width} × ${image.height}px`,
@@ -1293,7 +1326,11 @@ function finishTextResize(pointerId) {
 }
 
 function handleToolbarAction(event) {
-  const action = event.currentTarget.dataset.action;
+  const button = event.target.closest('[data-action]');
+  if (!button || !workspaceToolbar?.contains(button)) return;
+  event.preventDefault();
+  const action = button.dataset.action;
+  if (!action) return;
   if (action === 'select-files') {
     fileInput?.click();
     return;
@@ -1327,20 +1364,53 @@ function handleToolbarAction(event) {
       updateZoomLabel(image);
       break;
     case 'toggle-grid':
-      updateImage(image.id, { grid: !image.grid });
+      {
+        const nextGrid = !image.grid;
+        updateImage(image.id, { grid: nextGrid });
+        button.setAttribute('aria-pressed', nextGrid ? 'true' : 'false');
+      }
       renderer.render();
       break;
     case 'toggle-snap':
-      updateImage(image.id, { snap: !image.snap });
+      {
+        const nextSnap = !image.snap;
+        updateImage(image.id, { snap: nextSnap });
+        button.setAttribute('aria-pressed', nextSnap ? 'true' : 'false');
+      }
       renderer.render();
       break;
     case 'toggle-ruler':
-      updateImage(image.id, { ruler: !image.ruler });
+      {
+        const nextRuler = !image.ruler;
+        updateImage(image.id, { ruler: nextRuler });
+        button.setAttribute('aria-pressed', nextRuler ? 'true' : 'false');
+      }
       renderer.render();
       break;
     default:
       break;
   }
+}
+
+function syncWorkspaceToolbarState(image) {
+  if (!workspaceToolbar) return;
+  const actionableButtons = workspaceToolbar.querySelectorAll('[data-action]');
+  actionableButtons.forEach(button => {
+    const shouldDisable = !image;
+    if (button.disabled !== shouldDisable) {
+      button.disabled = shouldDisable;
+    }
+  });
+  const toggleStates = {
+    'toggle-grid': Boolean(image?.grid),
+    'toggle-snap': Boolean(image?.snap ?? true),
+    'toggle-ruler': Boolean(image?.ruler),
+  };
+  Object.entries(toggleStates).forEach(([action, isActive]) => {
+    const button = workspaceToolbar.querySelector(`[data-action="${action}"]`);
+    if (!button) return;
+    button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+  });
 }
 
 function setZoom(image, zoom, options = {}) {

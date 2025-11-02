@@ -370,42 +370,44 @@
       </aside>
       <section class="workspace" id="workspace" aria-labelledby="workspaceTitle">
         <h1 id="workspaceTitle" class="visually-hidden">Canvas</h1>
-        <div class="workspace-toolbar">
+        <div class="workspace-toolbar" id="workspaceToolbar" role="toolbar" aria-label="Điều khiển canvas">
           <div class="visually-hidden" aria-live="polite">
             <span id="activeFileName">Chưa có ảnh</span>
             <span id="activeZoom">100%</span>
           </div>
-          <div class="canvas-toolbar" role="toolbar" aria-label="Điều khiển canvas">
-            <div class="toolbar-group" id="viewToolbar">
-              <button type="button" class="icon-btn" data-action="zoom-out" aria-label="Thu nhỏ">
-                <svg class="icon"><use href="#icon-zoom-out"></use></svg>
-              </button>
-              <button type="button" class="icon-btn" data-action="zoom-in" aria-label="Phóng to">
-                <svg class="icon"><use href="#icon-zoom-in"></use></svg>
-              </button>
-              <div class="toolbar-divider" aria-hidden="true"></div>
-              <button type="button" class="icon-btn" data-action="fit" aria-label="Fit vào khung">
-                <svg class="icon"><use href="#icon-fit"></use></svg>
-              </button>
-              <button type="button" class="icon-btn" data-action="fill" aria-label="Fill toàn khung">
-                <svg class="icon"><use href="#icon-fill"></use></svg>
-              </button>
-              <button type="button" class="icon-btn" data-action="center" aria-label="Căn giữa canvas">
-                <svg class="icon"><use href="#icon-center"></use></svg>
-              </button>
-              <div class="toolbar-divider" aria-hidden="true"></div>
-              <button type="button" class="icon-btn" data-action="toggle-grid" aria-pressed="false" aria-label="Bật/tắt grid">
-                <svg class="icon"><use href="#icon-grid"></use></svg>
-              </button>
-              <button type="button" class="icon-btn" data-action="toggle-snap" aria-pressed="true" aria-label="Bật/tắt snap lưới">
-                <svg class="icon"><use href="#icon-snap"></use></svg>
-              </button>
-              <button type="button" class="icon-btn" data-action="toggle-ruler" aria-pressed="false" aria-label="Bật/tắt thước">
-                <svg class="icon"><use href="#icon-ruler"></use></svg>
-              </button>
-            </div>
-            <div class="toolbar-divider toolbar-divider--group" id="textToolbarDivider" aria-hidden="true" hidden></div>
-            <div class="toolbar-group text-style-toolbar" id="textStyleToolbar" hidden>
+          <div class="toolbar-group" id="viewToolbar" role="group" aria-label="Điều hướng canvas">
+            <span class="toolbar-label">Điều hướng</span>
+            <button type="button" class="icon-btn" data-action="zoom-out" aria-label="Thu nhỏ" data-tooltip="Thu nhỏ">
+              <svg class="icon"><use href="#icon-zoom-out"></use></svg>
+            </button>
+            <button type="button" class="icon-btn" data-action="zoom-in" aria-label="Phóng to" data-tooltip="Phóng to">
+              <svg class="icon"><use href="#icon-zoom-in"></use></svg>
+            </button>
+            <div class="toolbar-divider" aria-hidden="true"></div>
+            <button type="button" class="icon-btn" data-action="fit" aria-label="Fit vào khung" data-tooltip="Fit vào khung">
+              <svg class="icon"><use href="#icon-fit"></use></svg>
+            </button>
+            <button type="button" class="icon-btn" data-action="fill" aria-label="Fill toàn khung" data-tooltip="Fill toàn khung">
+              <svg class="icon"><use href="#icon-fill"></use></svg>
+            </button>
+            <button type="button" class="icon-btn" data-action="center" aria-label="Căn giữa canvas" data-tooltip="Căn giữa canvas">
+              <svg class="icon"><use href="#icon-center"></use></svg>
+            </button>
+            <div class="toolbar-divider" aria-hidden="true"></div>
+            <button type="button" class="icon-btn" data-action="toggle-grid" aria-pressed="false" aria-label="Bật/tắt grid" data-tooltip="Bật/tắt grid">
+              <svg class="icon"><use href="#icon-grid"></use></svg>
+            </button>
+            <button type="button" class="icon-btn" data-action="toggle-snap" aria-pressed="true" aria-label="Bật/tắt snap lưới" data-tooltip="Bật/tắt snap lưới">
+              <svg class="icon"><use href="#icon-snap"></use></svg>
+            </button>
+            <button type="button" class="icon-btn" data-action="toggle-ruler" aria-pressed="false" aria-label="Bật/tắt thước" data-tooltip="Bật/tắt thước">
+              <svg class="icon"><use href="#icon-ruler"></use></svg>
+            </button>
+          </div>
+          <div class="toolbar-divider toolbar-divider--group" id="textToolbarDivider" aria-hidden="true" hidden></div>
+          <div class="toolbar-group text-style-toolbar" id="textStyleToolbar" role="group" aria-label="Định dạng chữ" hidden>
+            <span class="toolbar-label">Định dạng chữ</span>
+            <div class="text-toolbar-controls">
               <label class="text-tool" for="textFontSize">
                 <svg class="icon" aria-hidden="true"><use href="#icon-font-size"></use></svg>
                 <input type="number" min="8" max="220" id="textFontSize" aria-label="Kích thước chữ (px)">
@@ -426,38 +428,39 @@
                 <svg class="icon" aria-hidden="true"><use href="#icon-letter-spacing"></use></svg>
                 <input type="number" step="1" min="-20" max="60" id="textLetterSpacing" aria-label="Giãn cách chữ">
               </label>
-              <div class="text-toggle-group" role="group" aria-label="Định dạng chữ">
-                <button type="button" class="text-toggle" data-text-style="bold" aria-pressed="false" aria-label="In đậm">
+            </div>
+            <div class="text-toolbar-actions">
+              <div class="text-toggle-group" role="group" aria-label="Kiểu chữ">
+                <button type="button" class="text-toggle" data-text-style="bold" aria-pressed="false" aria-label="In đậm" data-tooltip="In đậm">
                   <svg class="icon"><use href="#icon-text-bold"></use></svg>
                 </button>
-                <button type="button" class="text-toggle" data-text-style="italic" aria-pressed="false" aria-label="In nghiêng">
+                <button type="button" class="text-toggle" data-text-style="italic" aria-pressed="false" aria-label="In nghiêng" data-tooltip="In nghiêng">
                   <svg class="icon"><use href="#icon-text-italic"></use></svg>
                 </button>
-                <button type="button" class="text-toggle" data-text-style="underline" aria-pressed="false" aria-label="Gạch chân">
+                <button type="button" class="text-toggle" data-text-style="underline" aria-pressed="false" aria-label="Gạch chân" data-tooltip="Gạch chân">
                   <svg class="icon"><use href="#icon-text-underline"></use></svg>
                 </button>
-                <button type="button" class="text-toggle" data-text-style="uppercase" aria-pressed="false" aria-label="Viết hoa">
+                <button type="button" class="text-toggle" data-text-style="uppercase" aria-pressed="false" aria-label="Viết hoa" data-tooltip="Viết hoa">
                   <svg class="icon"><use href="#icon-text-uppercase"></use></svg>
                 </button>
               </div>
-              <button type="button" class="text-toggle" id="textShadowToggle" aria-pressed="false" aria-label="Bật tắt đổ bóng chữ">
+              <button type="button" class="text-toggle" id="textShadowToggle" aria-pressed="false" aria-label="Bật tắt đổ bóng chữ" data-tooltip="Bật tắt đổ bóng chữ">
                 <svg class="icon"><use href="#icon-shadow"></use></svg>
               </button>
               <div class="text-align-group" role="group" aria-label="Căn lề">
-                <button type="button" class="text-align-btn" data-align="left" aria-label="Căn trái">
+                <button type="button" class="text-align-btn" data-align="left" aria-label="Căn trái" data-tooltip="Căn trái">
                   <svg class="icon"><use href="#icon-align-left"></use></svg>
                 </button>
-                <button type="button" class="text-align-btn" data-align="center" aria-label="Căn giữa">
+                <button type="button" class="text-align-btn" data-align="center" aria-label="Căn giữa" data-tooltip="Căn giữa">
                   <svg class="icon"><use href="#icon-align-center"></use></svg>
                 </button>
-                <button type="button" class="text-align-btn" data-align="right" aria-label="Căn phải">
+                <button type="button" class="text-align-btn" data-align="right" aria-label="Căn phải" data-tooltip="Căn phải">
                   <svg class="icon"><use href="#icon-align-right"></use></svg>
                 </button>
               </div>
             </div>
           </div>
         </div>
-
         <div class="canvas-board" id="canvasBoard" data-state="empty">
           <div class="canvas-dropzone" id="canvasDropzone" role="button" tabindex="0" aria-describedby="dropHint">
             <div class="drop-card">
