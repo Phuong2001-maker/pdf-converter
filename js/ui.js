@@ -29,6 +29,8 @@ const dom = {
   layerUpButton: document.querySelector('[data-action="layer-up"]'),
   layerDownButton: document.querySelector('[data-action="layer-down"]'),
   deleteLayerButton: document.querySelector('[data-action="delete-layer"]'),
+  fontPreviewList: document.getElementById('fontPreviewList'),
+  signatureStyleList: document.getElementById('signatureStyleList'),
 };
 
 const localeStrings = {
@@ -194,6 +196,9 @@ function buildLayerName(layer, fallbackIndex) {
 function describeLayer(layer) {
   switch (layer.type) {
     case layerTypes.TEXT:
+      if (layer.signaturePresetName) {
+        return layer.signaturePresetName;
+      }
       return (layer.content || '').slice(0, 32) || 'Text';
     case layerTypes.PEN:
       return `${layer.strokes?.length || 0} strokes`;
@@ -417,6 +422,86 @@ export function bindLayerReorder(callback) {
 
 export function initUI() {
   attachPanelToggle();
+}
+
+export function renderFontShowcase(fonts = []) {
+  if (!dom.fontPreviewList) return;
+  dom.fontPreviewList.innerHTML = '';
+  const fragment = document.createDocumentFragment();
+  fonts.forEach(font => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'font-preview';
+    button.dataset.font = font.value;
+    button.dataset.weight = font.weight ? String(font.weight) : '';
+    button.setAttribute('aria-label', font.label);
+    button.setAttribute('role', 'option');
+    button.setAttribute('aria-pressed', 'false');
+    button.innerHTML = `
+      <span class="font-preview-sample" style="font-family: ${font.value}; font-weight: ${font.weight ?? 400};">${font.sample}</span>
+      <span class="font-preview-name">${font.label}</span>
+    `;
+    button.addEventListener('click', () => {
+      markActiveFont(font.value);
+      events.dispatchEvent(new CustomEvent('ui:fontpicked', { detail: { fontFamily: font.value, fontWeight: font.weight ?? 400 } }));
+    });
+    fragment.appendChild(button);
+  });
+  dom.fontPreviewList.appendChild(fragment);
+}
+
+export function markActiveFont(fontFamily) {
+  if (!dom.fontPreviewList) return;
+  dom.fontPreviewList.querySelectorAll('.font-preview').forEach(button => {
+    const isActive = button.dataset.font === fontFamily;
+    button.classList.toggle('is-active', isActive);
+    button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+  });
+}
+
+export function renderSignatureStyles(styles = []) {
+  if (!dom.signatureStyleList) return;
+  dom.signatureStyleList.innerHTML = '';
+  const fragment = document.createDocumentFragment();
+  styles.forEach(style => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'signature-card';
+    button.dataset.preset = style.id;
+    button.setAttribute('role', 'option');
+    button.setAttribute('aria-pressed', 'false');
+    button.setAttribute('aria-label', `${style.name} – ${style.tagline || 'Signature'}`);
+    button.innerHTML = `
+      <span class="signature-preview" style="font-family: ${style.fontFamily}; font-weight: ${style.fontWeight ?? 400}; color: ${style.previewColor || style.color};">${style.previewText}</span>
+      <div class="signature-meta">
+        <span>${style.name}</span>
+        <span>${style.tagline || 'Signature'}</span>
+      </div>
+    `;
+    if (style.background) {
+      button.style.background = style.background;
+    }
+    if (style.borderColor) {
+      button.style.borderColor = style.borderColor;
+    }
+    if (style.tone === 'dark') {
+      button.classList.add('is-dark');
+    }
+    button.addEventListener('click', () => {
+      events.dispatchEvent(new CustomEvent('ui:signaturepreset', { detail: { presetId: style.id } }));
+    });
+    fragment.appendChild(button);
+  });
+  dom.signatureStyleList.appendChild(fragment);
+}
+
+export function markActiveSignaturePreset(presetId = null) {
+  if (!dom.signatureStyleList) return;
+  dom.signatureStyleList.querySelectorAll('.signature-card').forEach(card => {
+    const isActive = Boolean(presetId && card.dataset.preset === presetId);
+    card.classList.toggle('is-active', isActive);
+    card.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+  });
 }
 
 // Listen for locale/theme events to re-render static strings

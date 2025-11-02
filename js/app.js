@@ -41,6 +41,10 @@ import {
   toggleTips,
   toggleOfflineBanner,
   registerOfflineBanner,
+  renderFontShowcase,
+  markActiveFont,
+  renderSignatureStyles,
+  markActiveSignaturePreset,
   bindLayerReorder,
 } from './ui.js';
 
@@ -90,6 +94,7 @@ let isSpacePressed = false;
 let renderScheduled = false;
 const pointerCache = new Map();
 let pinchState = null;
+let activeSignaturePresetId = null;
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 const isEditableTarget = target => {
@@ -225,6 +230,131 @@ const findLayerAtPoint = (image, pointer) => {
 const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 6;
 
+const FONT_SUGGESTIONS = [
+  { value: "'Great Vibes', cursive", label: 'Great Vibes', sample: 'Nguyễn Văn A' },
+  { value: "'Dancing Script', cursive", label: 'Dancing Script', sample: 'Trần Minh Khoa', weight: 600 },
+  { value: "'Pacifico', cursive", label: 'Pacifico', sample: 'Thiên Ân' },
+  { value: "'Sacramento', cursive", label: 'Sacramento', sample: 'Ngô Hải Đăng' },
+  { value: "'Allura', cursive", label: 'Allura', sample: 'Phạm Bảo Trâm' },
+  { value: "'Playball', cursive", label: 'Playball', sample: 'Lê Hữu Phát' },
+];
+
+const SIGNATURE_PRESETS = [
+  {
+    id: 'royal-blue',
+    name: 'Royal Blue',
+    tagline: 'Elegant',
+    previewText: 'Nguyễn Văn A',
+    fontFamily: "'Great Vibes', cursive",
+    fontWeight: 400,
+    color: '#0F172A',
+    previewColor: '#0F172A',
+    text: 'Nguyễn Văn A',
+    letterSpacing: 1,
+    fontSize: 118,
+    shadow: {
+      enabled: true,
+      blur: 18,
+      offsetX: 0,
+      offsetY: 12,
+      color: 'rgba(15, 23, 42, 0.28)',
+    },
+    background: 'linear-gradient(135deg, #DBEAFE, #EFF6FF)',
+    borderColor: '#93C5FD',
+  },
+  {
+    id: 'sunset-rose',
+    name: 'Sunset Rose',
+    tagline: 'Romantic',
+    previewText: 'Trần Bảo Ngọc',
+    fontFamily: "'Dancing Script', cursive",
+    fontWeight: 600,
+    color: '#B91C1C',
+    previewColor: '#B91C1C',
+    text: 'Trần Bảo Ngọc',
+    letterSpacing: 2,
+    fontSize: 110,
+    shadow: {
+      enabled: true,
+      blur: 16,
+      offsetX: 0,
+      offsetY: 10,
+      color: 'rgba(185, 28, 28, 0.28)',
+    },
+    background: 'linear-gradient(135deg, #FEE2E2, #FDE68A)',
+    borderColor: '#FCA5A5',
+  },
+  {
+    id: 'midnight-gold',
+    name: 'Midnight Gold',
+    tagline: 'Luxury',
+    previewText: 'Lê Gia Huy',
+    fontFamily: "'Sacramento', cursive",
+    fontWeight: 400,
+    color: '#F59E0B',
+    previewColor: '#F59E0B',
+    text: 'Lê Gia Huy',
+    letterSpacing: 3,
+    fontSize: 122,
+    shadow: {
+      enabled: true,
+      blur: 20,
+      offsetX: 0,
+      offsetY: 14,
+      color: 'rgba(17, 24, 39, 0.35)',
+    },
+    strokeWidth: 1,
+    strokeColor: 'rgba(17, 24, 39, 0.45)',
+    background: 'linear-gradient(135deg, #0F172A, #1F2937)',
+    borderColor: '#F59E0B',
+    tone: 'dark',
+  },
+  {
+    id: 'silver-stream',
+    name: 'Silver Stream',
+    tagline: 'Modern',
+    previewText: 'Phạm Thu Hà',
+    fontFamily: "'Allura', cursive",
+    fontWeight: 400,
+    color: '#2563EB',
+    previewColor: '#2563EB',
+    text: 'Phạm Thu Hà',
+    letterSpacing: 0.5,
+    fontSize: 112,
+    shadow: {
+      enabled: true,
+      blur: 14,
+      offsetX: 0,
+      offsetY: 9,
+      color: 'rgba(37, 99, 235, 0.24)',
+    },
+    background: 'linear-gradient(135deg, #EEF2FF, #E0E7FF)',
+    borderColor: '#93C5FD',
+  },
+  {
+    id: 'sport-vibe',
+    name: 'Sport Vibe',
+    tagline: 'Bold',
+    previewText: 'Ngô Quang Vũ',
+    fontFamily: "'Playball', cursive",
+    fontWeight: 400,
+    color: '#111827',
+    previewColor: '#111827',
+    text: 'Ngô Quang Vũ',
+    letterSpacing: 1,
+    fontSize: 108,
+    shadow: {
+      enabled: true,
+      blur: 12,
+      offsetX: 0,
+      offsetY: 8,
+      color: 'rgba(17, 24, 39, 0.22)',
+    },
+    background: 'linear-gradient(135deg, #F3F4F6, #E5E7EB)',
+    borderColor: '#94A3B8',
+  },
+];
+
 const toolDefaults = {
   [layerTypes.TEXT]: {
     content: 'Ký tên mẫu',
@@ -311,8 +441,14 @@ function toggleTextToolbar(visible) {
 }
 
 function applyTextStyleUpdates(updates = {}) {
+  activeSignaturePresetId = null;
+  markActiveSignaturePreset(null);
+  delete toolDefaults[layerTypes.TEXT].signaturePresetId;
+  delete toolDefaults[layerTypes.TEXT].signaturePresetName;
   const { image, layer, style } = resolveTextContext();
   const nextUpdates = { ...updates };
+  nextUpdates.signaturePresetId = null;
+  nextUpdates.signaturePresetName = null;
   if (Object.prototype.hasOwnProperty.call(nextUpdates, 'shadow')) {
     nextUpdates.shadow = {
       ...(style.shadow || {}),
@@ -429,6 +565,25 @@ function syncTextStyleControls() {
     const matchingOption = Array.from(fontPickerSelect.options).some(option => option.value === fontValue);
     fontPickerSelect.value = matchingOption ? fontValue : 'Inter';
     fontPickerSelect.disabled = !hasLayer;
+  }
+  markActiveFont(fontValue);
+  const presetId = layer?.signaturePresetId ?? activeSignaturePresetId;
+  markActiveSignaturePreset(presetId);
+  const textForm = document.getElementById('textToolForm');
+  if (textForm) {
+    const contentField = textForm.elements.content;
+    if (contentField && document.activeElement !== contentField) {
+      contentField.value = style.content || '';
+    }
+    const opacityField = textForm.elements.opacity;
+    if (opacityField) {
+      const opacityValue = Math.round((style.opacity ?? 1) * 100);
+      opacityField.value = opacityValue;
+      const display = textForm.querySelector('[data-field="opacity-display"]');
+      if (display) {
+        display.textContent = `${opacityValue}%`;
+      }
+    }
   }
 }
 
@@ -594,6 +749,10 @@ function init() {
   loadPresets();
   ensureDefaultPreset();
   renderPresetList(state.presets);
+  renderFontShowcase(FONT_SUGGESTIONS);
+  renderSignatureStyles(SIGNATURE_PRESETS);
+  markActiveFont(toolDefaults[layerTypes.TEXT].fontFamily);
+  markActiveSignaturePreset(activeSignaturePresetId);
   renderToolTabs(TOOL_DEFINITIONS);
   renderToolPanel(state.activeTool);
   updateToolSelection(state.activeTool);
@@ -671,6 +830,20 @@ function registerEvents() {
   events.addEventListener('ui:layerselected', event => {
     const { layerId } = event.detail;
     setActiveLayer(layerId);
+  });
+
+  events.addEventListener('ui:fontpicked', event => {
+    const { fontFamily } = event.detail || {};
+    if (!fontFamily) return;
+    applyTextStyleUpdates({ fontFamily });
+  });
+
+  events.addEventListener('ui:signaturepreset', event => {
+    const presetId = event.detail?.presetId;
+    const preset = SIGNATURE_PRESETS.find(style => style.id === presetId);
+    if (preset) {
+      applySignaturePreset(preset);
+    }
   });
 
   events.addEventListener('ui:layertoggle', event => {
@@ -754,6 +927,12 @@ events.addEventListener('layerupdate', () => {
 });
 
 events.addEventListener('layerchange', () => {
+  const currentText = getCurrentTextLayer();
+  activeSignaturePresetId = currentText?.signaturePresetId ?? null;
+  markActiveSignaturePreset(activeSignaturePresetId);
+  if (currentText?.fontFamily) {
+    markActiveFont(currentText.fontFamily);
+  }
   markActiveLayer(state.activeLayerId);
   renderToolPanel(state.activeTool);
   queueOverlaySync();
@@ -1720,6 +1899,63 @@ function createTextLayer() {
   setActiveLayer(layer.id);
   renderer.render();
   renderToolPanel(layerTypes.TEXT);
+}
+
+function applySignaturePreset(preset) {
+  if (!preset) return;
+  const updates = {
+    content: preset.text,
+    fontFamily: preset.fontFamily,
+    fontWeight: preset.fontWeight ?? 400,
+    color: preset.color,
+    strokeWidth: preset.strokeWidth ?? 0,
+    strokeColor: preset.strokeColor ?? '#ffffff',
+    shadow: preset.shadow ?? { enabled: false },
+    letterSpacing: preset.letterSpacing ?? 0,
+    uppercase: preset.uppercase ?? false,
+    italic: preset.italic ?? false,
+    align: preset.align ?? 'center',
+  };
+  if (typeof preset.fontSize === 'number') {
+    updates.fontSize = preset.fontSize;
+  }
+  if (typeof preset.opacity === 'number') {
+    updates.opacity = preset.opacity;
+  }
+  Object.assign(toolDefaults[layerTypes.TEXT], updates);
+  toolDefaults[layerTypes.TEXT].signaturePresetId = preset.id;
+  toolDefaults[layerTypes.TEXT].signaturePresetName = preset.name;
+  const image = getActiveImage();
+  if (!image) {
+    activeSignaturePresetId = preset.id;
+    markActiveSignaturePreset(activeSignaturePresetId);
+    markActiveFont(updates.fontFamily);
+    syncTextStyleControls();
+    return;
+  }
+  let targetLayer = getLayer(image.id, state.activeLayerId);
+  if (!targetLayer || targetLayer.type !== layerTypes.TEXT) {
+    targetLayer = addLayer(image.id, {
+      type: layerTypes.TEXT,
+      ...toolDefaults[layerTypes.TEXT],
+      ...updates,
+      signaturePresetId: preset.id,
+      signaturePresetName: preset.name,
+    });
+    setActiveLayer(targetLayer.id);
+  } else {
+    updateLayer(image.id, targetLayer.id, {
+      ...updates,
+      signaturePresetId: preset.id,
+      signaturePresetName: preset.name,
+    });
+  }
+  activeSignaturePresetId = preset.id;
+  markActiveSignaturePreset(activeSignaturePresetId);
+  markActiveFont(updates.fontFamily);
+  renderer.render();
+  syncTextStyleControls();
+  queueOverlaySync();
 }
 
 function handleLogoSelection(event) {

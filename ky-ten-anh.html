@@ -11,7 +11,7 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%232563EB' d='M6 26.5 4 28l1.5-4 14-14a3.5 3.5 0 0 1 5 5l-14 14z'/%3E%3Cpath fill='%230B1021' d='M22.5 9.5 28 4l-4.5 5.5-5.5 5.5z'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Great+Vibes&family=Pacifico&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Great+Vibes&family=Pacifico&family=Dancing+Script:wght@400;600&family=Sacramento&family=Allura&family=Playball&display=swap" rel="stylesheet">
   <script>
     (function () {
       try {
@@ -345,18 +345,40 @@
           <nav class="tool-tabs" id="toolTabs" role="tablist" aria-orientation="vertical">
             <p class="tab-placeholder">Đang tải công cụ…</p>
           </nav>
-          <div class="sidebar-control" id="fontPickerControl" hidden>
-            <label class="sidebar-control-label" for="fontPickerSelect">
-              <svg class="icon" aria-hidden="true"><use href="#icon-font"></use></svg>
-              <span>Phông chữ</span>
-            </label>
-            <select id="fontPickerSelect" aria-label="Chọn phông chữ">
-              <option value="Inter">Inter</option>
-              <option value="Roboto">Roboto</option>
-              <option value="'Great Vibes', cursive">Great Vibes</option>
-              <option value="'Pacifico', cursive">Pacifico</option>
-              <option value="system-ui">System UI</option>
-            </select>
+          <div class="sidebar-control font-picker" id="fontPickerControl" hidden>
+            <div class="font-picker-header">
+              <div class="font-picker-icon">
+                <svg class="icon" aria-hidden="true"><use href="#icon-font"></use></svg>
+              </div>
+              <div>
+                <span class="font-picker-title">Phông chữ</span>
+                <p class="font-picker-caption">Chọn phong cách chữ ký hoặc tùy chỉnh theo ý bạn.</p>
+              </div>
+            </div>
+            <div class="font-preview-grid" id="fontPreviewList" role="listbox" aria-label="Gợi ý phông chữ"></div>
+            <div class="font-picker-select">
+              <label for="fontPickerSelect">Tùy chọn khác</label>
+              <select id="fontPickerSelect" aria-label="Chọn phông chữ khác">
+                <option value="Inter">Inter</option>
+                <option value="Roboto">Roboto</option>
+                <option value="'Great Vibes', cursive">Great Vibes</option>
+                <option value="'Pacifico', cursive">Pacifico</option>
+                <option value="'Dancing Script', cursive">Dancing Script</option>
+                <option value="'Sacramento', cursive">Sacramento</option>
+                <option value="'Allura', cursive">Allura</option>
+                <option value="'Playball', cursive">Playball</option>
+                <option value="system-ui">System UI</option>
+              </select>
+            </div>
+            <div class="signature-library">
+              <div class="signature-library-header">
+                <div>
+                  <span>Thư viện chữ ký</span>
+                  <p>Nhấp để áp dụng ngay phong cách yêu thích.</p>
+                </div>
+              </div>
+              <div class="signature-gallery" id="signatureStyleList" role="listbox" aria-label="Thư viện chữ ký"></div>
+            </div>
           </div>
           <div class="sidebar-meta">
             <p>Privacy-first • 100% client-side</p>

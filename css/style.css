@@ -1189,6 +1189,184 @@ button:disabled {
   color: var(--color-subtext);
 }
 
+.font-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.font-picker-header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.font-picker-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  color: var(--color-primary);
+}
+
+.font-picker-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-heading);
+  display: block;
+}
+
+.font-picker-caption {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  color: var(--color-subtext);
+}
+
+.font-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(138px, 1fr));
+  gap: 12px;
+}
+
+.font-preview {
+  border: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  cursor: pointer;
+  background: color-mix(in srgb, var(--color-surface) 96%, transparent 4%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color var(--transition), box-shadow var(--transition);
+  appearance: none;
+}
+
+.font-preview:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 32%, transparent);
+  box-shadow: var(--shadow-xs);
+}
+
+.font-preview.is-active {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.font-preview-sample {
+  font-size: 1.1rem;
+  line-height: 1.2;
+  color: var(--color-heading);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.font-preview-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-subtext);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.font-picker-select {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.font-picker-select label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-subtext);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.signature-library {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.signature-library-header span {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-heading);
+}
+
+.signature-library-header p {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  color: var(--color-subtext);
+}
+
+.signature-gallery {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+
+.signature-card {
+  min-width: 168px;
+  padding: 14px 16px;
+  border-radius: var(--radius-lg);
+  border: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--color-surface) 96%, transparent 4%), color-mix(in srgb, var(--color-surface) 88%, transparent 12%));
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  transition: transform var(--transition-fast), box-shadow var(--transition), border-color var(--transition);
+  scroll-snap-align: start;
+  appearance: none;
+}
+
+.signature-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  border-color: color-mix(in srgb, var(--color-primary) 32%, transparent);
+}
+
+.signature-card.is-active {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+}
+
+.signature-preview {
+  font-size: 1.65rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.signature-card.is-dark .signature-preview {
+  text-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+.signature-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: var(--color-subtext);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.signature-card.is-dark .signature-meta {
+  color: rgba(248, 250, 252, 0.8);
+}
+
 input[type="text"],
 input[type="number"],
 input[type="color"],
