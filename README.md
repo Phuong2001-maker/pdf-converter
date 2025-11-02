@@ -1,6 +1,6 @@
 ﻿# Ký Ảnh — Ứng dụng ký chữ ký lên ảnh (client-side)
 
-Ứng dụng web thuần HTML/CSS/JS giúp ký chữ, ký tay, chèn logo, watermark, QR code, làm mờ/pixelate vùng chọn và xuất hàng loạt hoàn toàn trên trình duyệt. Không cần backend.
+Ứng dụng web thuần HTML/CSS/JS giúp ký chữ, ký tay, chèn logo, watermark, QR code, làm mờ/pixelate vùng chọn và xuất ảnh hoàn toàn trên trình duyệt. Không cần backend.
 
 ## Tính năng chính
 - Onboarding drag & drop, hỗ trợ nhiều ảnh, cảnh báo ảnh lớn >20MP
@@ -8,9 +8,9 @@
 - Công cụ ký tay (pen) với smoothing, undo/clear, chuyển thành layer mới
 - Chèn logo/sticker PNG/SVG, chỉnh scale/opacity/rotation nhanh
 - Watermark lặp với góc ±45°, spacing X/Y, opacity, áp dụng nhanh
-- QR chữ ký: nhập nội dung → sinh QR, preview, tùy chọn áp dụng batch
+- QR chữ ký: nhập nội dung → sinh QR, preview
 - Blur/Pixelate vùng chọn với intensity linh hoạt
-- Xuất PNG/JPEG/WebP, scale 25–200%, batch → ZIP (JSZip + FileSaver)
+- Xuất PNG/JPEG/WebP, scale 25–200%
 - Preset template lưu vào localStorage (ví dụ “Signature vàng góc phải”)
 - PWA offline (manifest + service worker) và nút “Cài Offline”
 - UI responsive (mobile bottom nav, panel dạng bottom sheet), theme light/dark, locale VI/EN

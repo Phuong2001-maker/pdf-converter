@@ -42,7 +42,6 @@ const localeStrings = {
       qr: 'QR chữ ký',
       blur: 'Blur/Pixelate',
       export: 'Xuất ảnh',
-      batch: 'Batch',
     },
     toolDescriptions: {
       text: 'Nhập nội dung chữ ký, font chữ, hiệu ứng.',
@@ -52,12 +51,10 @@ const localeStrings = {
       qr: 'Sinh QR chứa nội dung chữ ký và đặt vào ảnh.',
       blur: 'Chọn vùng để làm mờ hoặc pixelate.',
       export: 'Chọn định dạng, chất lượng, scale và tải xuống.',
-      batch: 'Quản lý nhiều ảnh, áp dụng template và tải ZIP.',
     },
     emptyLayers: 'Chưa có layer nào. Thêm layer để bắt đầu.',
     emptyPresets: 'Chưa có preset nào. Lưu cấu hình hiện tại để dùng lại.',
     toast: {
-      addedToBatch: 'Đã thêm vào batch',
       presetSaved: 'Preset đã lưu',
       presetDeleted: 'Preset đã xoá',
       exportReady: 'Ảnh đã sẵn sàng tải',
@@ -74,7 +71,6 @@ const localeStrings = {
       qr: 'Signature QR',
       blur: 'Blur/Pixelate',
       export: 'Export',
-      batch: 'Batch',
     },
     toolDescriptions: {
       text: 'Compose signature text with fonts and effects.',
@@ -84,12 +80,10 @@ const localeStrings = {
       qr: 'Create QR code with signature details and place on image.',
       blur: 'Blur or pixelate selected regions.',
       export: 'Select formats, quality, scale and download.',
-      batch: 'Manage multiple photos, apply templates and export ZIP.',
     },
     emptyLayers: 'No layers yet – add a layer to start.',
     emptyPresets: 'No presets saved. Store your configuration to reuse.',
     toast: {
-      addedToBatch: 'Added to batch',
       presetSaved: 'Preset saved',
       presetDeleted: 'Preset removed',
       exportReady: 'Export ready',

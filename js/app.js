@@ -279,7 +279,6 @@ const toolDefaults = {
     margin: 12,
     opacity: 0.95,
     position: { x: 0.16, y: 0.84 },
-    applyAll: false,
   },
   [layerTypes.BLUR]: {
     mode: 'blur',
@@ -521,7 +520,6 @@ const TOOL_DEFINITIONS = [
   { id: layerTypes.QR, icon: 'icon-qr' },
   { id: layerTypes.BLUR, icon: 'icon-blur' },
   { id: 'export', icon: 'icon-export' },
-  { id: 'batch', icon: 'icon-batch' },
 ];
 
 function scheduleRendererResize(image = null) {
@@ -745,9 +743,10 @@ events.addEventListener('layerchange', () => {
 events.addEventListener('presetchange', () => {
   renderPresetList(state.presets);
 });
-
 events.addEventListener('toolchange', event => {
-  renderToolPanel(event.detail.toolId);
+  const toolId = event.detail?.toolId ?? state.activeTool;
+  updateToolSelection(toolId);
+  renderToolPanel(toolId);
   queueOverlaySync();
 });
 
@@ -1813,9 +1812,6 @@ function renderToolPanel(toolId) {
     case 'export':
       toolPanelCleanup = renderExportPanel(container);
       break;
-    case 'batch':
-      toolPanelCleanup = renderBatchPanel(container);
-      break;
     default:
       break;
   }
@@ -2082,10 +2078,6 @@ function renderQrPanel(container) {
         <span>${state.locale === 'vi' ? 'Độ mờ (%)' : 'Opacity (%)'}</span>
         <input type="range" name="opacity" min="10" max="100" value="${Math.round((current.opacity ?? 1) * 100)}" ${disabled ? 'disabled' : ''}>
       </label>
-      <label class="switch field">
-        <input type="checkbox" name="applyAll" ${current.applyAll ? 'checked' : ''} ${disabled ? 'disabled' : ''}>
-        <span>${state.locale === 'vi' ? 'Áp dụng cho batch' : 'Apply to batch'}</span>
-      </label>
       <button type="button" class="btn secondary" data-action="preview"${disabled ? ' disabled' : ''}>
         <svg class="icon"><use href="#icon-camera"></use></svg>
         <span>${state.locale === 'vi' ? 'Quét thử bằng camera' : 'Preview'}</span>
@@ -2104,7 +2096,6 @@ function renderQrPanel(container) {
       size: parseInt(data.get('size'), 10),
       margin: parseInt(data.get('margin'), 10),
       opacity: parseFloat(data.get('opacity')) / 100,
-      applyAll: form.elements.applyAll.checked,
     };
     if (layer && layer.type === layerTypes.QR) {
       const generated = await generateQr(values);
@@ -2287,57 +2278,6 @@ function drawLayerForExport(ctx, image, layer, scale) {
 function buildExportFileName(name, format) {
   const base = name.replace(/\.[^.]+$/, '');
   return `${base}-signed.${format}`;
-}
-
-function renderBatchPanel(container) {
-  container.innerHTML = `
-    <div class="batch-summary">
-      <p>${state.locale === 'vi' ? 'Ảnh đã nạp' : 'Loaded photos'}: <strong>${state.images.length}</strong></p>
-      <div class="chip-set">
-        <button type="button" class="chip" data-action="batch-preset">${state.locale === 'vi' ? 'Áp dụng preset' : 'Apply preset'}</button>
-        <button type="button" class="chip" data-action="batch-export"${state.images.length ? '' : ' disabled'}>${state.locale === 'vi' ? 'Ký tất cả → ZIP' : 'Sign all → ZIP'}</button>
-      </div>
-    </div>
-  `;
-  container.querySelector('[data-action="batch-preset"]')?.addEventListener('click', handleApplyPresetBatch);
-  container.querySelector('[data-action="batch-export"]')?.addEventListener('click', handleExportZip);
-}
-
-function handleApplyPresetBatch() {
-  if (!state.presets.length) {
-    togglePresetPanel(true);
-    showToast({
-      title: state.locale === 'vi' ? 'Chưa có preset' : 'No preset available',
-      tone: 'warn',
-    });
-    return;
-  }
-  const preset = state.presets[0];
-  state.images.forEach(image => {
-    addLayer(image.id, { type: layerTypes.TEXT, ...preset.payload });
-  });
-  renderer.render();
-  showToast({
-    title: state.locale === 'vi' ? 'Preset áp dụng' : 'Preset applied',
-    tone: 'success',
-  });
-}
-
-async function handleExportZip() {
-  if (!state.images.length) return;
-  const zip = new window.JSZip();
-  for (const image of state.images) {
-    const blob = await exportImageToBlob(image, { format: 'png', scale: 1, quality: 0.95 });
-    if (blob) {
-      zip.file(buildExportFileName(image.name, 'png'), blob);
-    }
-  }
-  const content = await zip.generateAsync({ type: 'blob' });
-  window.saveAs(content, 'ky-anh-batch.zip');
-  showToast({
-    title: state.locale === 'vi' ? 'ZIP đã sẵn sàng' : 'ZIP ready',
-    tone: 'success',
-  });
 }
 
 document.addEventListener('DOMContentLoaded', init);
