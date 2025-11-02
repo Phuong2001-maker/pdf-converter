@@ -1,4 +1,4 @@
-const CACHE_NAME = 'signapp-cache-v3';
+const CACHE_NAME = 'signapp-cache-v4';
 const ASSETS = [
   './ky-ten-anh.html',
   './css/style.css',
@@ -38,14 +38,18 @@ self.addEventListener('fetch', event => {
   const acceptHeader = request.headers.get('accept') || '';
   const isHtmlRequest = request.mode === 'navigate' || acceptHeader.includes('text/html');
 
+  const fetchAndCache = () =>
+    fetch(request).then(response => {
+      if (response && response.status === 200 && (response.type === 'basic' || response.type === 'cors')) {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+      }
+      return response;
+    });
+
   if (isHtmlRequest) {
     event.respondWith(
-      fetch(request)
-        .then(response => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
-          return response;
-        })
+      fetchAndCache()
         .catch(async () => {
           const cached = await caches.match(request);
           if (cached) {
@@ -62,17 +66,12 @@ self.addEventListener('fetch', event => {
   }
 
   event.respondWith(
-    caches.match(request).then(cached => {
+    fetchAndCache().catch(async () => {
+      const cached = await caches.match(request);
       if (cached) {
         return cached;
       }
-      return fetch(request).then(response => {
-        if (response && response.status === 200 && response.type === 'basic') {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
-        }
-        return response;
-      });
+      return Response.error();
     })
   );
 });
