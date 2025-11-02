@@ -361,10 +361,13 @@ export class CanvasRenderer {
     ctx.lineCap = 'round';
 
     strokes.forEach(stroke => {
-      const { points = [], color = '#0F172A', size = 4 } = stroke;
+      const { points = [], color = '#0F172A', size = 4, cap } = stroke;
       if (points.length < 2) return;
       ctx.strokeStyle = color;
       ctx.lineWidth = size;
+      const resolvedCap = cap || (stroke.roundCap === false ? 'butt' : 'round');
+      ctx.lineCap = resolvedCap;
+      ctx.lineJoin = resolvedCap === 'round' ? 'round' : 'miter';
       ctx.beginPath();
       points.forEach((point, index) => {
         const px = point.x * image.width;

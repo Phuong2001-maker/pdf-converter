@@ -366,6 +366,12 @@ const PEN_COLOR_PRESETS = [
   '#FFFFFF',
 ];
 
+const PEN_CAP_OPTIONS = [
+  { id: 'round', label: 'Tròn', icon: 'round' },
+  { id: 'butt', label: 'Phẳng', icon: 'flat' },
+  { id: 'square', label: 'Vuông', icon: 'square' },
+];
+
 const toolDefaults = {
   [layerTypes.TEXT]: {
     content: 'Ký tên mẫu',
@@ -397,6 +403,7 @@ const toolDefaults = {
     size: 4,
     smoothing: 0.65,
     roundCap: true,
+    cap: 'round',
   },
   [layerTypes.LOGO]: {
     scale: 0.6,
@@ -1316,6 +1323,7 @@ function startPenStroke(pointer) {
       name: 'Pen',
       strokes: [],
       opacity: 1,
+      cap: toolDefaults[layerTypes.PEN].cap || (toolDefaults[layerTypes.PEN].roundCap ? 'round' : 'butt'),
     });
     setActiveLayer(newLayer.id);
     penStroke = { layerId: newLayer.id, points: [] };
@@ -1328,7 +1336,7 @@ function startPenStroke(pointer) {
 function addPenPoint(pointer) {
   const image = getActiveImage();
   if (!image || !penStroke) return;
-  const { color, size } = toolDefaults[layerTypes.PEN];
+  const { color, size, cap } = toolDefaults[layerTypes.PEN];
   penStroke.points.push({
     x: clamp(pointer.x / image.width, 0, 1),
     y: clamp(pointer.y / image.height, 0, 1),
@@ -1337,7 +1345,12 @@ function addPenPoint(pointer) {
   if (!layer) return;
   const strokes = Array.isArray(layer.strokes) ? layer.strokes.slice() : [];
   if (!penStroke.stroke) {
-    penStroke.stroke = { color, size, points: [] };
+    penStroke.stroke = {
+      color,
+      size,
+      cap: cap || (toolDefaults[layerTypes.PEN].roundCap ? 'round' : 'butt'),
+      points: [],
+    };
     strokes.push(penStroke.stroke);
   }
   penStroke.stroke.points = penStroke.points.slice();
@@ -2147,11 +2160,20 @@ function renderTextPanel(container) {
 function renderPenPanel(container) {
   const localeIsVi = state.locale === 'vi';
   const defaults = toolDefaults[layerTypes.PEN];
+  const image = getActiveImage();
+  const activeLayer = image ? getLayer(image.id, state.activeLayerId) : null;
+  const lastStroke = activeLayer?.type === layerTypes.PEN && Array.isArray(activeLayer.strokes) && activeLayer.strokes.length
+    ? activeLayer.strokes[activeLayer.strokes.length - 1]
+    : null;
   const thicknessPresets = [2, 4, 6, 8, 12];
-  const currentColor = defaults.color || PEN_COLOR_PRESETS[0];
-  const currentSize = Number.isFinite(defaults.size) ? defaults.size : 4;
+  const currentColor = lastStroke?.color || defaults.color || PEN_COLOR_PRESETS[0];
+  const currentSize = Number.isFinite(lastStroke?.size) ? lastStroke.size : (Number.isFinite(defaults.size) ? defaults.size : 4);
   const currentSmoothing = Number.isFinite(defaults.smoothing) ? defaults.smoothing : 0.65;
-  const currentRoundCap = defaults.roundCap ?? true;
+  const resolvedCapDefault = defaults.cap || (defaults.roundCap ? 'round' : 'butt');
+  const layerCap = activeLayer?.cap;
+  const currentCap = lastStroke?.cap
+    || layerCap
+    || (lastStroke?.roundCap === false ? 'butt' : resolvedCapDefault);
   container.innerHTML = `
     <div class="pen-panel">
       <section class="pen-section">
@@ -2197,14 +2219,25 @@ function renderPenPanel(container) {
         </div>
       </section>
       <section class="pen-section pen-options">
-        <label class="switch">
-          <input type="checkbox" id="penRoundCap" ${currentRoundCap ? 'checked' : ''}>
-          <span>${localeIsVi ? 'Đầu tròn' : 'Round cap'}</span>
-        </label>
+        <div class="pen-section-header">
+          <h4>${localeIsVi ? 'Kiểu đầu nét' : 'Stroke caps'}</h4>
+          <p>${localeIsVi ? 'Chọn kiểu kết thúc nét cho chữ ký.' : 'Choose how stroke endings should look.'}</p>
+        </div>
+        <div class="pen-cap-group">
+          ${PEN_CAP_OPTIONS.map(option => {
+            const isActive = option.id === currentCap;
+            return `
+              <button type="button" class="pen-cap-button${isActive ? ' is-active' : ''}" data-cap="${option.id}">
+                <span class="pen-cap-preview" data-shape="${option.icon}"></span>
+                <span>${option.label}</span>
+              </button>
+            `;
+          }).join('')}
+        </div>
         <div class="pen-actions">
           <button type="button" class="btn ghost" data-action="pen-undo">
             <svg class="icon"><use href="#icon-undo"></use></svg>
-            <span>Undo</span>
+            <span>${localeIsVi ? 'Hoàn tác' : 'Undo'}</span>
           </button>
           <button type="button" class="btn ghost danger" data-action="pen-clear">
             <svg class="icon"><use href="#icon-eraser"></use></svg>
@@ -2224,7 +2257,16 @@ function renderPenPanel(container) {
     toolDefaults[layerTypes.PEN] = {
       ...toolDefaults[layerTypes.PEN],
       ...updates,
+      cap: updates.cap ?? toolDefaults[layerTypes.PEN].cap,
+      roundCap: updates.cap ? updates.cap === 'round' : (updates.roundCap ?? toolDefaults[layerTypes.PEN].roundCap),
     };
+    if (updates.cap) {
+      toolDefaults[layerTypes.PEN].cap = updates.cap;
+      toolDefaults[layerTypes.PEN].roundCap = updates.cap === 'round';
+    }
+    if (!updates.cap && Object.prototype.hasOwnProperty.call(updates, 'roundCap')) {
+      toolDefaults[layerTypes.PEN].cap = updates.roundCap ? 'round' : 'butt';
+    }
   };
   const paletteButtons = Array.from(container.querySelectorAll('.pen-color'));
   const colorInput = container.querySelector('#penColorPicker');
@@ -2284,9 +2326,16 @@ function renderPenPanel(container) {
   };
   addListener(smoothingRange, 'input', event => setSmoothing(event.target.value));
 
-  const roundCapToggle = container.querySelector('#penRoundCap');
-  addListener(roundCapToggle, 'change', event => {
-    setPenDefaults({ roundCap: event.target.checked });
+  const capButtons = Array.from(container.querySelectorAll('.pen-cap-button'));
+  const setCap = value => {
+    const capValue = PEN_CAP_OPTIONS.some(option => option.id === value) ? value : 'round';
+    setPenDefaults({ cap: capValue, roundCap: capValue === 'round' });
+    capButtons.forEach(button => {
+      button.classList.toggle('is-active', button.dataset.cap === capValue);
+    });
+  };
+  capButtons.forEach(button => {
+    addListener(button, 'click', () => setCap(button.dataset.cap));
   });
 
   container.querySelectorAll('[data-action]').forEach(button => {
@@ -2311,9 +2360,7 @@ function renderPenPanel(container) {
   setColor(currentColor);
   setSize(currentSize);
   setSmoothing(currentSmoothing);
-  if (roundCapToggle) {
-    roundCapToggle.checked = !!currentRoundCap;
-  }
+  setCap(currentCap);
 
   return () => {
     disposers.forEach(dispose => dispose());

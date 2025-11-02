@@ -1423,23 +1423,12 @@ button:disabled {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 20%, transparent);
 }
 
-.pen-color.is-active::after {
-  content: '';
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  border: 2px solid var(--color-surface);
-  background: var(--color-primary);
-  position: absolute;
-  top: 6px;
-  right: 6px;
-}
-
 .pen-color-custom {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .pen-color-custom label {
@@ -1466,6 +1455,7 @@ button:disabled {
   padding: 0;
   border: none;
   background: transparent;
+  cursor: pointer;
 }
 
 .pen-color-value {
@@ -1473,6 +1463,103 @@ button:disabled {
   font-weight: 600;
   letter-spacing: 0.08em;
   color: var(--color-heading);
+}
+
+.pen-cap-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pen-cap-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-muted-surface) 40%, transparent 60%);
+  border: 1px solid color-mix(in srgb, var(--color-border) 65%, transparent);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  transition: transform var(--transition-fast), border-color var(--transition), background var(--transition);
+  appearance: none;
+  color: var(--color-heading);
+}
+
+.pen-cap-button:hover,
+.pen-cap-button:focus-visible {
+  transform: translateY(-1px);
+  border-color: var(--color-primary);
+  outline: none;
+}
+
+.pen-cap-button.is-active {
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.pen-cap-preview {
+  width: 28px;
+  height: 16px;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pen-cap-preview::before,
+.pen-cap-preview::after {
+  content: '';
+  position: absolute;
+  background: currentColor;
+  top: 50%;
+  transform: translateY(-50%);
+  left: 0;
+}
+
+.pen-cap-preview::before {
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+}
+
+.pen-cap-preview[data-shape='flat']::before {
+  border-radius: 2px;
+}
+
+.pen-cap-preview[data-shape='round']::after {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  right: 0;
+  left: auto;
+}
+
+.pen-cap-preview[data-shape='flat']::after,
+.pen-cap-preview[data-shape='flat']::before {
+  border-radius: 2px;
+}
+
+.pen-cap-preview[data-shape='flat']::after {
+  width: 4px;
+  height: 10px;
+  right: 0;
+  left: auto;
+}
+
+.pen-cap-preview[data-shape='square']::before {
+  border-radius: 2px;
+  width: calc(100% - 6px);
+}
+
+.pen-cap-preview[data-shape='square']::after {
+  width: 4px;
+  height: 12px;
+  right: 2px;
+  border-radius: 2px;
+  left: auto;
 }
 
 .pen-slider {
@@ -1513,6 +1600,7 @@ button:disabled {
   text-transform: uppercase;
   transition: transform var(--transition-fast), border-color var(--transition), background var(--transition);
   appearance: none;
+  cursor: pointer;
 }
 
 .pen-weight-chip span {
@@ -2147,4 +2235,21 @@ textarea {
 :focus-visible {
   outline: 2px solid #93C5FD;
   outline-offset: 2px;
+}
+.pen-cap-preview[data-shape='round']::after {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  right: 0;
+}
+
+.pen-cap-preview[data-shape='flat']::after,
+.pen-cap-preview[data-shape='flat']::before {
+  border-radius: 2px;
+}
+
+.pen-cap-preview[data-shape='flat']::after {
+  width: 4px;
+  height: 10px;
+  right: 0;
 }
