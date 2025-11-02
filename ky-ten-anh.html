@@ -289,12 +289,13 @@
         </div>
       </aside>
       <section class="workspace" id="workspace" aria-labelledby="workspaceTitle">
+        <h1 id="workspaceTitle" class="visually-hidden">Canvas</h1>
         <div class="workspace-toolbar">
+          <div class="visually-hidden" aria-live="polite">
+            <span id="activeFileName">Chưa có ảnh</span>
+            <span id="activeZoom">100%</span>
+          </div>
           <div class="canvas-toolbar" role="toolbar" aria-label="Điều khiển canvas">
-            <button type="button" class="icon-btn" data-action="select-files" aria-label="Thêm ảnh">
-              <svg class="icon"><use href="#icon-plus"></use></svg>
-            </button>
-            <div class="toolbar-divider" aria-hidden="true"></div>
             <button type="button" class="icon-btn" data-action="zoom-out" aria-label="Thu nhỏ">
               <svg class="icon"><use href="#icon-zoom-out"></use></svg>
             </button>

@@ -169,6 +169,12 @@ function scheduleRendererResize(image = null) {
 function updateDropzoneVisibility(image) {
   if (!dropzone) return;
   const hasImage = Boolean(image);
+  if (hasImage) {
+    const activeElement = document.activeElement;
+    if (activeElement && dropzone.contains(activeElement) && typeof activeElement.blur === 'function') {
+      activeElement.blur();
+    }
+  }
   dropzone.hidden = hasImage;
   dropzone.setAttribute('aria-hidden', hasImage ? 'true' : 'false');
   dropzone.tabIndex = hasImage ? -1 : 0;
@@ -211,7 +217,10 @@ function registerEvents() {
   window.addEventListener('pointerup', handlePointerUp, { passive: true });
   window.addEventListener('keydown', handleKeyDown);
 
-  dropzone?.addEventListener('click', () => fileInput?.click());
+  dropzone?.addEventListener('click', event => {
+    if (event.defaultPrevented) return;
+    fileInput?.click();
+  });
   dropzone?.addEventListener('dragover', handleDragOver);
   dropzone?.addEventListener('dragleave', handleDragLeave);
   dropzone?.addEventListener('drop', handleDrop);
@@ -235,7 +244,11 @@ function registerEvents() {
   duplicateLayerButton?.addEventListener('click', handleDuplicateLayer);
   deleteLayerButton?.addEventListener('click', handleDeleteLayer);
   savePresetButton?.addEventListener('click', handleSavePreset);
-  selectFilesButton?.addEventListener('click', () => fileInput?.click());
+  selectFilesButton?.addEventListener('click', event => {
+    event.preventDefault();
+    event.stopPropagation();
+    fileInput?.click();
+  });
   useSampleButton?.addEventListener('click', handleUseSample);
 
   events.addEventListener('ui:toolselected', event => {

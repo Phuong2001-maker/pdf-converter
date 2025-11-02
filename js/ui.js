@@ -336,23 +336,29 @@ export function setPanelExpanded(expanded) {
 }
 
 export function updateStatusBar({ dimensions, zoom, memory }) {
-  if (dimensions) {
+  if (dimensions && dom.statusDimensions) {
     dom.statusDimensions.textContent = dimensions;
   }
   if (typeof zoom === 'string') {
-    dom.statusScale.textContent = zoom;
-    dom.activeZoom.textContent = zoom.replace('Zoom:', '').trim();
+    if (dom.statusScale) {
+      dom.statusScale.textContent = zoom;
+    }
+    if (dom.activeZoom) {
+      dom.activeZoom.textContent = zoom.replace('Zoom:', '').trim();
+    }
   }
-  if (memory) {
+  if (memory && dom.statusMemory) {
     dom.statusMemory.textContent = memory;
   }
 }
 
 export function updateActiveFileName(name) {
+  if (!dom.activeFileName) return;
   dom.activeFileName.textContent = name || (state.locale === 'vi' ? 'Chưa có ảnh' : 'No image');
 }
 
 export function toggleTips(visible) {
+  if (!dom.workspaceTips) return;
   dom.workspaceTips.hidden = !visible;
 }
 

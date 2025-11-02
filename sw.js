@@ -30,6 +30,11 @@ self.addEventListener('fetch', event => {
   }
 
   const { request } = event;
+  const url = new URL(request.url);
+  const isHttp = url.protocol === 'http:' || url.protocol === 'https:';
+  if (!isHttp) {
+    return;
+  }
   const acceptHeader = request.headers.get('accept') || '';
   const isHtmlRequest = request.mode === 'navigate' || acceptHeader.includes('text/html');
 
