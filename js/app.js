@@ -49,6 +49,7 @@ const dropzone = document.getElementById('canvasDropzone');
 const fileInput = document.getElementById('imageInput');
 const logoInput = document.getElementById('logoInput');
 const canvasBoard = document.getElementById('canvasBoard');
+const selectionOverlay = document.getElementById('selectionOverlay');
 const toolbarButtons = document.querySelectorAll('.canvas-toolbar [data-action]');
 const selectFilesButton = document.querySelector('[data-action="select-files"]');
 const useSampleButton = document.querySelector('[data-action="use-sample"]');
@@ -70,12 +71,127 @@ const fontPickerSelect = document.getElementById('fontPickerSelect');
 const fontPickerControl = document.getElementById('fontPickerControl');
 
 const renderer = new CanvasRenderer(canvas, overlayCanvas);
+const immediateRender = renderer.render.bind(renderer);
+renderer.renderNow = (...args) => {
+  immediateRender(...args);
+  syncSelectionOverlay();
+};
+renderer.render = function renderWithOverlay(...args) {
+  immediateRender(...args);
+  queueOverlaySync();
+};
 let toolPanelCleanup = null;
 let penStroke = null;
 let blurSelection = null;
 let dragLayer = null;
+let panSession = null;
+let resizeSession = null;
+let isSpacePressed = false;
+let renderScheduled = false;
+const pointerCache = new Map();
+let pinchState = null;
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+const isEditableTarget = target => {
+  if (!target) return false;
+  if (target.isContentEditable) return true;
+  const tag = target.tagName;
+  if (!tag) return false;
+  return ['INPUT', 'TEXTAREA', 'SELECT'].includes(tag);
+};
+const MIN_TEXT_FONT = 12;
+const MAX_TEXT_FONT = 640;
+const MIN_TEXT_BOUNDS = 24;
+const getLayerBounds = (layer, image) => {
+  if (!layer?.bounds || !image) return null;
+  return {
+    x: layer.bounds.x * image.width,
+    y: layer.bounds.y * image.height,
+    width: layer.bounds.width * image.width,
+    height: layer.bounds.height * image.height,
+  };
+};
+const isPointInsideBounds = (bounds, px, py) => {
+  if (!bounds) return false;
+  return px >= bounds.x && px <= bounds.x + bounds.width && py >= bounds.y && py <= bounds.y + bounds.height;
+};
+const hideSelectionOverlay = () => {
+  if (!selectionOverlay) return;
+  selectionOverlay.classList.remove('is-active');
+  selectionOverlay.style.width = '0px';
+  selectionOverlay.style.height = '0px';
+  selectionOverlay.dataset.layerId = '';
+};
+const syncSelectionOverlay = () => {
+  if (!selectionOverlay) return;
+  const image = getActiveImage();
+  if (!image) {
+    hideSelectionOverlay();
+    return;
+  }
+  const layer = getLayer(image.id, state.activeLayerId);
+  if (!layer || layer.type !== layerTypes.TEXT || layer.visible === false) {
+    hideSelectionOverlay();
+    return;
+  }
+  const bounds = getLayerBounds(layer, image);
+  if (!bounds || bounds.width < 1 || bounds.height < 1) {
+    hideSelectionOverlay();
+    return;
+  }
+  const topLeft = renderer.imageToScreen(bounds.x, bounds.y);
+  const bottomRight = renderer.imageToScreen(bounds.x + bounds.width, bounds.y + bounds.height);
+  const width = bottomRight.x - topLeft.x;
+  const height = bottomRight.y - topLeft.y;
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width < 1 || height < 1) {
+    hideSelectionOverlay();
+    return;
+  }
+  selectionOverlay.style.transform = `translate3d(${topLeft.x}px, ${topLeft.y}px, 0)`;
+  selectionOverlay.style.width = `${width}px`;
+  selectionOverlay.style.height = `${height}px`;
+  selectionOverlay.dataset.layerId = layer.id;
+  selectionOverlay.classList.add('is-active');
+};
+const queueOverlaySync = () => {
+  if (!selectionOverlay) return;
+  syncSelectionOverlay();
+  if (renderScheduled) return;
+  renderScheduled = true;
+  requestAnimationFrame(() => {
+    renderScheduled = false;
+    syncSelectionOverlay();
+  });
+};
+const findLayerAtPoint = (image, pointer) => {
+  if (!image || !pointer) return null;
+  const px = pointer.x / image.width;
+  const py = pointer.y / image.height;
+  for (let i = image.layers.length - 1; i >= 0; i -= 1) {
+    const layer = image.layers[i];
+    if (!layer || layer.visible === false) continue;
+    if (layer.type === layerTypes.TEXT) {
+      const bounds = layer.bounds;
+      if (!bounds) continue;
+      if (
+        px >= bounds.x &&
+        px <= bounds.x + bounds.width &&
+        py >= bounds.y &&
+        py <= bounds.y + bounds.height
+      ) {
+        return layer;
+      }
+    } else if (layer.position) {
+      const distance = Math.hypot(px - layer.position.x, py - layer.position.y);
+      if (distance < 0.04) {
+        return layer;
+      }
+    }
+  }
+  return null;
+};
+const MIN_ZOOM = 0.25;
+const MAX_ZOOM = 6;
 
 const toolDefaults = {
   [layerTypes.TEXT]: {
@@ -384,6 +500,26 @@ function updateDropzoneVisibility(image) {
   }
 }
 
+function setupSelectionOverlay() {
+  if (!selectionOverlay) return;
+  selectionOverlay.innerHTML = `
+    <div class="transform-box" data-role="box">
+      <div class="transform-handle handle-nw" data-handle="nw" role="button" aria-label="Resize northwest"></div>
+      <div class="transform-handle handle-ne" data-handle="ne" role="button" aria-label="Resize northeast"></div>
+      <div class="transform-handle handle-sw" data-handle="sw" role="button" aria-label="Resize southwest"></div>
+      <div class="transform-handle handle-se" data-handle="se" role="button" aria-label="Resize southeast"></div>
+    </div>
+  `;
+  selectionOverlay.classList.remove('is-active');
+  selectionOverlay.style.transform = 'translate3d(0, 0, 0)';
+  selectionOverlay.style.width = '0px';
+  selectionOverlay.style.height = '0px';
+  selectionOverlay.addEventListener('pointerdown', handleSelectionPointerDown);
+  selectionOverlay.addEventListener('pointermove', handleSelectionPointerMove);
+  selectionOverlay.addEventListener('pointerup', handleSelectionPointerUp);
+  selectionOverlay.addEventListener('pointercancel', handleSelectionPointerUp);
+}
+
 function init() {
   initUI();
   setupTextToolbar();
@@ -395,6 +531,8 @@ function init() {
   updateToolSelection(state.activeTool);
   registerEvents();
   updateDropzoneVisibility(getActiveImage());
+  setupSelectionOverlay();
+  queueOverlaySync();
   const container = canvas.parentElement;
   if (container) {
     const rect = container.getBoundingClientRect();
@@ -417,7 +555,10 @@ function init() {
 function registerEvents() {
   window.addEventListener('resize', handleResize, { passive: true });
   window.addEventListener('pointerup', handlePointerUp, { passive: true });
+  window.addEventListener('pointercancel', handlePointerUp, { passive: true });
   window.addEventListener('keydown', handleKeyDown);
+  window.addEventListener('keyup', handleKeyUp);
+  window.addEventListener('blur', handleWindowBlur, { passive: true });
 
   dropzone?.addEventListener('click', event => {
     if (event.defaultPrevented) return;
@@ -470,11 +611,11 @@ function registerEvents() {
     updateActiveFileName(image?.name || null);
     canvasBoard.dataset.state = image ? 'loaded' : 'empty';
     updateDropzoneVisibility(image);
-    if (image) {
-      updateStatusBar({
-        dimensions: `${image.width} × ${image.height}px`,
-        zoom: `Zoom: ${(image.zoom * 100).toFixed(0)}%`,
-        memory: estimateMemoryUsage(image),
+  if (image) {
+    updateStatusBar({
+      dimensions: `${image.width} × ${image.height}px`,
+      zoom: `Zoom: ${(image.zoom * 100).toFixed(0)}%`,
+      memory: estimateMemoryUsage(image),
       });
       scheduleRendererResize(image);
     } else {
@@ -483,54 +624,59 @@ function registerEvents() {
         zoom: 'Zoom: 100%',
         memory: 'RAM ước tính: —',
       });
-    }
-    renderer.render();
-    if (state.activeTool === layerTypes.TEXT) {
-      syncTextStyleControls();
-    }
-  });
+  }
+  renderer.render();
+  if (state.activeTool === layerTypes.TEXT) {
+    syncTextStyleControls();
+  }
+  queueOverlaySync();
+});
 
-  events.addEventListener('imagechange', () => {
-    const image = getActiveImage();
-    renderLayerList(image);
+events.addEventListener('imagechange', () => {
+  const image = getActiveImage();
+  renderLayerList(image);
     updateActiveFileName(image?.name || null);
     canvasBoard.dataset.state = image ? 'loaded' : 'empty';
     updateDropzoneVisibility(image);
-    if (image) {
-      updateStatusBar({
-        dimensions: `${image.width} × ${image.height}px`,
-        zoom: `Zoom: ${(image.zoom * 100).toFixed(0)}%`,
-        memory: estimateMemoryUsage(image),
-      });
-      scheduleRendererResize(image);
-    }
-    renderer.render();
-    if (state.activeTool === layerTypes.TEXT) {
-      syncTextStyleControls();
-    }
-  });
+  if (image) {
+    updateStatusBar({
+      dimensions: `${image.width} × ${image.height}px`,
+      zoom: `Zoom: ${(image.zoom * 100).toFixed(0)}%`,
+      memory: estimateMemoryUsage(image),
+    });
+    scheduleRendererResize(image);
+  }
+  renderer.render();
+  if (state.activeTool === layerTypes.TEXT) {
+    syncTextStyleControls();
+  }
+  queueOverlaySync();
+});
 
-  events.addEventListener('layerlistchange', () => {
-    const image = getActiveImage();
-    renderLayerList(image);
-    renderer.render();
-    if (state.activeTool === layerTypes.TEXT) {
-      syncTextStyleControls();
-    }
-  });
+events.addEventListener('layerlistchange', () => {
+  const image = getActiveImage();
+  renderLayerList(image);
+  renderer.render();
+  if (state.activeTool === layerTypes.TEXT) {
+    syncTextStyleControls();
+  }
+  queueOverlaySync();
+});
 
-  events.addEventListener('layerchange', () => {
-    markActiveLayer(state.activeLayerId);
-    renderToolPanel(state.activeTool);
-  });
+events.addEventListener('layerchange', () => {
+  markActiveLayer(state.activeLayerId);
+  renderToolPanel(state.activeTool);
+  queueOverlaySync();
+});
 
-  events.addEventListener('presetchange', () => {
-    renderPresetList(state.presets);
-  });
+events.addEventListener('presetchange', () => {
+  renderPresetList(state.presets);
+});
 
-  events.addEventListener('toolchange', event => {
-    renderToolPanel(event.detail.toolId);
-  });
+events.addEventListener('toolchange', event => {
+  renderToolPanel(event.detail.toolId);
+  queueOverlaySync();
+});
 
   window.addEventListener('online', () => toggleOfflineBanner(false));
   window.addEventListener('offline', () => toggleOfflineBanner(true));
@@ -677,31 +823,87 @@ function handleCanvasWheel(event) {
 function handleCanvasPointerDown(event) {
   const image = getActiveImage();
   if (!image) return;
+  rememberPointer(event);
+  if (event.pointerType === 'touch' && pointerCache.size === 2) {
+    const points = pointerPairs();
+    if (points.length === 2) {
+      pinchState = {
+        initialDistance: Math.hypot(points[1].x - points[0].x, points[1].y - points[0].y) || 1,
+        initialZoom: image.zoom || renderer.view.scale,
+      };
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    return;
+  }
   const tool = state.activeTool;
   const pointer = renderer.screenToImage(event.clientX, event.clientY);
+  const hitLayer = findLayerAtPoint(image, pointer);
+  if (hitLayer && state.activeLayerId !== hitLayer.id) {
+    setActiveLayer(hitLayer.id);
+    queueOverlaySync();
+  }
+  const isTouchPointer = event.pointerType === 'touch';
+  const isMousePointer = !event.pointerType || event.pointerType === 'mouse';
+  const isPenPointer = event.pointerType === 'pen';
+  const isPrimaryPointer = (isMousePointer && event.button === 0) || isTouchPointer || isPenPointer;
+  if (!hitLayer && (isMousePointer || isPenPointer) && event.button === 0 && !isSpacePressed && tool !== layerTypes.PEN && tool !== layerTypes.BLUR) {
+    setActiveLayer(null);
+    queueOverlaySync();
+  }
+  const panRequested = isSpacePressed ||
+    event.button === 1 ||
+    event.button === 2 ||
+    (isTouchPointer && tool !== layerTypes.PEN && tool !== layerTypes.BLUR);
+  if (panRequested) {
+    startPan(event, image);
+    event.preventDefault();
+    return;
+  }
   if (tool === layerTypes.PEN) {
     startPenStroke(pointer);
   } else if (tool === layerTypes.BLUR) {
     startBlurSelection(pointer);
   } else {
-    startLayerDrag(pointer);
+    const layerForDrag = hitLayer || getLayer(image.id, state.activeLayerId);
+    if (layerForDrag?.position && isPrimaryPointer) {
+      startLayerDrag(pointer, event.pointerId);
+      event.preventDefault();
+    }
   }
 }
 
 function handleCanvasPointerMove(event) {
   const image = getActiveImage();
   if (!image) return;
+  updatePointer(event);
+  if (panSession && panSession.pointerId === event.pointerId) {
+    updatePan(event);
+    event.preventDefault();
+    return;
+  }
+  if (pointerCache.size >= 2 && applyPinchZoom(image)) {
+    event.preventDefault();
+    return;
+  }
   const pointer = renderer.screenToImage(event.clientX, event.clientY);
   if (penStroke) {
     extendPenStroke(pointer);
   } else if (blurSelection) {
     updateBlurSelection(pointer);
   } else if (dragLayer) {
-    updateLayerDrag(pointer);
+    updateLayerDrag(pointer, event.pointerId);
+    event.preventDefault();
   }
 }
 
-function handleCanvasPointerUp() {
+function handleCanvasPointerUp(event) {
+  if (event?.type === 'pointerup' || event?.type === 'pointercancel') {
+    releasePointer(event);
+    if (panSession && panSession.pointerId === event.pointerId) {
+      finishPan();
+    }
+  }
   if (penStroke) {
     finishPenStroke();
   }
@@ -709,15 +911,105 @@ function handleCanvasPointerUp() {
     finalizeBlurSelection();
   }
   if (dragLayer) {
-    finalizeLayerDrag();
+    finalizeLayerDrag(event?.pointerId);
   }
 }
 
-function handlePointerUp() {
-  handleCanvasPointerUp();
+function handlePointerUp(event) {
+  handleCanvasPointerUp(event);
+}
+
+function handleSelectionPointerDown(event) {
+  const image = getActiveImage();
+  if (!image) return;
+  const layer = getLayer(image.id, state.activeLayerId);
+  if (!layer || layer.type !== layerTypes.TEXT) return;
+  rememberPointer(event);
+  if (isSpacePressed) {
+    startPan(event, image);
+    event.preventDefault();
+    event.stopPropagation();
+    return;
+  }
+  const isPrimary = event.button === 0 || event.pointerType === 'touch' || event.pointerType === 'pen';
+  if (!isPrimary) {
+    return;
+  }
+  if (event.pointerType === 'touch' && pointerCache.size === 2) {
+    const points = pointerPairs();
+    if (points.length === 2) {
+      pinchState = {
+        initialDistance: Math.hypot(points[1].x - points[0].x, points[1].y - points[0].y) || 1,
+        initialZoom: image.zoom || renderer.view.scale,
+      };
+    }
+    return;
+  }
+  const pointer = renderer.screenToImage(event.clientX, event.clientY);
+  const handle = event.target?.dataset?.handle;
+  if (handle) {
+    startTextResize(layer, handle, pointer, event.pointerId);
+  } else {
+    startLayerDrag(pointer, event.pointerId);
+  }
+  if (typeof selectionOverlay?.setPointerCapture === 'function') {
+    try {
+      selectionOverlay.setPointerCapture(event.pointerId);
+    } catch (error) {
+      /* ignore */
+    }
+  }
+  event.preventDefault();
+  event.stopPropagation();
+}
+
+function handleSelectionPointerMove(event) {
+  const image = getActiveImage();
+  if (!image) return;
+  updatePointer(event);
+  if (pointerCache.size >= 2 && applyPinchZoom(image)) {
+    event.preventDefault();
+    return;
+  }
+  if (resizeSession && resizeSession.pointerId === event.pointerId) {
+    updateTextResize(event, image);
+    event.preventDefault();
+    return;
+  }
+  if (dragLayer && dragLayer.pointerId === event.pointerId) {
+    const pointer = renderer.screenToImage(event.clientX, event.clientY);
+    updateLayerDrag(pointer, event.pointerId);
+    event.preventDefault();
+  }
+}
+
+function handleSelectionPointerUp(event) {
+  releasePointer(event);
+  if (resizeSession && resizeSession.pointerId === event.pointerId) {
+    finishTextResize(event.pointerId);
+  }
+  if (dragLayer && dragLayer.pointerId === event.pointerId) {
+    finalizeLayerDrag(event.pointerId);
+  }
+  if (typeof selectionOverlay?.releasePointerCapture === 'function') {
+    try {
+      selectionOverlay.releasePointerCapture(event.pointerId);
+    } catch (error) {
+      /* ignore */
+    }
+  }
+  event.preventDefault();
+  event.stopPropagation();
 }
 
 function handleKeyDown(event) {
+  if (event.code === 'Space' && !event.repeat && !isEditableTarget(event.target)) {
+    if (!isSpacePressed) {
+      isSpacePressed = true;
+      canvasBoard?.classList.add('is-pan-mode');
+    }
+    event.preventDefault();
+  }
   const image = getActiveImage();
   if (!image) return;
   if (event.ctrlKey || event.metaKey) {
@@ -837,45 +1129,167 @@ function finalizeBlurSelection() {
   renderer.render();
 }
 
-function startLayerDrag(pointer) {
+function startLayerDrag(pointer, pointerId) {
   const image = getActiveImage();
   if (!image) return;
   const layer = getLayer(image.id, state.activeLayerId);
   if (!layer || !layer.position) return;
+  const widthRatio = Math.min(Math.max(layer.bounds?.width ?? 0, 0), 1);
+  const heightRatio = Math.min(Math.max(layer.bounds?.height ?? 0, 0), 1);
   dragLayer = {
     layerId: layer.id,
     pointerStart: pointer,
     original: { ...layer.position },
+    pointerId,
+    imageId: image.id,
+    bounds: {
+      width: widthRatio,
+      height: heightRatio,
+    },
   };
 }
 
-function updateLayerDrag(pointer) {
-  const image = getActiveImage();
-  if (!image || !dragLayer) return;
+function updateLayerDrag(pointer, pointerId) {
+  if (!dragLayer) return;
+  if (typeof dragLayer.pointerId === 'number' && typeof pointerId === 'number' && dragLayer.pointerId !== pointerId) {
+    return;
+  }
+  const image = getImage(dragLayer.imageId) || getActiveImage();
+  if (!image) return;
   const layer = getLayer(image.id, dragLayer.layerId);
   if (!layer || !layer.position) return;
   const dx = (pointer.x - dragLayer.pointerStart.x) / image.width;
   const dy = (pointer.y - dragLayer.pointerStart.y) / image.height;
   const snap = layer.snap ?? toolDefaults[layer.type]?.snap;
-  const position = {
-    x: clamp(dragLayer.original.x + dx, 0, 1),
-    y: clamp(dragLayer.original.y + dy, 0, 1),
-  };
+  const boundsWidth = Math.min(Math.max(dragLayer.bounds?.width ?? layer.bounds?.width ?? 0, 0), 1);
+  const boundsHeight = Math.min(Math.max(dragLayer.bounds?.height ?? layer.bounds?.height ?? 0, 0), 1);
+  let nextX = clamp(dragLayer.original.x + dx, 0, 1);
+  let nextY = clamp(dragLayer.original.y + dy, 0, 1);
   if (snap) {
     const step = 0.01;
-    position.x = Math.round(position.x / step) * step;
-    position.y = Math.round(position.y / step) * step;
+    nextX = Math.round(nextX / step) * step;
+    nextY = Math.round(nextY / step) * step;
   }
-  updateLayer(image.id, layer.id, { position });
+  if (boundsWidth > 0 && boundsWidth < 1) {
+    const marginX = boundsWidth / 2;
+    nextX = clamp(nextX, marginX, 1 - marginX);
+  }
+  if (boundsHeight > 0 && boundsHeight < 1) {
+    const marginY = boundsHeight / 2;
+    nextY = clamp(nextY, marginY, 1 - marginY);
+  }
+  updateLayer(image.id, layer.id, { position: { x: nextX, y: nextY } });
   renderer.render();
 }
 
-function finalizeLayerDrag() {
-  const image = getActiveImage();
-  if (image && dragLayer) {
+function finalizeLayerDrag(pointerId) {
+  if (!dragLayer) return;
+  if (typeof dragLayer.pointerId === 'number' && typeof pointerId === 'number' && dragLayer.pointerId !== pointerId) {
+    return;
+  }
+  const image = getImage(dragLayer.imageId) || getActiveImage();
+  if (image) {
     pushHistory(image.id);
   }
   dragLayer = null;
+  queueOverlaySync();
+}
+
+function startTextResize(layer, handle, pointer, pointerId) {
+  const image = getActiveImage();
+  if (!image) return;
+  const bounds = getLayerBounds(layer, image);
+  if (!bounds) return;
+  const direction = {
+    x: handle.includes('e') ? 1 : -1,
+    y: handle.includes('s') ? 1 : -1,
+  };
+  const anchor = {
+    x: direction.x === 1 ? bounds.x : bounds.x + bounds.width,
+    y: direction.y === 1 ? bounds.y : bounds.y + bounds.height,
+  };
+  resizeSession = {
+    layerId: layer.id,
+    imageId: image.id,
+    handle,
+    pointerId,
+    anchor,
+    direction,
+    initialBounds: bounds,
+    minWidth: Math.max(MIN_TEXT_BOUNDS, bounds.width * 0.25),
+    minHeight: Math.max(MIN_TEXT_BOUNDS, bounds.height * 0.25),
+    initialFontSize: layer.fontSize || toolDefaults[layer.type]?.fontSize || toolDefaults[layerTypes.TEXT].fontSize,
+    initialStrokeWidth: layer.strokeWidth ?? toolDefaults[layer.type]?.strokeWidth ?? 0,
+    initialLetterSpacing: layer.letterSpacing ?? toolDefaults[layer.type]?.letterSpacing ?? 0,
+    initialShadow: layer.shadow ? { ...layer.shadow } : null,
+    initialPosition: { ...(layer.position || { x: 0.5, y: 0.5 }) },
+  };
+}
+
+function updateTextResize(event, image) {
+  if (!resizeSession || resizeSession.pointerId !== event.pointerId) return;
+  const layer = getLayer(resizeSession.imageId, resizeSession.layerId);
+  if (!layer) return;
+  const pointer = renderer.screenToImage(event.clientX, event.clientY);
+  const px = clamp(pointer.x, 0, image.width);
+  const py = clamp(pointer.y, 0, image.height);
+  const { anchor, direction, initialBounds, minWidth, minHeight } = resizeSession;
+  const deltaX = Math.max(minWidth, (px - anchor.x) * direction.x);
+  const deltaY = Math.max(minHeight, (py - anchor.y) * direction.y);
+  const availableWidth = direction.x === 1 ? image.width - anchor.x : anchor.x;
+  const availableHeight = direction.y === 1 ? image.height - anchor.y : anchor.y;
+  const constrainedWidth = clamp(deltaX, minWidth, Math.max(minWidth, availableWidth));
+  const constrainedHeight = clamp(deltaY, minHeight, Math.max(minHeight, availableHeight));
+  const minScale = Math.max(
+    minWidth > 0 ? minWidth / initialBounds.width : 0.1,
+    minHeight > 0 ? minHeight / initialBounds.height : 0.1,
+  );
+  const maxScaleX = availableWidth > 0 ? availableWidth / initialBounds.width : minScale;
+  const maxScaleY = availableHeight > 0 ? availableHeight / initialBounds.height : minScale;
+  const maxScaleCanvas = Math.min(image.width / initialBounds.width, image.height / initialBounds.height);
+  const maxScale = Math.max(minScale, Math.min(maxScaleX || minScale, maxScaleY || minScale, maxScaleCanvas || minScale));
+  const targetScale = Math.max(constrainedWidth / initialBounds.width, constrainedHeight / initialBounds.height);
+  const scale = clamp(targetScale, minScale, maxScale);
+  const newWidth = clamp(initialBounds.width * scale, minWidth, image.width);
+  const newHeight = clamp(initialBounds.height * scale, minHeight, image.height);
+  const centerX = clamp(anchor.x + (newWidth / 2) * direction.x, newWidth / 2, image.width - newWidth / 2);
+  const centerY = clamp(anchor.y + (newHeight / 2) * direction.y, newHeight / 2, image.height - newHeight / 2);
+  const fontSize = clamp(resizeSession.initialFontSize * scale, MIN_TEXT_FONT, MAX_TEXT_FONT);
+  const updates = {
+    fontSize,
+    position: {
+      x: clamp(centerX / image.width, 0, 1),
+      y: clamp(centerY / image.height, 0, 1),
+    },
+  };
+  if (resizeSession.initialStrokeWidth) {
+    updates.strokeWidth = clamp(resizeSession.initialStrokeWidth * scale, 0, fontSize * 0.6);
+  }
+  if (typeof resizeSession.initialLetterSpacing === 'number') {
+    updates.letterSpacing = clamp(resizeSession.initialLetterSpacing * scale, -400, 400);
+  }
+  if (resizeSession.initialShadow) {
+    updates.shadow = {
+      ...resizeSession.initialShadow,
+      blur: clamp((resizeSession.initialShadow.blur ?? 0) * scale, 0, 200),
+      offsetX: (resizeSession.initialShadow.offsetX ?? 0) * scale,
+      offsetY: (resizeSession.initialShadow.offsetY ?? 0) * scale,
+    };
+  }
+  updateLayer(resizeSession.imageId, resizeSession.layerId, updates);
+  renderer.render();
+}
+
+function finishTextResize(pointerId) {
+  if (!resizeSession || (typeof pointerId === 'number' && resizeSession.pointerId !== pointerId)) {
+    return;
+  }
+  const image = getImage(resizeSession.imageId) || getActiveImage();
+  if (image) {
+    pushHistory(image.id);
+  }
+  resizeSession = null;
+  queueOverlaySync();
 }
 
 function handleToolbarAction(event) {
@@ -930,13 +1344,9 @@ function handleToolbarAction(event) {
 }
 
 function setZoom(image, zoom, options = {}) {
-  const fallbackScale = Math.min(
-    renderer.bounds.width ? renderer.bounds.width / image.width : 0.1,
-    renderer.bounds.height ? renderer.bounds.height / image.height : 0.1,
-  );
-  const minScale = renderer.minScale || Math.max(fallbackScale, 0.1);
-  const maxScale = Math.max(8, minScale * 4);
-  const next = clamp(zoom, minScale, maxScale);
+  const next = clamp(zoom, MIN_ZOOM, MAX_ZOOM);
+  renderer.minScale = MIN_ZOOM;
+  renderer.maxScale = MAX_ZOOM;
   const focus = options.focus;
   let nextOffset = renderer.view.offset;
   if (focus) {
@@ -965,17 +1375,134 @@ function clampViewOffset(image, offset, scale) {
   const current = offset || renderer.view.offset;
   const offsetX = typeof current.x === 'number' ? current.x : 0;
   const offsetY = typeof current.y === 'number' ? current.y : 0;
-  const minX = Math.min(0, viewWidth - image.width * scale);
-  const minY = Math.min(0, viewHeight - image.height * scale);
-  const clampedX = clamp(offsetX, minX, 0);
-  const clampedY = clamp(offsetY, minY, 0);
+  const contentWidth = image.width * scale;
+  const contentHeight = image.height * scale;
+  let clampedX;
+  if (contentWidth <= viewWidth) {
+    clampedX = (viewWidth - contentWidth) / 2;
+  } else {
+    const minX = viewWidth - contentWidth;
+    clampedX = clamp(offsetX, minX, 0);
+  }
+  let clampedY;
+  if (contentHeight <= viewHeight) {
+    clampedY = (viewHeight - contentHeight) / 2;
+  } else {
+    const minY = viewHeight - contentHeight;
+    clampedY = clamp(offsetY, minY, 0);
+  }
   return { x: clampedX, y: clampedY };
+}
+
+function startPan(event, image) {
+  if (!image) return;
+  panSession = {
+    pointerId: event.pointerId,
+    startX: event.clientX,
+    startY: event.clientY,
+    origin: { ...renderer.view.offset },
+    imageId: image.id,
+  };
+  canvasBoard?.classList.add('is-pan-mode');
+  if (typeof event.target?.setPointerCapture === 'function') {
+    try {
+      event.target.setPointerCapture(event.pointerId);
+    } catch (error) {
+      /* ignore pointer capture errors */
+    }
+  }
+}
+
+function handleKeyUp(event) {
+  if (event.code === 'Space') {
+    isSpacePressed = false;
+    canvasBoard?.classList.remove('is-pan-mode');
+  }
+}
+
+function handleWindowBlur() {
+  if (isSpacePressed) {
+    isSpacePressed = false;
+    canvasBoard?.classList.remove('is-pan-mode');
+  }
+  if (panSession) {
+    finishPan();
+  }
+  pointerCache.clear();
+  pinchState = null;
+}
+function updatePan(event) {
+  if (!panSession) return;
+  const image = getImage(panSession.imageId);
+  if (!image) return;
+  const dx = event.clientX - panSession.startX;
+  const dy = event.clientY - panSession.startY;
+  const nextOffset = {
+    x: panSession.origin.x + dx,
+    y: panSession.origin.y + dy,
+  };
+  const clamped = clampViewOffset(image, nextOffset, image.zoom || renderer.view.scale);
+  renderer.setView({ offset: clamped });
+}
+
+function finishPan() {
+  if (!panSession) return;
+  const image = getImage(panSession.imageId);
+  if (image) {
+    updateImage(image.id, {
+      pan: { x: renderer.view.offset.x, y: renderer.view.offset.y },
+      zoom: renderer.view.scale,
+    });
+  }
+  if (!isSpacePressed) {
+    canvasBoard?.classList.remove('is-pan-mode');
+  }
+  panSession = null;
+  queueOverlaySync();
+}
+
+function rememberPointer(event) {
+  pointerCache.set(event.pointerId, { x: event.clientX, y: event.clientY });
+}
+
+function updatePointer(event) {
+  if (!pointerCache.has(event.pointerId)) return;
+  pointerCache.set(event.pointerId, { x: event.clientX, y: event.clientY });
+}
+
+function releasePointer(event) {
+  pointerCache.delete(event.pointerId);
+  if (pointerCache.size < 2) {
+    pinchState = null;
+  }
+}
+
+function pointerPairs() {
+  return Array.from(pointerCache.values());
+}
+
+function applyPinchZoom(image) {
+  if (!pinchState || pointerCache.size < 2 || !image) return false;
+  const points = pointerPairs();
+  if (points.length < 2) return false;
+  const [a, b] = points;
+  const distance = Math.hypot(b.x - a.x, b.y - a.y);
+  if (!distance || !pinchState.initialDistance) return false;
+  const scaleFactor = distance / pinchState.initialDistance;
+  const targetZoom = clamp(pinchState.initialZoom * scaleFactor, MIN_ZOOM, MAX_ZOOM);
+  const focus = {
+    clientX: (a.x + b.x) / 2,
+    clientY: (a.y + b.y) / 2,
+  };
+  setZoom(image, targetZoom, { focus });
+  return true;
 }
 
 function computeFillZoom(image) {
   const availableWidth = renderer.bounds.width;
   const availableHeight = renderer.bounds.height;
-  return Math.max(availableWidth / image.width, availableHeight / image.height);
+  const fill = Math.max(availableWidth / image.width, availableHeight / image.height);
+  return clamp(fill, MIN_ZOOM, MAX_ZOOM);
 }
 
 function updateZoomLabel(image) {

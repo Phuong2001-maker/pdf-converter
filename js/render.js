@@ -1,6 +1,8 @@
 import { getActiveImage, state, layerTypes } from './state.js';
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+const DEFAULT_MIN_SCALE = 0.25;
+const DEFAULT_MAX_SCALE = 6;
 
 export class CanvasRenderer {
   constructor(canvas, overlay) {
@@ -16,7 +18,9 @@ export class CanvasRenderer {
     this.bounds = { width: canvas.clientWidth, height: canvas.clientHeight };
     this.selection = null;
     this.hoverLayerId = null;
-    this.minScale = 0.1;
+    this.minScale = DEFAULT_MIN_SCALE;
+    this.maxScale = DEFAULT_MAX_SCALE;
+    this.fitScale = 1;
   }
 
   resize(width, height) {
@@ -34,8 +38,9 @@ export class CanvasRenderer {
 
   setView({ scale, offset }) {
     if (typeof scale === 'number') {
-      const min = this.minScale || 0.1;
-      const max = Math.max(8, min * 4);
+      const min = typeof this.minScale === 'number' ? this.minScale : DEFAULT_MIN_SCALE;
+      const maxCandidate = typeof this.maxScale === 'number' ? this.maxScale : DEFAULT_MAX_SCALE;
+      const max = Math.max(min, maxCandidate);
       this.view.scale = clamp(scale, min, max);
     }
     if (offset) {
@@ -88,7 +93,8 @@ export class CanvasRenderer {
     const scale = Math.max(availableWidth / imageWidth, availableHeight / imageHeight);
     const offsetX = (this.bounds.width - imageWidth * scale) / 2;
     const offsetY = (this.bounds.height - imageHeight * scale) / 2;
-    this.minScale = Math.max(scale, 0.01);
+    this.fitScale = scale;
+    this.minScale = DEFAULT_MIN_SCALE;
     this.setView({ scale, offset: { x: offsetX, y: offsetY } });
   }
 
@@ -102,6 +108,21 @@ export class CanvasRenderer {
       ctx.restore();
       this.renderOverlay();
       return;
+    }
+
+    const contentWidth = image.width * this.view.scale;
+    const contentHeight = image.height * this.view.scale;
+    if (contentWidth <= this.bounds.width) {
+      this.view.offset.x = (this.bounds.width - contentWidth) / 2;
+    } else {
+      const minX = this.bounds.width - contentWidth;
+      this.view.offset.x = clamp(this.view.offset.x, minX, 0);
+    }
+    if (contentHeight <= this.bounds.height) {
+      this.view.offset.y = (this.bounds.height - contentHeight) / 2;
+    } else {
+      const minY = this.bounds.height - contentHeight;
+      this.view.offset.y = clamp(this.view.offset.y, minY, 0);
     }
 
     const transform = this.getTransform();
@@ -194,24 +215,85 @@ export class CanvasRenderer {
     const maxWidth = maxWidthRatio ? image.width * maxWidthRatio : undefined;
     const startY = y - ((lines.length - 1) * fontSize * lineHeight) / 2;
 
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
     lines.forEach((line, index) => {
       const lineY = startY + index * fontSize * lineHeight;
-      const metrics = ctx.measureText(line);
+      const text = line || ' ';
+      const metrics = ctx.measureText(text);
       const effectiveWidth = this.calculateLineWidth(line, metrics.width, letterSpacing);
+      const startX = this.computeAlignedStart(x, effectiveWidth, align);
+      const ascent = metrics.actualBoundingBoxAscent ?? fontSize * 0.72;
+      const descent = metrics.actualBoundingBoxDescent ?? fontSize * 0.28;
+      const top = lineY - ascent;
+      const bottom = lineY + descent;
+      const lineMinX = startX;
+      const lineMaxX = startX + effectiveWidth;
+      minX = Math.min(minX, lineMinX);
+      maxX = Math.max(maxX, lineMaxX);
+      minY = Math.min(minY, top);
+      maxY = Math.max(maxY, bottom);
+
       if (letterSpacing) {
-        this.drawWithLetterSpacing(ctx, line, x, lineY, letterSpacing, align, strokeWidth, strokeColor, effectiveWidth);
+        this.drawWithLetterSpacing(ctx, text, x, lineY, letterSpacing, align, strokeWidth, strokeColor, effectiveWidth);
       } else {
         if (strokeWidth > 0) {
           ctx.lineWidth = strokeWidth;
           ctx.strokeStyle = strokeColor;
-          ctx.strokeText(line, x, lineY, maxWidth);
+          ctx.strokeText(text, x, lineY, maxWidth);
         }
-        ctx.fillText(line, x, lineY, maxWidth);
+        ctx.fillText(text, x, lineY, maxWidth);
       }
-      if (underline && line.trim().length) {
+      if (underline && text.trim().length) {
         this.drawUnderline(ctx, x, lineY, effectiveWidth, align, fontSize, metrics, color, strokeWidth);
       }
     });
+
+    if (lines.length) {
+      const padding = Math.max(8, fontSize * 0.12);
+      minX -= padding;
+      maxX += padding;
+      minY -= padding;
+      maxY += padding;
+      const width = Math.max(12, maxX - minX);
+      const height = Math.max(12, maxY - minY);
+      const widthRatio = width / image.width;
+      const heightRatio = height / image.height;
+      const normalizedWidth = Math.min(widthRatio, 1);
+      const normalizedHeight = Math.min(heightRatio, 1);
+
+      let centerX = Number.isFinite(position.x) ? position.x : 0.5;
+      let centerY = Number.isFinite(position.y) ? position.y : 0.5;
+
+      if (normalizedWidth >= 1) {
+        centerX = 0.5;
+      } else if (normalizedWidth > 0) {
+        centerX = clamp(centerX, normalizedWidth / 2, 1 - normalizedWidth / 2);
+      }
+
+      if (normalizedHeight >= 1) {
+        centerY = 0.5;
+      } else if (normalizedHeight > 0) {
+        centerY = clamp(centerY, normalizedHeight / 2, 1 - normalizedHeight / 2);
+      }
+
+      if (!layer.position) {
+        layer.position = { x: centerX, y: centerY };
+      } else if (layer.position.x !== centerX || layer.position.y !== centerY) {
+        layer.position = { ...layer.position, x: centerX, y: centerY };
+      }
+
+      const normalized = {
+        x: normalizedWidth >= 1 ? 0 : clamp(centerX - normalizedWidth / 2, 0, 1 - normalizedWidth),
+        y: normalizedHeight >= 1 ? 0 : clamp(centerY - normalizedHeight / 2, 0, 1 - normalizedHeight),
+        width: normalizedWidth,
+        height: normalizedHeight,
+      };
+      layer.bounds = normalized;
+    }
     ctx.restore();
   }
 

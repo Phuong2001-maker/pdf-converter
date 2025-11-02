@@ -635,6 +635,82 @@
   <input type="file" id="imageInput" accept="image/*,.heic,.heif" multiple hidden>
   <input type="file" id="logoInput" accept="image/*,.svg" hidden>
 
+  <style>
+    .selection-overlay {
+      pointer-events: none;
+      box-sizing: border-box;
+      border: 1.5px dashed var(--color-primary);
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+      transition: none;
+      will-change: transform, width, height;
+      touch-action: none;
+    }
+
+    .selection-overlay.is-active {
+      display: block;
+    }
+
+    .selection-overlay .transform-box {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      pointer-events: auto;
+      cursor: move;
+      touch-action: none;
+    }
+
+    .selection-overlay .transform-box::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      border: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent);
+      pointer-events: none;
+    }
+
+    .selection-overlay .transform-handle {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--color-primary);
+      border: 2px solid var(--color-surface);
+      pointer-events: auto;
+      touch-action: none;
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-primary) 28%, transparent);
+    }
+
+    .selection-overlay .transform-handle.handle-nw {
+      top: -8px;
+      left: -8px;
+      cursor: nwse-resize;
+    }
+
+    .selection-overlay .transform-handle.handle-ne {
+      top: -8px;
+      right: -8px;
+      cursor: nesw-resize;
+    }
+
+    .selection-overlay .transform-handle.handle-sw {
+      bottom: -8px;
+      left: -8px;
+      cursor: nesw-resize;
+    }
+
+    .selection-overlay .transform-handle.handle-se {
+      bottom: -8px;
+      right: -8px;
+      cursor: nwse-resize;
+    }
+
+    .canvas-board.is-pan-mode,
+    .canvas-board.is-pan-mode *:not(.transform-handle) {
+      cursor: grab;
+    }
+  </style>
+
   <script src="vendor/qrcode.min.js"></script>
   <script src="libs/jszip/jszip.min.js"></script>
   <script src="libs/filesaver/FileSaver.min.js"></script>
