@@ -41,6 +41,7 @@ import {
   toggleTips,
   toggleOfflineBanner,
   registerOfflineBanner,
+  bindLayerReorder,
 } from './ui.js';
 
 const canvas = document.getElementById('editorCanvas');
@@ -54,7 +55,6 @@ const workspaceToolbar = document.getElementById('workspaceToolbar');
 const selectFilesButton = document.querySelector('[data-action="select-files"]');
 const useSampleButton = document.querySelector('[data-action="use-sample"]');
 const layerAddTextButton = document.querySelector('[data-action="add-layer-text"]');
-const duplicateLayerButton = document.querySelector('[data-action="duplicate-layer"]');
 const deleteLayerButton = document.querySelector('[data-action="delete-layer"]');
 const savePresetButton = document.querySelector('[data-action="save-preset"]');
 const textStyleToolbar = document.getElementById('textStyleToolbar');
@@ -597,6 +597,7 @@ function init() {
   renderToolTabs(TOOL_DEFINITIONS);
   renderToolPanel(state.activeTool);
   updateToolSelection(state.activeTool);
+  bindLayerReorder(handleLayerReorder);
   registerEvents();
   updateDropzoneVisibility(getActiveImage());
   syncWorkspaceToolbarState(getActiveImage());
@@ -653,7 +654,6 @@ function registerEvents() {
 
   workspaceToolbar?.addEventListener('click', handleToolbarAction);
   layerAddTextButton?.addEventListener('click', createTextLayer);
-  duplicateLayerButton?.addEventListener('click', handleDuplicateLayer);
   deleteLayerButton?.addEventListener('click', handleDeleteLayer);
   savePresetButton?.addEventListener('click', handleSavePreset);
   selectFilesButton?.addEventListener('click', event => {
@@ -671,6 +671,17 @@ function registerEvents() {
   events.addEventListener('ui:layerselected', event => {
     const { layerId } = event.detail;
     setActiveLayer(layerId);
+  });
+
+  events.addEventListener('ui:layertoggle', event => {
+    const { layerId } = event.detail;
+    const image = getActiveImage();
+    if (!image) return;
+    const layer = getLayer(image.id, layerId);
+    if (!layer) return;
+    const nextVisible = layer.visible === false;
+    updateLayer(image.id, layer.id, { visible: nextVisible });
+    events.dispatchEvent(new CustomEvent('layerlistchange', { detail: { imageId: image.id, layers: image.layers.slice() } }));
   });
 
   events.addEventListener('imagelistchange', () => {
@@ -732,6 +743,14 @@ events.addEventListener('layerlistchange', () => {
     syncTextStyleControls();
   }
   queueOverlaySync();
+});
+
+events.addEventListener('layerupdate', () => {
+  const image = getActiveImage();
+  renderLayerList(image);
+  if (state.activeTool === layerTypes.TEXT) {
+    syncTextStyleControls();
+  }
 });
 
 events.addEventListener('layerchange', () => {
@@ -1632,24 +1651,6 @@ async function handleDeleteLayer() {
   renderer.render();
 }
 
-function handleDuplicateLayer() {
-  const image = getActiveImage();
-  if (!image || !state.activeLayerId) return;
-  const layer = getLayer(image.id, state.activeLayerId);
-  if (!layer) return;
-  const duplicate = JSON.parse(JSON.stringify(layer));
-  duplicate.id = undefined;
-  if (duplicate.position) {
-    duplicate.position = {
-      x: clamp(duplicate.position.x + 0.03, 0, 1),
-      y: clamp(duplicate.position.y + 0.03, 0, 1),
-    };
-  }
-  const newLayer = addLayer(image.id, duplicate);
-  setActiveLayer(newLayer.id);
-  renderer.render();
-}
-
 async function handleSavePreset() {
   const tool = state.activeTool;
   const payload = collectToolState(tool);
@@ -1817,6 +1818,30 @@ function renderToolPanel(toolId) {
   }
 }
 
+function handleLayerReorder(orderedIds = []) {
+  const image = getActiveImage();
+  if (!image) return;
+  if (!Array.isArray(orderedIds) || orderedIds.length !== image.layers.length) return;
+  const layerMap = new Map(image.layers.map(layer => [layer.id, layer]));
+  const orderedLayers = [];
+  let changed = false;
+  for (let index = 0; index < orderedIds.length; index += 1) {
+    const id = orderedIds[index];
+    const layer = layerMap.get(id);
+    if (!layer) {
+      return;
+    }
+    orderedLayers.push(layer);
+    if (!changed && image.layers[index] !== layer) {
+      changed = true;
+    }
+  }
+  if (!changed) return;
+  image.layers = orderedLayers;
+  pushHistory(image.id);
+  events.dispatchEvent(new CustomEvent('layerlistchange', { detail: { imageId: image.id, layers: image.layers.slice() } }));
+}
+
 function renderTextPanel(container) {
   const { layer, style } = resolveTextContext();
   const disabled = !(layer && layer.type === layerTypes.TEXT);
@@ -1828,7 +1853,10 @@ function renderTextPanel(container) {
       </label>
       <label class="field">
         <span>${state.locale === 'vi' ? 'Độ mờ (%)' : 'Opacity (%)'}</span>
-        <input type="range" name="opacity" min="10" max="100" value="${Math.round((style.opacity ?? 1) * 100)}" ${disabled ? 'disabled' : ''}>
+        <div class="field-slider">
+          <input type="range" name="opacity" min="10" max="100" value="${Math.round((style.opacity ?? 1) * 100)}" ${disabled ? 'disabled' : ''}>
+          <span class="field-value" data-field="opacity-display">${Math.round((style.opacity ?? 1) * 100)}%</span>
+        </div>
       </label>
     </form>
   `;
@@ -1836,6 +1864,12 @@ function renderTextPanel(container) {
   if (!form) return;
   const contentField = form.elements.content;
   const opacityField = form.elements.opacity;
+  const opacityDisplay = form.querySelector('[data-field="opacity-display"]');
+  const updateOpacityDisplay = value => {
+    if (!opacityDisplay) return;
+    const numeric = Number.isFinite(value) ? Math.round(value) : Math.round((style.opacity ?? 1) * 100);
+    opacityDisplay.textContent = `${numeric}%`;
+  };
   const handleChange = () => {
     const updates = {};
     if (contentField && !contentField.disabled) {
@@ -1845,12 +1879,16 @@ function renderTextPanel(container) {
       const opacityValue = parseFloat(opacityField.value);
       if (!Number.isNaN(opacityValue)) {
         updates.opacity = opacityValue / 100;
+        updateOpacityDisplay(opacityValue);
       }
     }
     if (Object.keys(updates).length) {
       applyTextStyleUpdates(updates);
     }
   };
+  if (opacityField && !Number.isNaN(parseFloat(opacityField.value))) {
+    updateOpacityDisplay(parseFloat(opacityField.value));
+  }
   form.addEventListener('input', handleChange);
   form.addEventListener('change', handleChange);
   return () => {

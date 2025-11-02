@@ -28,7 +28,6 @@ const dom = {
   workspaceTips: document.getElementById('workspaceTips'),
   layerUpButton: document.querySelector('[data-action="layer-up"]'),
   layerDownButton: document.querySelector('[data-action="layer-down"]'),
-  duplicateLayerButton: document.querySelector('[data-action="duplicate-layer"]'),
   deleteLayerButton: document.querySelector('[data-action="delete-layer"]'),
 };
 
@@ -153,11 +152,14 @@ export function renderLayerList(image) {
     const node = template.content.firstElementChild.cloneNode(true);
     const label = layer.name || buildLayerName(layer, image.layers.length - index);
     node.dataset.layerId = layer.id;
+    node.draggable = true;
+    node.setAttribute('draggable', 'true');
     node.querySelector('.layer-name').textContent = label;
     node.querySelector('.layer-desc').textContent = describeLayer(layer);
     node.setAttribute('aria-selected', String(layer.id === state.activeLayerId));
+    node.classList.toggle('is-active', layer.id === state.activeLayerId);
     const toggleButton = node.querySelector('.layer-visibility');
-    toggleButton.setAttribute('aria-pressed', String(!layer.visible === false));
+    toggleButton.setAttribute('aria-pressed', String(layer.visible !== false));
     toggleButton.innerHTML = `<svg class="icon"><use href="#${layer.visible === false ? 'icon-eye-off' : 'icon-eye'}"></use></svg>`;
     toggleButton.addEventListener('click', event => {
       event.stopPropagation();
@@ -212,9 +214,11 @@ export function markActiveLayer(layerId) {
   dom.layerList.querySelectorAll('.layer-item').forEach(item => {
     const isActive = item.dataset.layerId === layerId;
     item.setAttribute('aria-selected', String(isActive));
+    item.classList.toggle('is-active', isActive);
   });
-  dom.duplicateLayerButton.disabled = !layerId;
-  dom.deleteLayerButton.disabled = !layerId;
+  if (dom.deleteLayerButton) {
+    dom.deleteLayerButton.disabled = !layerId;
+  }
 }
 
 export function renderPresetList(presets) {
@@ -376,11 +380,13 @@ export function bindPresetActions(callbacks) {
 
 export function bindLayerReorder(callback) {
   let dragSrc;
+  if (!dom.layerList) return;
   dom.layerList.addEventListener('dragstart', event => {
     const item = event.target.closest('.layer-item');
     if (!item) return;
     dragSrc = item;
     event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', item.dataset.layerId || '');
     item.classList.add('dragging');
   });
   dom.layerList.addEventListener('dragend', () => {
@@ -389,16 +395,23 @@ export function bindLayerReorder(callback) {
   });
   dom.layerList.addEventListener('dragover', event => {
     event.preventDefault();
+     if (!dragSrc) return;
     const target = event.target.closest('.layer-item');
     if (!target || target === dragSrc) return;
     const rect = target.getBoundingClientRect();
     const shouldInsertBefore = event.clientY < rect.top + rect.height / 2;
     dom.layerList.insertBefore(dragSrc, shouldInsertBefore ? target : target.nextSibling);
   });
-  dom.layerList.addEventListener('drop', () => {
+  dom.layerList.addEventListener('drop', event => {
+    event.preventDefault();
     if (!dragSrc) return;
-    const ids = Array.from(dom.layerList.children).map(el => el.dataset.layerId).reverse();
+    dragSrc.classList.remove('dragging');
+    const ids = Array.from(dom.layerList.children)
+      .filter(node => node.classList.contains('layer-item'))
+      .map(el => el.dataset.layerId)
+      .reverse();
     callback?.(ids);
+    dragSrc = null;
   });
 }
 

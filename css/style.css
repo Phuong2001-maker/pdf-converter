@@ -1084,20 +1084,13 @@ button:disabled {
 
 .layer-item[aria-selected="true"] {
   transform: translateY(-1px);
+  background: color-mix(in srgb, var(--color-primary) 14%, var(--color-surface));
+  border-color: color-mix(in srgb, var(--color-primary) 35%, transparent);
 }
 
-.layer-handle {
-  display: inline-flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.layer-handle span {
-  width: 12px;
-  height: 2px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--color-subtext) 65%, transparent);
-  display: block;
+.layer-item.is-active .layer-name {
+  color: var(--color-primary);
+  font-weight: 600;
 }
 
 .layer-meta {
@@ -1169,6 +1162,24 @@ button:disabled {
 
 .field.three-col {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.field-slider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.field-slider input[type="range"] {
+  flex: 1;
+}
+
+.field-value {
+  min-width: 3ch;
+  font-size: 0.86rem;
+  font-weight: 500;
+  color: var(--color-subtext);
+  text-align: right;
 }
 
 .field span,
