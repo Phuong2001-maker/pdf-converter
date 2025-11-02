@@ -62,7 +62,6 @@ const layerAddTextButton = document.querySelector('[data-action="add-layer-text"
 const deleteLayerButton = document.querySelector('[data-action="delete-layer"]');
 const savePresetButton = document.querySelector('[data-action="save-preset"]');
 const textStyleToolbar = document.getElementById('textStyleToolbar');
-const textToolbarDivider = document.getElementById('textToolbarDivider');
 const textFontSizeInput = document.getElementById('textFontSize');
 const textFillColorInput = document.getElementById('textFillColor');
 const textStrokeWidthInput = document.getElementById('textStrokeWidth');
@@ -73,6 +72,7 @@ const textLetterSpacingInput = document.getElementById('textLetterSpacing');
 const textStyleToggleButtons = Array.from(document.querySelectorAll('[data-text-style]'));
 const fontPickerSelect = document.getElementById('fontPickerSelect');
 const fontPickerControl = document.getElementById('fontPickerControl');
+const layerPanel = document.getElementById('layerPanel');
 
 const renderer = new CanvasRenderer(canvas, overlayCanvas);
 const immediateRender = renderer.render.bind(renderer);
@@ -452,12 +452,6 @@ function resolveTextContext() {
 }
 
 function toggleTextToolbar(visible) {
-  if (textStyleToolbar) {
-    textStyleToolbar.hidden = !visible;
-  }
-  if (textToolbarDivider) {
-    textToolbarDivider.hidden = !visible;
-  }
   if (fontPickerControl) {
     fontPickerControl.hidden = !visible;
   }
@@ -2061,8 +2055,9 @@ function renderToolPanel(toolId) {
   container.innerHTML = '';
   const showTextToolbar = toolId === layerTypes.TEXT;
   toggleTextToolbar(showTextToolbar);
-  if (showTextToolbar) {
-    syncTextStyleControls();
+  syncTextStyleControls();
+  if (layerPanel) {
+    layerPanel.hidden = !showTextToolbar;
   }
   switch (toolId) {
     case layerTypes.TEXT:
