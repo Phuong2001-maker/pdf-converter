@@ -115,6 +115,38 @@ const isPointInsideBounds = (bounds, px, py) => {
   if (!bounds) return false;
   return px >= bounds.x && px <= bounds.x + bounds.width && py >= bounds.y && py <= bounds.y + bounds.height;
 };
+const reanchorTextLayerToAlign = (image, layer, alignOverride) => {
+  if (!image || !layer || layer.type !== layerTypes.TEXT) return false;
+  const bounds = layer.bounds;
+  if (!bounds) return false;
+  const align = alignOverride || layer.align || 'center';
+  const widthRatio = clamp(bounds.width ?? 0, 0, 1);
+  let minX = 0.5;
+  let maxX = 0.5;
+  if (widthRatio > 0 && widthRatio < 1) {
+    minX = widthRatio / 2;
+    maxX = 1 - widthRatio / 2;
+  }
+  let desiredX = layer.position?.x ?? 0.5;
+  if (align === 'left') {
+    desiredX = minX;
+  } else if (align === 'right') {
+    desiredX = maxX;
+  } else if (align === 'center') {
+    desiredX = 0.5;
+  } else {
+    return false;
+  }
+  const clampedX = clamp(desiredX, minX, maxX);
+  const currentX = layer.position?.x ?? 0.5;
+  if (Math.abs(currentX - clampedX) < 1e-4) return false;
+  if (!layer.position) {
+    layer.position = { x: clampedX, y: 0.5 };
+  } else {
+    layer.position = { ...layer.position, x: clampedX };
+  }
+  return true;
+};
 const hideSelectionOverlay = () => {
   if (!selectionOverlay) return;
   selectionOverlay.classList.remove('is-active');
@@ -318,9 +350,17 @@ function applyTextStyleUpdates(updates = {}) {
       };
     }
   }
+  const alignChange = Object.prototype.hasOwnProperty.call(nextUpdates, 'align');
+  const uppercaseChange = Object.prototype.hasOwnProperty.call(nextUpdates, 'uppercase');
   if (layer) {
-    updateLayer(image.id, layer.id, nextUpdates);
+    const updatedLayer = updateLayer(image.id, layer.id, nextUpdates);
     renderer.render();
+    if (updatedLayer && image && (alignChange || uppercaseChange)) {
+      const didAdjust = reanchorTextLayerToAlign(image, updatedLayer, nextUpdates.align);
+      if (didAdjust) {
+        renderer.render();
+      }
+    }
   } else {
     Object.assign(toolDefaults[layerTypes.TEXT], nextUpdates);
   }

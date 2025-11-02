@@ -340,9 +340,18 @@ button:disabled {
   border: 1px solid color-mix(in srgb, var(--color-border) 86%, transparent 14%);
   box-shadow: var(--shadow-sm);
   width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
+  position: relative;
+  overflow: visible;
   scrollbar-width: thin;
+  isolation: isolate;
+}
+
+.workspace-toolbar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .workspace-toolbar .toolbar-group {
@@ -435,6 +444,7 @@ button:disabled {
   background: color-mix(in srgb, var(--color-surface) 92%, transparent 8%);
   height: 40px;
   min-width: 72px;
+  position: relative;
 }
 
 .workspace-toolbar [data-tooltip] {
@@ -447,6 +457,7 @@ button:disabled {
   pointer-events: none;
   opacity: 0;
   transition: opacity var(--transition-fast), transform var(--transition-fast);
+  z-index: 100;
 }
 
 .workspace-toolbar [data-tooltip]::after {
@@ -461,7 +472,6 @@ button:disabled {
   font-size: 0.76rem;
   box-shadow: var(--shadow-sm);
   white-space: nowrap;
-  z-index: 10;
 }
 
 .workspace-toolbar [data-tooltip]::before {
@@ -472,7 +482,6 @@ button:disabled {
   border-width: 6px;
   border-style: solid;
   border-color: var(--color-paper-strong, #0B1021) transparent transparent transparent;
-  z-index: 9;
 }
 
 .workspace-toolbar [data-tooltip]:hover::after,
