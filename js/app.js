@@ -56,6 +56,16 @@ const layerAddTextButton = document.querySelector('[data-action="add-layer-text"
 const duplicateLayerButton = document.querySelector('[data-action="duplicate-layer"]');
 const deleteLayerButton = document.querySelector('[data-action="delete-layer"]');
 const savePresetButton = document.querySelector('[data-action="save-preset"]');
+const textStyleToolbar = document.getElementById('textStyleToolbar');
+const textToolbarDivider = document.getElementById('textToolbarDivider');
+const textFontSizeInput = document.getElementById('textFontSize');
+const textFillColorInput = document.getElementById('textFillColor');
+const textStrokeWidthInput = document.getElementById('textStrokeWidth');
+const textStrokeColorInput = document.getElementById('textStrokeColor');
+const textShadowToggle = document.getElementById('textShadowToggle');
+const textAlignButtons = Array.from(document.querySelectorAll('.text-align-btn'));
+const fontPickerSelect = document.getElementById('fontPickerSelect');
+const fontPickerControl = document.getElementById('fontPickerControl');
 
 const renderer = new CanvasRenderer(canvas, overlayCanvas);
 let toolPanelCleanup = null;
@@ -126,6 +136,138 @@ const toolDefaults = {
   },
 };
 
+function resolveTextContext() {
+  const image = getActiveImage();
+  if (!image) {
+    return { image: null, layer: null, style: toolDefaults[layerTypes.TEXT] };
+  }
+  const layer = getLayer(image.id, state.activeLayerId);
+  if (layer && layer.type === layerTypes.TEXT) {
+    return { image, layer, style: layer };
+  }
+  return { image, layer: null, style: toolDefaults[layerTypes.TEXT] };
+}
+
+function toggleTextToolbar(visible) {
+  if (textStyleToolbar) {
+    textStyleToolbar.hidden = !visible;
+  }
+  if (textToolbarDivider) {
+    textToolbarDivider.hidden = !visible;
+  }
+  if (fontPickerControl) {
+    fontPickerControl.hidden = !visible;
+  }
+}
+
+function applyTextStyleUpdates(updates = {}) {
+  const { image, layer, style } = resolveTextContext();
+  const nextUpdates = { ...updates };
+  if (Object.prototype.hasOwnProperty.call(nextUpdates, 'shadow')) {
+    nextUpdates.shadow = {
+      ...(style.shadow || {}),
+      ...(nextUpdates.shadow || {}),
+    };
+  }
+  if (layer) {
+    updateLayer(image.id, layer.id, nextUpdates);
+    renderer.render();
+  } else {
+    Object.assign(toolDefaults[layerTypes.TEXT], nextUpdates);
+  }
+  if (state.activeTool === layerTypes.TEXT) {
+    syncTextStyleControls();
+  }
+}
+
+function syncTextStyleControls() {
+  if (!textStyleToolbar) return;
+  const { layer, style } = resolveTextContext();
+  const hasLayer = Boolean(layer);
+  const fontValue = style.fontFamily || 'Inter';
+  const fillColor = typeof style.color === 'string' && style.color.startsWith('#') ? style.color : '#0F172A';
+  const outlineColor = typeof style.strokeColor === 'string' && style.strokeColor.startsWith('#') ? style.strokeColor : '#ffffff';
+  if (textFontSizeInput) {
+    textFontSizeInput.value = Math.round(style.fontSize || 72);
+    textFontSizeInput.disabled = !hasLayer;
+  }
+  if (textFillColorInput) {
+    textFillColorInput.value = fillColor;
+    textFillColorInput.disabled = !hasLayer;
+  }
+  if (textStrokeWidthInput) {
+    textStrokeWidthInput.value = style.strokeWidth ?? 0;
+    textStrokeWidthInput.disabled = !hasLayer;
+  }
+  if (textStrokeColorInput) {
+    textStrokeColorInput.value = outlineColor;
+    textStrokeColorInput.disabled = !hasLayer;
+  }
+  if (textShadowToggle) {
+    const active = Boolean(style.shadow?.enabled);
+    textShadowToggle.setAttribute('aria-pressed', active ? 'true' : 'false');
+    textShadowToggle.disabled = !hasLayer;
+  }
+  if (textAlignButtons.length) {
+    textAlignButtons.forEach(button => {
+      button.classList.toggle('is-active', style.align === button.dataset.align);
+      button.disabled = !hasLayer;
+    });
+  }
+  if (fontPickerSelect) {
+    const matchingOption = Array.from(fontPickerSelect.options).some(option => option.value === fontValue);
+    fontPickerSelect.value = matchingOption ? fontValue : 'Inter';
+    fontPickerSelect.disabled = !hasLayer;
+  }
+}
+
+function setupTextToolbar() {
+  textFontSizeInput?.addEventListener('input', event => {
+    if (textFontSizeInput.disabled) return;
+    const value = parseFloat(event.target.value);
+    if (Number.isNaN(value)) return;
+    const clamped = clamp(value, parseFloat(textFontSizeInput.min) || 8, parseFloat(textFontSizeInput.max) || 220);
+    applyTextStyleUpdates({ fontSize: clamped });
+  });
+
+  textFillColorInput?.addEventListener('input', event => {
+    if (textFillColorInput.disabled) return;
+    applyTextStyleUpdates({ color: event.target.value });
+  });
+
+  textStrokeWidthInput?.addEventListener('input', event => {
+    if (textStrokeWidthInput.disabled) return;
+    const value = Math.max(0, parseFloat(event.target.value) || 0);
+    applyTextStyleUpdates({ strokeWidth: value });
+  });
+
+  textStrokeColorInput?.addEventListener('input', event => {
+    if (textStrokeColorInput.disabled) return;
+    applyTextStyleUpdates({ strokeColor: event.target.value });
+  });
+
+  textShadowToggle?.addEventListener('click', () => {
+    if (textShadowToggle.disabled) return;
+    const next = textShadowToggle.getAttribute('aria-pressed') !== 'true';
+    textShadowToggle.setAttribute('aria-pressed', next ? 'true' : 'false');
+    applyTextStyleUpdates({ shadow: { enabled: next } });
+  });
+
+  if (textAlignButtons.length) {
+    textAlignButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        if (button.disabled) return;
+        applyTextStyleUpdates({ align: button.dataset.align });
+      });
+    });
+  }
+
+  fontPickerSelect?.addEventListener('change', event => {
+    if (fontPickerSelect.disabled) return;
+    applyTextStyleUpdates({ fontFamily: event.target.value });
+  });
+}
+
 const TOOL_DEFINITIONS = [
   { id: layerTypes.TEXT, icon: 'icon-type' },
   { id: layerTypes.PEN, icon: 'icon-pen' },
@@ -185,6 +327,7 @@ function updateDropzoneVisibility(image) {
 
 function init() {
   initUI();
+  setupTextToolbar();
   loadPresets();
   ensureDefaultPreset();
   renderPresetList(state.presets);
@@ -283,6 +426,9 @@ function registerEvents() {
       });
     }
     renderer.render();
+    if (state.activeTool === layerTypes.TEXT) {
+      syncTextStyleControls();
+    }
   });
 
   events.addEventListener('imagechange', () => {
@@ -300,12 +446,18 @@ function registerEvents() {
       scheduleRendererResize(image);
     }
     renderer.render();
+    if (state.activeTool === layerTypes.TEXT) {
+      syncTextStyleControls();
+    }
   });
 
   events.addEventListener('layerlistchange', () => {
     const image = getActiveImage();
     renderLayerList(image);
     renderer.render();
+    if (state.activeTool === layerTypes.TEXT) {
+      syncTextStyleControls();
+    }
   });
 
   events.addEventListener('layerchange', () => {
@@ -315,6 +467,10 @@ function registerEvents() {
 
   events.addEventListener('presetchange', () => {
     renderPresetList(state.presets);
+  });
+
+  events.addEventListener('toolchange', event => {
+    renderToolPanel(event.detail.toolId);
   });
 
   window.addEventListener('online', () => toggleOfflineBanner(false));
@@ -934,6 +1090,11 @@ function renderToolPanel(toolId) {
     toolPanelCleanup = null;
   }
   container.innerHTML = '';
+  const showTextToolbar = toolId === layerTypes.TEXT;
+  toggleTextToolbar(showTextToolbar);
+  if (showTextToolbar) {
+    syncTextStyleControls();
+  }
   switch (toolId) {
     case layerTypes.TEXT:
       toolPanelCleanup = renderTextPanel(container);
@@ -965,104 +1126,41 @@ function renderToolPanel(toolId) {
 }
 
 function renderTextPanel(container) {
-  const image = getActiveImage();
-  const layer = image ? getLayer(image.id, state.activeLayerId) : null;
-  const current = layer?.type === layerTypes.TEXT ? layer : toolDefaults[layerTypes.TEXT];
+  const { layer, style } = resolveTextContext();
   const disabled = !(layer && layer.type === layerTypes.TEXT);
   container.innerHTML = `
     <form id="textToolForm" class="form-grid" autocomplete="off">
       <label class="field">
         <span>${state.locale === 'vi' ? 'Nội dung chữ ký' : 'Signature content'}</span>
-        <textarea name="content" rows="3" ${disabled ? 'disabled' : ''}>${current.content || ''}</textarea>
+        <textarea name="content" rows="3" ${disabled ? 'disabled' : ''}>${style.content || ''}</textarea>
       </label>
-      <div class="field two-col">
-        <label>
-          <span>${state.locale === 'vi' ? 'Phông chữ' : 'Font family'}</span>
-          <select name="fontFamily" ${disabled ? 'disabled' : ''}>
-            <option value="Inter"${current.fontFamily === 'Inter' ? ' selected' : ''}>Inter</option>
-            <option value="Roboto"${current.fontFamily === 'Roboto' ? ' selected' : ''}>Roboto</option>
-            <option value="'Great Vibes', cursive"${current.fontFamily.includes('Great Vibes') ? ' selected' : ''}>Great Vibes</option>
-            <option value="'Pacifico', cursive"${current.fontFamily.includes('Pacifico') ? ' selected' : ''}>Pacifico</option>
-            <option value="system-ui"${current.fontFamily === 'system-ui' ? ' selected' : ''}>System UI</option>
-          </select>
-        </label>
-      </div>
-      <div class="field two-col">
-        <label>
-          <span>${state.locale === 'vi' ? 'Kích thước (px)' : 'Font size (px)'}</span>
-          <input type="number" name="fontSize" min="8" max="220" value="${current.fontSize || 72}" ${disabled ? 'disabled' : ''}>
-        </label>
-        <label>
-          <span>${state.locale === 'vi' ? 'Độ mờ (%)' : 'Opacity (%)'}</span>
-          <input type="range" name="opacity" min="10" max="100" value="${Math.round((current.opacity ?? 1) * 100)}" ${disabled ? 'disabled' : ''}>
-        </label>
-      </div>
-      <div class="field two-col">
-        <label>
-          <span>${state.locale === 'vi' ? 'Màu chữ' : 'Fill color'}</span>
-          <input type="color" name="color" value="${current.color || '#0F172A'}" ${disabled ? 'disabled' : ''}>
-        </label>
-        <label>
-          <span>${state.locale === 'vi' ? 'Viền (px)' : 'Stroke (px)'}</span>
-          <input type="number" name="strokeWidth" min="0" max="12" value="${current.strokeWidth || 0}" ${disabled ? 'disabled' : ''}>
-        </label>
-      </div>
       <label class="field">
-        <span>${state.locale === 'vi' ? 'Màu viền' : 'Stroke color'}</span>
-        <input type="color" name="strokeColor" value="${current.strokeColor || '#ffffff'}" ${disabled ? 'disabled' : ''}>
+        <span>${state.locale === 'vi' ? 'Độ mờ (%)' : 'Opacity (%)'}</span>
+        <input type="range" name="opacity" min="10" max="100" value="${Math.round((style.opacity ?? 1) * 100)}" ${disabled ? 'disabled' : ''}>
       </label>
-      <label class="switch field">
-        <input type="checkbox" name="shadow" ${current.shadow?.enabled ? 'checked' : ''} ${disabled ? 'disabled' : ''}>
-        <span>${state.locale === 'vi' ? 'Đổ bóng chữ' : 'Drop shadow'}</span>
-      </label>
-      <div class="field">
-        <span>${state.locale === 'vi' ? 'Căn lề' : 'Align'}</span>
-        <div class="chip-set">
-          <button type="button" class="chip${current.align === 'left' ? ' is-active' : ''}" data-align="left"${disabled ? ' disabled' : ''}>${state.locale === 'vi' ? 'Trái' : 'Left'}</button>
-          <button type="button" class="chip${current.align === 'center' ? ' is-active' : ''}" data-align="center"${disabled ? ' disabled' : ''}>${state.locale === 'vi' ? 'Giữa' : 'Center'}</button>
-          <button type="button" class="chip${current.align === 'right' ? ' is-active' : ''}" data-align="right"${disabled ? ' disabled' : ''}>${state.locale === 'vi' ? 'Phải' : 'Right'}</button>
-        </div>
-      </div>
     </form>
   `;
   const form = container.querySelector('#textToolForm');
   if (!form) return;
+  const contentField = form.elements.content;
+  const opacityField = form.elements.opacity;
   const handleChange = () => {
-    const data = new FormData(form);
-    const updates = {
-      content: data.get('content'),
-      fontFamily: data.get('fontFamily'),
-      fontSize: parseFloat(data.get('fontSize')),
-      opacity: parseFloat(data.get('opacity')) / 100,
-      color: data.get('color'),
-      strokeWidth: parseFloat(data.get('strokeWidth')) || 0,
-      strokeColor: data.get('strokeColor'),
-      shadow: {
-        ...(current.shadow || {}),
-        enabled: form.elements.shadow.checked,
-      },
-    };
-    if (layer && layer.type === layerTypes.TEXT) {
-      updateLayer(image.id, layer.id, updates);
-      renderer.render();
-    } else {
-      Object.assign(toolDefaults[layerTypes.TEXT], updates);
+    const updates = {};
+    if (contentField && !contentField.disabled) {
+      updates.content = contentField.value;
+    }
+    if (opacityField && !opacityField.disabled) {
+      const opacityValue = parseFloat(opacityField.value);
+      if (!Number.isNaN(opacityValue)) {
+        updates.opacity = opacityValue / 100;
+      }
+    }
+    if (Object.keys(updates).length) {
+      applyTextStyleUpdates(updates);
     }
   };
   form.addEventListener('input', handleChange);
   form.addEventListener('change', handleChange);
-  form.querySelectorAll('[data-align]').forEach(button => {
-    button.addEventListener('click', () => {
-      form.querySelectorAll('[data-align]').forEach(btn => btn.classList.remove('is-active'));
-      button.classList.add('is-active');
-      if (layer && layer.type === layerTypes.TEXT) {
-        updateLayer(image.id, layer.id, { align: button.dataset.align });
-        renderer.render();
-      } else {
-        toolDefaults[layerTypes.TEXT].align = button.dataset.align;
-      }
-    });
-  });
   return () => {
     form.removeEventListener('input', handleChange);
     form.removeEventListener('change', handleChange);
