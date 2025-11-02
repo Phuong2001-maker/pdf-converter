@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = 'signapp-cache-v1';
+const CACHE_NAME = 'signapp-cache-v2';
 const ASSETS = [
   './ky-ten-anh.html',
   './css/style.css',
