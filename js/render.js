@@ -16,6 +16,7 @@ export class CanvasRenderer {
     this.bounds = { width: canvas.clientWidth, height: canvas.clientHeight };
     this.selection = null;
     this.hoverLayerId = null;
+    this.minScale = 0.1;
   }
 
   resize(width, height) {
@@ -33,7 +34,9 @@ export class CanvasRenderer {
 
   setView({ scale, offset }) {
     if (typeof scale === 'number') {
-      this.view.scale = clamp(scale, 0.1, 8);
+      const min = this.minScale || 0.1;
+      const max = Math.max(8, min * 4);
+      this.view.scale = clamp(scale, min, max);
     }
     if (offset) {
       this.view.offset = { x: offset.x, y: offset.y };
@@ -80,12 +83,12 @@ export class CanvasRenderer {
   }
 
   fitToBounds(imageWidth, imageHeight) {
-    const padding = 48;
-    const availableWidth = this.bounds.width - padding * 2;
-    const availableHeight = this.bounds.height - padding * 2;
-    const scale = Math.min(availableWidth / imageWidth, availableHeight / imageHeight);
+    const availableWidth = this.bounds.width;
+    const availableHeight = this.bounds.height;
+    const scale = Math.max(availableWidth / imageWidth, availableHeight / imageHeight);
     const offsetX = (this.bounds.width - imageWidth * scale) / 2;
     const offsetY = (this.bounds.height - imageHeight * scale) / 2;
+    this.minScale = Math.max(scale, 0.01);
     this.setView({ scale, offset: { x: offsetX, y: offsetY } });
   }
 

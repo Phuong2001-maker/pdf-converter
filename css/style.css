@@ -400,6 +400,10 @@ button:disabled {
   border-radius: var(--radius-lg);
 }
 
+.canvas-board:not([data-state="empty"]) .canvas-dropzone {
+  display: none;
+}
+
 .drop-card {
   max-width: 420px;
   width: 100%;

@@ -155,9 +155,26 @@ function scheduleRendererResize(image = null) {
     renderer.resize(rect.width, rect.height);
     if (image) {
       renderer.fitToBounds(image.width, image.height);
+      const appliedScale = renderer.view.scale;
+      updateImage(image.id, {
+        zoom: appliedScale,
+        pan: { x: renderer.view.offset.x, y: renderer.view.offset.y },
+      });
+      updateZoomLabel(image);
     }
   };
   requestAnimationFrame(attemptResize);
+}
+
+function updateDropzoneVisibility(image) {
+  if (!dropzone) return;
+  const hasImage = Boolean(image);
+  dropzone.hidden = hasImage;
+  dropzone.setAttribute('aria-hidden', hasImage ? 'true' : 'false');
+  dropzone.tabIndex = hasImage ? -1 : 0;
+  if (!hasImage) {
+    dropzone.classList.remove('is-hover');
+  }
 }
 
 function init() {
@@ -169,6 +186,7 @@ function init() {
   renderToolPanel(state.activeTool);
   updateToolSelection(state.activeTool);
   registerEvents();
+  updateDropzoneVisibility(getActiveImage());
   const container = canvas.parentElement;
   if (container) {
     const rect = container.getBoundingClientRect();
@@ -197,6 +215,11 @@ function registerEvents() {
   dropzone?.addEventListener('dragover', handleDragOver);
   dropzone?.addEventListener('dragleave', handleDragLeave);
   dropzone?.addEventListener('drop', handleDrop);
+
+  canvasBoard?.addEventListener('dragover', handleDragOver);
+  canvasBoard?.addEventListener('dragleave', handleDragLeave);
+  canvasBoard?.addEventListener('drop', handleDrop);
+  canvasBoard?.addEventListener('wheel', handleCanvasWheel, { passive: false });
 
   fileInput?.addEventListener('change', handleFileSelection);
   logoInput?.addEventListener('change', handleLogoSelection);
@@ -231,6 +254,7 @@ function registerEvents() {
     renderPresetList(state.presets);
     updateActiveFileName(image?.name || null);
     canvasBoard.dataset.state = image ? 'loaded' : 'empty';
+    updateDropzoneVisibility(image);
     if (image) {
       updateStatusBar({
         dimensions: `${image.width} × ${image.height}px`,
@@ -253,6 +277,7 @@ function registerEvents() {
     renderLayerList(image);
     updateActiveFileName(image?.name || null);
     canvasBoard.dataset.state = image ? 'loaded' : 'empty';
+    updateDropzoneVisibility(image);
     if (image) {
       updateStatusBar({
         dimensions: `${image.width} × ${image.height}px`,
@@ -336,32 +361,29 @@ async function createImageStateFromFile(file) {
     const bitmap = await createImageBitmap(blob, { imageOrientation: 'from-image' });
     let width = bitmap.width;
     let height = bitmap.height;
-    let scaleFactor = 1;
+    let processedBitmap = bitmap;
+    let baseCanvas = null;
     const pixelCount = width * height;
     if (pixelCount > 20_000_000) {
-      const confirm = await showConfirm({
-        message: state.locale === 'vi'
-          ? 'Ảnh lớn hơn 20MP. Giảm 50% để thao tác mượt hơn?'
-          : 'Image exceeds 20MP. Downscale 50% for smoother editing?',
-        confirmLabel: state.locale === 'vi' ? 'Giảm ảnh' : 'Downscale',
-        cancelLabel: state.locale === 'vi' ? 'Giữ nguyên' : 'Keep original',
-      });
-      if (confirm) {
-        scaleFactor = 0.5;
-      }
-    }
-
-    let baseCanvas;
-    if (scaleFactor !== 1) {
-      width = Math.round(width * scaleFactor);
-      height = Math.round(height * scaleFactor);
+      const scaleFactor = 0.5;
+      const targetWidth = Math.round(width * scaleFactor);
+      const targetHeight = Math.round(height * scaleFactor);
       baseCanvas = document.createElement('canvas');
-      baseCanvas.width = width;
-      baseCanvas.height = height;
+      baseCanvas.width = targetWidth;
+      baseCanvas.height = targetHeight;
       const ctx = baseCanvas.getContext('2d');
-      ctx.drawImage(bitmap, 0, 0, width, height);
+      ctx.drawImage(bitmap, 0, 0, targetWidth, targetHeight);
+      processedBitmap = await createImageBitmap(baseCanvas);
+      width = targetWidth;
+      height = targetHeight;
+      showToast({
+        title: state.locale === 'vi' ? 'Đã tối ưu ảnh lớn' : 'Large image optimized',
+        message: state.locale === 'vi'
+          ? 'Ảnh vượt 20MP được giảm 50% để thao tác mượt mà hơn.'
+          : 'Images above 20MP are downscaled 50% to keep editing smooth.',
+        tone: 'info',
+      });
     }
-
     const objectUrl = URL.createObjectURL(blob);
     const sizeMb = (file.size / 1024 / 1024).toFixed(2);
     const imageState = {
@@ -371,7 +393,7 @@ async function createImageStateFromFile(file) {
       height,
       sourceWidth: bitmap.width,
       sourceHeight: bitmap.height,
-      bitmap: scaleFactor === 1 ? bitmap : await createImageBitmap(baseCanvas),
+      bitmap: processedBitmap,
       baseCanvas,
       objectUrl,
       sizeBytes: file.size,
@@ -392,8 +414,6 @@ async function createImageStateFromFile(file) {
     });
 
     updateActiveFileName(imageState.name);
-    canvasBoard.dataset.state = 'loaded';
-    renderer.render();
     return imageState;
   } catch (error) {
     console.error('Failed to load image', error);
@@ -411,6 +431,19 @@ function estimateMemoryUsage(image) {
   const bytes = pixels * 4;
   const mb = bytes / 1024 / 1024;
   return `${state.locale === 'vi' ? 'RAM ước tính:' : 'Estimated RAM:'} ${mb.toFixed(1)} MB`;
+}
+
+function handleCanvasWheel(event) {
+  const image = getActiveImage();
+  if (!image) return;
+  if (!event.target.closest?.('.canvas-board')) return;
+  event.preventDefault();
+  const delta = event.deltaY;
+  if (!delta) return;
+  const zoomFactor = delta < 0 ? 1.2 : 1 / 1.2;
+  setZoom(image, image.zoom * zoomFactor, {
+    focus: { clientX: event.clientX, clientY: event.clientY },
+  });
 }
 
 function handleCanvasPointerDown(event) {
@@ -619,6 +652,10 @@ function finalizeLayerDrag() {
 
 function handleToolbarAction(event) {
   const action = event.currentTarget.dataset.action;
+  if (action === 'select-files') {
+    fileInput?.click();
+    return;
+  }
   const image = getActiveImage();
   if (!image) return;
   switch (action) {
@@ -630,6 +667,10 @@ function handleToolbarAction(event) {
       break;
     case 'fit':
       renderer.fitToBounds(image.width, image.height);
+      updateImage(image.id, {
+        zoom: renderer.view.scale,
+        pan: { x: renderer.view.offset.x, y: renderer.view.offset.y },
+      });
       updateZoomLabel(image);
       break;
     case 'fill':
@@ -637,6 +678,11 @@ function handleToolbarAction(event) {
       break;
     case 'center':
       renderer.fitToBounds(image.width, image.height);
+      updateImage(image.id, {
+        zoom: renderer.view.scale,
+        pan: { x: renderer.view.offset.x, y: renderer.view.offset.y },
+      });
+      updateZoomLabel(image);
       break;
     case 'toggle-grid':
       updateImage(image.id, { grid: !image.grid });
@@ -655,22 +701,57 @@ function handleToolbarAction(event) {
   }
 }
 
-function setZoom(image, zoom) {
-  const next = clamp(zoom, 0.1, 8);
-  updateImage(image.id, { zoom: next });
-  renderer.setView({ scale: next, offset: renderer.view.offset });
+function setZoom(image, zoom, options = {}) {
+  const fallbackScale = Math.min(
+    renderer.bounds.width ? renderer.bounds.width / image.width : 0.1,
+    renderer.bounds.height ? renderer.bounds.height / image.height : 0.1,
+  );
+  const minScale = renderer.minScale || Math.max(fallbackScale, 0.1);
+  const maxScale = Math.max(8, minScale * 4);
+  const next = clamp(zoom, minScale, maxScale);
+  const focus = options.focus;
+  let nextOffset = renderer.view.offset;
+  if (focus) {
+    const rect = canvas.getBoundingClientRect();
+    const localX = focus.clientX - rect.left;
+    const localY = focus.clientY - rect.top;
+    const imagePoint = renderer.screenToImage(focus.clientX, focus.clientY);
+    nextOffset = {
+      x: localX - imagePoint.x * next,
+      y: localY - imagePoint.y * next,
+    };
+  }
+  const clampedOffset = clampViewOffset(image, nextOffset, next);
+  renderer.setView({ scale: next, offset: clampedOffset });
+  const appliedScale = renderer.view.scale;
+  updateImage(image.id, {
+    zoom: appliedScale,
+    pan: { x: renderer.view.offset.x, y: renderer.view.offset.y },
+  });
   updateZoomLabel(image);
-  renderer.render();
+}
+
+function clampViewOffset(image, offset, scale) {
+  const viewWidth = renderer.bounds.width;
+  const viewHeight = renderer.bounds.height;
+  const current = offset || renderer.view.offset;
+  const offsetX = typeof current.x === 'number' ? current.x : 0;
+  const offsetY = typeof current.y === 'number' ? current.y : 0;
+  const minX = Math.min(0, viewWidth - image.width * scale);
+  const minY = Math.min(0, viewHeight - image.height * scale);
+  const clampedX = clamp(offsetX, minX, 0);
+  const clampedY = clamp(offsetY, minY, 0);
+  return { x: clampedX, y: clampedY };
 }
 
 function computeFillZoom(image) {
-  const padding = 24;
-  const availableWidth = renderer.bounds.width - padding * 2;
-  const availableHeight = renderer.bounds.height - padding * 2;
+  const availableWidth = renderer.bounds.width;
+  const availableHeight = renderer.bounds.height;
   return Math.max(availableWidth / image.width, availableHeight / image.height);
 }
 
 function updateZoomLabel(image) {
+  if (!image || typeof image.zoom !== 'number') return;
   updateStatusBar({ zoom: `Zoom: ${(image.zoom * 100).toFixed(0)}%` });
 }
 
