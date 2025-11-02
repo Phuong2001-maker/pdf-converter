@@ -64,6 +64,8 @@ const textStrokeWidthInput = document.getElementById('textStrokeWidth');
 const textStrokeColorInput = document.getElementById('textStrokeColor');
 const textShadowToggle = document.getElementById('textShadowToggle');
 const textAlignButtons = Array.from(document.querySelectorAll('.text-align-btn'));
+const textLetterSpacingInput = document.getElementById('textLetterSpacing');
+const textStyleToggleButtons = Array.from(document.querySelectorAll('[data-text-style]'));
 const fontPickerSelect = document.getElementById('fontPickerSelect');
 const fontPickerControl = document.getElementById('fontPickerControl');
 
@@ -98,6 +100,7 @@ const toolDefaults = {
     position: { x: 0.5, y: 0.65 },
     maxWidthRatio: null,
     letterSpacing: 0,
+    underline: false,
     snap: true,
   },
   [layerTypes.PEN]: {
@@ -203,10 +206,33 @@ function syncTextStyleControls() {
     textStrokeColorInput.value = outlineColor;
     textStrokeColorInput.disabled = !hasLayer;
   }
+  if (textLetterSpacingInput) {
+    textLetterSpacingInput.value = style.letterSpacing ?? 0;
+    textLetterSpacingInput.disabled = !hasLayer;
+  }
   if (textShadowToggle) {
     const active = Boolean(style.shadow?.enabled);
     textShadowToggle.setAttribute('aria-pressed', active ? 'true' : 'false');
+    textShadowToggle.classList.toggle('is-active', active);
     textShadowToggle.disabled = !hasLayer;
+  }
+  if (textStyleToggleButtons.length) {
+    textStyleToggleButtons.forEach(button => {
+      const styleKey = button.dataset.textStyle;
+      let isActive = false;
+      if (styleKey === 'bold') {
+        isActive = (style.fontWeight ?? 400) >= 600;
+      } else if (styleKey === 'italic') {
+        isActive = Boolean(style.italic);
+      } else if (styleKey === 'underline') {
+        isActive = Boolean(style.underline);
+      } else if (styleKey === 'uppercase') {
+        isActive = Boolean(style.uppercase);
+      }
+      button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      button.classList.toggle('is-active', isActive);
+      button.disabled = !hasLayer;
+    });
   }
   if (textAlignButtons.length) {
     textAlignButtons.forEach(button => {
@@ -227,6 +253,7 @@ function setupTextToolbar() {
     const value = parseFloat(event.target.value);
     if (Number.isNaN(value)) return;
     const clamped = clamp(value, parseFloat(textFontSizeInput.min) || 8, parseFloat(textFontSizeInput.max) || 220);
+    textFontSizeInput.value = clamped;
     applyTextStyleUpdates({ fontSize: clamped });
   });
 
@@ -237,7 +264,10 @@ function setupTextToolbar() {
 
   textStrokeWidthInput?.addEventListener('input', event => {
     if (textStrokeWidthInput.disabled) return;
-    const value = Math.max(0, parseFloat(event.target.value) || 0);
+    const min = parseFloat(textStrokeWidthInput.min) || 0;
+    const max = parseFloat(textStrokeWidthInput.max) || 12;
+    const value = clamp(parseFloat(event.target.value) || 0, min, max);
+    textStrokeWidthInput.value = value;
     applyTextStyleUpdates({ strokeWidth: value });
   });
 
@@ -246,12 +276,41 @@ function setupTextToolbar() {
     applyTextStyleUpdates({ strokeColor: event.target.value });
   });
 
+  textLetterSpacingInput?.addEventListener('input', event => {
+    if (textLetterSpacingInput.disabled) return;
+    const value = parseFloat(event.target.value);
+    if (Number.isNaN(value)) return;
+    const min = parseFloat(textLetterSpacingInput.min) || -20;
+    const max = parseFloat(textLetterSpacingInput.max) || 60;
+    const clamped = clamp(value, min, max);
+    textLetterSpacingInput.value = clamped;
+    applyTextStyleUpdates({ letterSpacing: clamped });
+  });
+
   textShadowToggle?.addEventListener('click', () => {
     if (textShadowToggle.disabled) return;
     const next = textShadowToggle.getAttribute('aria-pressed') !== 'true';
-    textShadowToggle.setAttribute('aria-pressed', next ? 'true' : 'false');
     applyTextStyleUpdates({ shadow: { enabled: next } });
   });
+
+  if (textStyleToggleButtons.length) {
+    textStyleToggleButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        if (button.disabled) return;
+        const isActive = button.getAttribute('aria-pressed') === 'true';
+        const styleKey = button.dataset.textStyle;
+        if (styleKey === 'bold') {
+          applyTextStyleUpdates({ fontWeight: isActive ? 400 : 700 });
+        } else if (styleKey === 'italic') {
+          applyTextStyleUpdates({ italic: !isActive });
+        } else if (styleKey === 'underline') {
+          applyTextStyleUpdates({ underline: !isActive });
+        } else if (styleKey === 'uppercase') {
+          applyTextStyleUpdates({ uppercase: !isActive });
+        }
+      });
+    });
+  }
 
   if (textAlignButtons.length) {
     textAlignButtons.forEach(button => {

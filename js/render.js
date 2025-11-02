@@ -167,6 +167,7 @@ export class CanvasRenderer {
       position = { x: 0.5, y: 0.5 },
       lineHeight = 1.24,
       letterSpacing = 0,
+      underline = false,
       maxWidthRatio = null,
     } = layer;
 
@@ -195,8 +196,10 @@ export class CanvasRenderer {
 
     lines.forEach((line, index) => {
       const lineY = startY + index * fontSize * lineHeight;
+      const metrics = ctx.measureText(line);
+      const effectiveWidth = this.calculateLineWidth(line, metrics.width, letterSpacing);
       if (letterSpacing) {
-        this.drawWithLetterSpacing(ctx, line, x, lineY, letterSpacing, align);
+        this.drawWithLetterSpacing(ctx, line, x, lineY, letterSpacing, align, strokeWidth, strokeColor, effectiveWidth);
       } else {
         if (strokeWidth > 0) {
           ctx.lineWidth = strokeWidth;
@@ -205,23 +208,62 @@ export class CanvasRenderer {
         }
         ctx.fillText(line, x, lineY, maxWidth);
       }
+      if (underline && line.trim().length) {
+        this.drawUnderline(ctx, x, lineY, effectiveWidth, align, fontSize, metrics, color, strokeWidth);
+      }
     });
     ctx.restore();
   }
 
-  drawWithLetterSpacing(ctx, text, x, y, letterSpacing, align) {
+  calculateLineWidth(text, measuredWidth, letterSpacing) {
+    if (!text) return 0;
     const characters = [...text];
-    const totalWidth = ctx.measureText(text).width + letterSpacing * (characters.length - 1);
-    let cursor = x;
-    if (align === 'center') {
-      cursor = x - totalWidth / 2;
-    } else if (align === 'right') {
-      cursor = x - totalWidth;
+    if (!letterSpacing || characters.length <= 1) {
+      return measuredWidth;
     }
+    return measuredWidth + letterSpacing * (characters.length - 1);
+  }
+
+  computeAlignedStart(x, width, align) {
+    if (align === 'center') {
+      return x - width / 2;
+    }
+    if (align === 'right') {
+      return x - width;
+    }
+    return x;
+  }
+
+  drawWithLetterSpacing(ctx, text, x, y, letterSpacing, align, strokeWidth, strokeColor, lineWidth) {
+    const characters = [...text];
+    const totalWidth = lineWidth ?? this.calculateLineWidth(text, ctx.measureText(text).width, letterSpacing);
+    let cursor = this.computeAlignedStart(x, totalWidth, align);
     characters.forEach(char => {
+      if (strokeWidth > 0) {
+        ctx.lineWidth = strokeWidth;
+        ctx.strokeStyle = strokeColor;
+        ctx.strokeText(char, cursor, y);
+      }
       ctx.fillText(char, cursor, y);
       cursor += ctx.measureText(char).width + letterSpacing;
     });
+  }
+
+  drawUnderline(ctx, x, y, width, align, fontSize, metrics, color, strokeWidth) {
+    if (!width) return;
+    const descent = metrics?.actualBoundingBoxDescent ?? fontSize * 0.25;
+    const offset = fontSize * 0.08;
+    const underlineY = y + descent + offset;
+    const startX = this.computeAlignedStart(x, width, align);
+    ctx.save();
+    ctx.shadowColor = 'transparent';
+    ctx.beginPath();
+    ctx.lineWidth = Math.max(1, strokeWidth > 0 ? strokeWidth : Math.round(fontSize * 0.06));
+    ctx.strokeStyle = color;
+    ctx.moveTo(startX, underlineY);
+    ctx.lineTo(startX + width, underlineY);
+    ctx.stroke();
+    ctx.restore();
   }
 
   drawPenLayer(ctx, image, layer) {

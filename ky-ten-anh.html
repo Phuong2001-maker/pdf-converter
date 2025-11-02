@@ -115,6 +115,31 @@
       <path d="M6 12h9a3 3 0 0 1 3 3"></path>
       <rect x="3" y="9" width="9" height="9" rx="2"></rect>
     </symbol>
+    <symbol id="icon-letter-spacing" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m8 19 4-14 4 14"></path>
+      <path d="M4 19h4"></path>
+      <path d="M16 19h4"></path>
+      <path d="M9 14h6"></path>
+    </symbol>
+    <symbol id="icon-text-bold" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M7 4h6.5a3.5 3.5 0 0 1 0 7H7z"></path>
+      <path d="M7 11h7a3.5 3.5 0 0 1 0 7H7z"></path>
+    </symbol>
+    <symbol id="icon-text-italic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10 4h10"></path>
+      <path d="M4 20h10"></path>
+      <path d="M15 4 9 20"></path>
+    </symbol>
+    <symbol id="icon-text-underline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M7 4v6a5 5 0 0 0 10 0V4"></path>
+      <path d="M5 20h14"></path>
+    </symbol>
+    <symbol id="icon-text-uppercase" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m4 19 4-14 4 14"></path>
+      <path d="M5.5 14h4.9"></path>
+      <path d="m12 19 4-14 4 14"></path>
+      <path d="M13.5 14h4.9"></path>
+    </symbol>
     <symbol id="icon-align-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
       <path d="M4 6h16"></path>
       <path d="M4 10h10"></path>
@@ -381,21 +406,39 @@
             </div>
             <div class="toolbar-divider toolbar-divider--group" id="textToolbarDivider" aria-hidden="true" hidden></div>
             <div class="toolbar-group text-style-toolbar" id="textStyleToolbar" hidden>
-              <div class="text-control">
+              <label class="text-tool" for="textFontSize">
                 <svg class="icon" aria-hidden="true"><use href="#icon-font-size"></use></svg>
                 <input type="number" min="8" max="220" id="textFontSize" aria-label="Kích thước chữ (px)">
-              </div>
-              <div class="text-control">
+              </label>
+              <label class="text-tool text-tool--color" for="textFillColor">
                 <svg class="icon" aria-hidden="true"><use href="#icon-color"></use></svg>
                 <input type="color" id="textFillColor" aria-label="Màu chữ">
-              </div>
-              <div class="text-control">
+              </label>
+              <label class="text-tool" for="textStrokeWidth">
                 <svg class="icon" aria-hidden="true"><use href="#icon-outline"></use></svg>
                 <input type="number" min="0" max="12" id="textStrokeWidth" aria-label="Độ dày viền (px)">
-              </div>
-              <div class="text-control">
+              </label>
+              <label class="text-tool text-tool--color" for="textStrokeColor">
                 <svg class="icon" aria-hidden="true"><use href="#icon-color"></use></svg>
                 <input type="color" id="textStrokeColor" aria-label="Màu viền">
+              </label>
+              <label class="text-tool" for="textLetterSpacing">
+                <svg class="icon" aria-hidden="true"><use href="#icon-letter-spacing"></use></svg>
+                <input type="number" step="1" min="-20" max="60" id="textLetterSpacing" aria-label="Giãn cách chữ">
+              </label>
+              <div class="text-toggle-group" role="group" aria-label="Định dạng chữ">
+                <button type="button" class="text-toggle" data-text-style="bold" aria-pressed="false" aria-label="In đậm">
+                  <svg class="icon"><use href="#icon-text-bold"></use></svg>
+                </button>
+                <button type="button" class="text-toggle" data-text-style="italic" aria-pressed="false" aria-label="In nghiêng">
+                  <svg class="icon"><use href="#icon-text-italic"></use></svg>
+                </button>
+                <button type="button" class="text-toggle" data-text-style="underline" aria-pressed="false" aria-label="Gạch chân">
+                  <svg class="icon"><use href="#icon-text-underline"></use></svg>
+                </button>
+                <button type="button" class="text-toggle" data-text-style="uppercase" aria-pressed="false" aria-label="Viết hoa">
+                  <svg class="icon"><use href="#icon-text-uppercase"></use></svg>
+                </button>
               </div>
               <button type="button" class="text-toggle" id="textShadowToggle" aria-pressed="false" aria-label="Bật tắt đổ bóng chữ">
                 <svg class="icon"><use href="#icon-shadow"></use></svg>
