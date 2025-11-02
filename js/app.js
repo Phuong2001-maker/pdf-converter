@@ -355,6 +355,17 @@ const SIGNATURE_PRESETS = [
   },
 ];
 
+const PEN_COLOR_PRESETS = [
+  '#0F172A',
+  '#1E293B',
+  '#2563EB',
+  '#0EA5E9',
+  '#9333EA',
+  '#F97316',
+  '#FACC15',
+  '#FFFFFF',
+];
+
 const toolDefaults = {
   [layerTypes.TEXT]: {
     content: 'Ký tên mẫu',
@@ -2134,44 +2145,152 @@ function renderTextPanel(container) {
 }
 
 function renderPenPanel(container) {
-  const form = document.createElement('form');
-  form.className = 'form-grid';
-  form.innerHTML = `
-    <label class="field">
-      <span>${state.locale === 'vi' ? 'Màu bút' : 'Pen color'}</span>
-      <input type="color" name="color" value="${toolDefaults[layerTypes.PEN].color}">
-    </label>
-    <label class="field">
-      <span>${state.locale === 'vi' ? 'Độ dày nét' : 'Stroke width'}</span>
-      <input type="range" name="size" min="1" max="48" value="${toolDefaults[layerTypes.PEN].size}">
-    </label>
-    <label class="field">
-      <span>${state.locale === 'vi' ? 'Smooth' : 'Smoothing'}</span>
-      <input type="range" name="smoothing" min="0" max="1" step="0.05" value="${toolDefaults[layerTypes.PEN].smoothing}">
-    </label>
-    <label class="switch field">
-      <input type="checkbox" name="roundCap" ${toolDefaults[layerTypes.PEN].roundCap ? 'checked' : ''}>
-      <span>${state.locale === 'vi' ? 'Đầu tròn' : 'Round cap'}</span>
-    </label>
-    <div class="chip-set">
-      <button type="button" class="chip" data-action="pen-undo">Undo</button>
-      <button type="button" class="chip" data-action="pen-clear">${state.locale === 'vi' ? 'Xoá nét' : 'Clear'}</button>
+  const localeIsVi = state.locale === 'vi';
+  const defaults = toolDefaults[layerTypes.PEN];
+  const thicknessPresets = [2, 4, 6, 8, 12];
+  const currentColor = defaults.color || PEN_COLOR_PRESETS[0];
+  const currentSize = Number.isFinite(defaults.size) ? defaults.size : 4;
+  const currentSmoothing = Number.isFinite(defaults.smoothing) ? defaults.smoothing : 0.65;
+  const currentRoundCap = defaults.roundCap ?? true;
+  container.innerHTML = `
+    <div class="pen-panel">
+      <section class="pen-section">
+        <div class="pen-section-header">
+          <h4>${localeIsVi ? 'Màu bút' : 'Pen color'}</h4>
+          <p>${localeIsVi ? 'Palette gợi ý với độ tương phản cao cho chữ ký tay.' : 'Curated palette with high contrast for signatures.'}</p>
+        </div>
+        <div class="pen-color-grid">
+          ${PEN_COLOR_PRESETS.map(color => {
+            const isActive = color.toLowerCase() === currentColor.toLowerCase();
+            return `<button type="button" class="pen-color${isActive ? ' is-active' : ''}" style="--swatch:${color}" data-color="${color}" aria-label="${color}"></button>`;
+          }).join('')}
+        </div>
+        <div class="pen-color-custom">
+          <label for="penColorPicker">${localeIsVi ? 'Màu tuỳ chỉnh' : 'Custom color'}</label>
+          <div class="pen-color-input">
+            <input type="color" id="penColorPicker" value="${currentColor}">
+            <span class="pen-color-value" data-field="pen-color-value">${currentColor.toUpperCase()}</span>
+          </div>
+        </div>
+      </section>
+      <section class="pen-section">
+        <div class="pen-section-header">
+          <h4>${localeIsVi ? 'Độ dày nét' : 'Stroke weight'}</h4>
+          <p>${localeIsVi ? 'Điều chỉnh độ lớn của nét bút hoặc chọn nhanh bên dưới.' : 'Fine-tune stroke size or pick a preset below.'}</p>
+        </div>
+        <div class="pen-slider">
+          <input type="range" id="penSizeRange" name="size" min="1" max="48" value="${currentSize}">
+          <span class="pen-slider-value" data-field="pen-size-display">${Math.round(currentSize)} px</span>
+        </div>
+        <div class="pen-weight-presets">
+          ${thicknessPresets.map(size => `<button type="button" class="pen-weight-chip${Math.round(currentSize) === size ? ' is-active' : ''}" data-size="${size}">${size}<span>px</span></button>`).join('')}
+        </div>
+      </section>
+      <section class="pen-section">
+        <div class="pen-section-header">
+          <h4>${localeIsVi ? 'Độ mượt' : 'Smoothing'}</h4>
+          <p>${localeIsVi ? 'Giảm rung tay để nét chữ mềm mại hơn.' : 'Reduce jitter for smoother handwriting.'}</p>
+        </div>
+        <div class="pen-slider">
+          <input type="range" id="penSmoothingRange" name="smoothing" min="0" max="1" step="0.05" value="${currentSmoothing}">
+          <span class="pen-slider-value" data-field="pen-smoothing-display">${Math.round(currentSmoothing * 100)}%</span>
+        </div>
+      </section>
+      <section class="pen-section pen-options">
+        <label class="switch">
+          <input type="checkbox" id="penRoundCap" ${currentRoundCap ? 'checked' : ''}>
+          <span>${localeIsVi ? 'Đầu tròn' : 'Round cap'}</span>
+        </label>
+        <div class="pen-actions">
+          <button type="button" class="btn ghost" data-action="pen-undo">
+            <svg class="icon"><use href="#icon-undo"></use></svg>
+            <span>Undo</span>
+          </button>
+          <button type="button" class="btn ghost danger" data-action="pen-clear">
+            <svg class="icon"><use href="#icon-eraser"></use></svg>
+            <span>${localeIsVi ? 'Xoá nét' : 'Clear'}</span>
+          </button>
+        </div>
+      </section>
     </div>
   `;
-  container.appendChild(form);
-  const handleChange = () => {
-    const data = new FormData(form);
+  const disposers = [];
+  const addListener = (element, event, handler) => {
+    if (!element) return;
+    element.addEventListener(event, handler);
+    disposers.push(() => element.removeEventListener(event, handler));
+  };
+  const setPenDefaults = updates => {
     toolDefaults[layerTypes.PEN] = {
-      color: data.get('color'),
-      size: parseFloat(data.get('size')),
-      smoothing: parseFloat(data.get('smoothing')),
-      roundCap: form.elements.roundCap.checked,
+      ...toolDefaults[layerTypes.PEN],
+      ...updates,
     };
   };
-  form.addEventListener('input', handleChange);
-  form.addEventListener('change', handleChange);
-  form.querySelectorAll('[data-action]').forEach(button => {
-    button.addEventListener('click', () => {
+  const paletteButtons = Array.from(container.querySelectorAll('.pen-color'));
+  const colorInput = container.querySelector('#penColorPicker');
+  const colorValue = container.querySelector('[data-field="pen-color-value"]');
+  const normalizeColor = color => (color || '').toLowerCase();
+  const setColor = color => {
+    if (!color) return;
+    const normalized = color.startsWith('#') ? color : `#${color}`;
+    setPenDefaults({ color: normalized });
+    if (colorInput) {
+      colorInput.value = normalized;
+    }
+    if (colorValue) {
+      colorValue.textContent = normalized.toUpperCase();
+    }
+    paletteButtons.forEach(button => {
+      button.classList.toggle('is-active', normalizeColor(button.dataset.color) === normalizeColor(normalized));
+    });
+  };
+  paletteButtons.forEach(button => {
+    addListener(button, 'click', () => setColor(button.dataset.color));
+  });
+  addListener(colorInput, 'input', event => setColor(event.target.value));
+
+  const sizeRange = container.querySelector('#penSizeRange');
+  const sizeDisplay = container.querySelector('[data-field="pen-size-display"]');
+  const sizeChips = Array.from(container.querySelectorAll('.pen-weight-chip'));
+  const setSize = value => {
+    const numeric = Math.min(48, Math.max(1, parseFloat(value) || currentSize));
+    setPenDefaults({ size: numeric });
+    if (sizeRange) {
+      sizeRange.value = numeric;
+    }
+    if (sizeDisplay) {
+      sizeDisplay.textContent = `${Math.round(numeric)} px`;
+    }
+    sizeChips.forEach(chip => {
+      chip.classList.toggle('is-active', Math.round(numeric) === Number(chip.dataset.size));
+    });
+  };
+  addListener(sizeRange, 'input', event => setSize(event.target.value));
+  sizeChips.forEach(chip => {
+    addListener(chip, 'click', () => setSize(chip.dataset.size));
+  });
+
+  const smoothingRange = container.querySelector('#penSmoothingRange');
+  const smoothingDisplay = container.querySelector('[data-field="pen-smoothing-display"]');
+  const setSmoothing = value => {
+    const numeric = Math.min(1, Math.max(0, parseFloat(value)));
+    setPenDefaults({ smoothing: numeric });
+    if (smoothingRange) {
+      smoothingRange.value = numeric;
+    }
+    if (smoothingDisplay) {
+      smoothingDisplay.textContent = `${Math.round(numeric * 100)}%`;
+    }
+  };
+  addListener(smoothingRange, 'input', event => setSmoothing(event.target.value));
+
+  const roundCapToggle = container.querySelector('#penRoundCap');
+  addListener(roundCapToggle, 'change', event => {
+    setPenDefaults({ roundCap: event.target.checked });
+  });
+
+  container.querySelectorAll('[data-action]').forEach(button => {
+    addListener(button, 'click', () => {
       const action = button.dataset.action;
       const image = getActiveImage();
       if (!image) return;
@@ -2187,9 +2306,17 @@ function renderPenPanel(container) {
       renderer.render();
     });
   });
+
+  // initialise UI state
+  setColor(currentColor);
+  setSize(currentSize);
+  setSmoothing(currentSmoothing);
+  if (roundCapToggle) {
+    roundCapToggle.checked = !!currentRoundCap;
+  }
+
   return () => {
-    form.removeEventListener('input', handleChange);
-    form.removeEventListener('change', handleChange);
+    disposers.forEach(dispose => dispose());
   };
 }
 

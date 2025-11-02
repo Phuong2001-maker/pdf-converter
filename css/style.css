@@ -1363,6 +1363,192 @@ button:disabled {
   letter-spacing: 0.08em;
 }
 
+.pen-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pen-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: var(--radius-lg);
+  border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+  background: color-mix(in srgb, var(--color-surface) 95%, transparent 5%);
+  box-shadow: var(--shadow-xs);
+}
+
+.pen-section-header h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--color-heading);
+}
+
+.pen-section-header p {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  color: var(--color-subtext);
+}
+
+.pen-color-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+  gap: 10px;
+}
+
+.pen-color {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--swatch);
+  border: 2px solid transparent;
+  box-shadow: inset 0 0 0 1px rgba(17, 24, 39, 0.08);
+  transition: transform var(--transition-fast), box-shadow var(--transition), border-color var(--transition);
+  position: relative;
+  appearance: none;
+}
+
+.pen-color:hover,
+.pen-color:focus-visible {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--color-primary) 35%, transparent);
+  box-shadow: var(--shadow-sm);
+  outline: none;
+}
+
+.pen-color.is-active {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 20%, transparent);
+}
+
+.pen-color.is-active::after {
+  content: '';
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--color-surface);
+  background: var(--color-primary);
+  position: absolute;
+  top: 6px;
+  right: 6px;
+}
+
+.pen-color-custom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pen-color-custom label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-subtext);
+}
+
+.pen-color-input {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+  background: color-mix(in srgb, var(--color-muted-surface) 40%, transparent 60%);
+}
+
+.pen-color-input input[type="color"] {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.pen-color-value {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--color-heading);
+}
+
+.pen-slider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.pen-slider input[type="range"] {
+  flex: 1;
+}
+
+.pen-slider-value {
+  min-width: 52px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-subtext);
+  text-align: right;
+}
+
+.pen-weight-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pen-weight-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-muted-surface) 50%, transparent 50%);
+  border: 1px solid color-mix(in srgb, var(--color-border) 65%, transparent);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: transform var(--transition-fast), border-color var(--transition), background var(--transition);
+  appearance: none;
+}
+
+.pen-weight-chip span {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--color-subtext);
+}
+
+.pen-weight-chip:hover,
+.pen-weight-chip:focus-visible {
+  transform: translateY(-1px);
+  border-color: var(--color-primary);
+  outline: none;
+}
+
+.pen-weight-chip.is-active {
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.pen-options {
+  gap: 18px;
+}
+
+.pen-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pen-actions .btn {
+  flex: 1;
+  min-width: 130px;
+  justify-content: center;
+}
 .signature-card.is-dark .signature-meta {
   color: rgba(248, 250, 252, 0.8);
 }
