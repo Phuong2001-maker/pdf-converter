@@ -470,14 +470,42 @@ export class CanvasRenderer {
       imageElement.src = dataUrl;
       return;
     }
-    const scaledSize = size;
-    const x = position.x * image.width;
-    const y = position.y * image.height;
+    const tileSize = size + margin * 2;
+    const widthRatio = clamp(tileSize / image.width, 0, 1);
+    const heightRatio = clamp(tileSize / image.height, 0, 1);
+    const minX = widthRatio >= 1 ? 0.5 : widthRatio / 2;
+    const minY = heightRatio >= 1 ? 0.5 : heightRatio / 2;
+    let centerX = Number.isFinite(position.x) ? position.x : 0.5;
+    let centerY = Number.isFinite(position.y) ? position.y : 0.5;
+    if (widthRatio >= 1) {
+      centerX = 0.5;
+    } else if (widthRatio > 0) {
+      centerX = clamp(centerX, minX, 1 - minX);
+    }
+    if (heightRatio >= 1) {
+      centerY = 0.5;
+    } else if (heightRatio > 0) {
+      centerY = clamp(centerY, minY, 1 - minY);
+    }
+    if (!layer.position) {
+      layer.position = { x: centerX, y: centerY };
+    } else if (layer.position.x !== centerX || layer.position.y !== centerY) {
+      layer.position = { ...layer.position, x: centerX, y: centerY };
+    }
+    const normalizedBounds = {
+      x: widthRatio >= 1 ? 0 : clamp(centerX - widthRatio / 2, 0, 1 - widthRatio),
+      y: heightRatio >= 1 ? 0 : clamp(centerY - heightRatio / 2, 0, 1 - heightRatio),
+      width: widthRatio,
+      height: heightRatio,
+    };
+    layer.bounds = normalizedBounds;
+    const x = centerX * image.width;
+    const y = centerY * image.height;
     ctx.save();
     ctx.globalAlpha = opacity;
     ctx.fillStyle = 'rgba(255,255,255,0.9)';
-    ctx.fillRect(x - scaledSize / 2 - margin, y - scaledSize / 2 - margin, scaledSize + margin * 2, scaledSize + margin * 2);
-    ctx.drawImage(img, x - scaledSize / 2, y - scaledSize / 2, scaledSize, scaledSize);
+    ctx.fillRect(x - tileSize / 2, y - tileSize / 2, tileSize, tileSize);
+    ctx.drawImage(img, x - size / 2, y - size / 2, size, size);
     ctx.restore();
   }
 

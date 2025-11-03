@@ -190,7 +190,11 @@ const syncSelectionOverlay = () => {
     return;
   }
   const layer = getLayer(image.id, state.activeLayerId);
-  if (!layer || layer.type !== layerTypes.TEXT || layer.visible === false) {
+  if (
+    !layer ||
+    layer.visible === false ||
+    (layer.type !== layerTypes.TEXT && layer.type !== layerTypes.QR)
+  ) {
     hideSelectionOverlay();
     return;
   }
@@ -230,9 +234,8 @@ const findLayerAtPoint = (image, pointer) => {
   for (let i = image.layers.length - 1; i >= 0; i -= 1) {
     const layer = image.layers[i];
     if (!layer || layer.visible === false) continue;
-    if (layer.type === layerTypes.TEXT) {
-      const bounds = layer.bounds;
-      if (!bounds) continue;
+    const bounds = layer.bounds;
+    if (bounds) {
       if (
         px >= bounds.x &&
         px <= bounds.x + bounds.width &&
@@ -445,10 +448,10 @@ const toolDefaults = {
     color: 'rgba(37, 99, 235, 0.28)',
   },
   [layerTypes.QR]: {
-    text: 'Dr. Huỳnh – Implant – 0972 000 000',
+    text: '',
     size: 220,
     margin: 12,
-    opacity: 0.95,
+    opacity: 1,
     position: { x: 0.16, y: 0.84 },
   },
   [layerTypes.BLUR]: {
@@ -1287,7 +1290,7 @@ function handleSelectionPointerDown(event) {
   const image = getActiveImage();
   if (!image) return;
   const layer = getLayer(image.id, state.activeLayerId);
-  if (!layer || layer.type !== layerTypes.TEXT) return;
+  if (!layer || (layer.type !== layerTypes.TEXT && layer.type !== layerTypes.QR)) return;
   rememberPointer(event);
   if (isSpacePressed) {
     startPan(event, image);
@@ -1312,7 +1315,11 @@ function handleSelectionPointerDown(event) {
   const pointer = renderer.screenToImage(event.clientX, event.clientY);
   const handle = event.target?.dataset?.handle;
   if (handle) {
-    startTextResize(layer, handle, pointer, event.pointerId);
+    if (layer.type === layerTypes.TEXT) {
+      startTextResize(layer, handle, pointer, event.pointerId);
+    } else if (layer.type === layerTypes.QR) {
+      startQrResize(layer, handle, pointer, event.pointerId);
+    }
   } else {
     startLayerDrag(pointer, event.pointerId);
   }
@@ -1336,7 +1343,11 @@ function handleSelectionPointerMove(event) {
     return;
   }
   if (resizeSession && resizeSession.pointerId === event.pointerId) {
-    updateTextResize(event, image);
+    if (resizeSession.mode === 'text') {
+      updateTextResize(event, image);
+    } else if (resizeSession.mode === 'qr') {
+      updateQrResize(event, image);
+    }
     event.preventDefault();
     return;
   }
@@ -1350,7 +1361,11 @@ function handleSelectionPointerMove(event) {
 function handleSelectionPointerUp(event) {
   releasePointer(event);
   if (resizeSession && resizeSession.pointerId === event.pointerId) {
-    finishTextResize(event.pointerId);
+    if (resizeSession.mode === 'text') {
+      finishTextResize(event.pointerId);
+    } else if (resizeSession.mode === 'qr') {
+      finishQrResize(event.pointerId);
+    }
   }
   if (dragLayer && dragLayer.pointerId === event.pointerId) {
     finalizeLayerDrag(event.pointerId);
@@ -1579,6 +1594,7 @@ function startTextResize(layer, handle, pointer, pointerId) {
     y: direction.y === 1 ? bounds.y : bounds.y + bounds.height,
   };
   resizeSession = {
+    mode: 'text',
     layerId: layer.id,
     imageId: image.id,
     handle,
@@ -1596,8 +1612,37 @@ function startTextResize(layer, handle, pointer, pointerId) {
   };
 }
 
+function startQrResize(layer, handle, pointer, pointerId) {
+  const image = getActiveImage();
+  if (!image) return;
+  const bounds = getLayerBounds(layer, image);
+  if (!bounds) return;
+  const direction = {
+    x: handle.includes('e') ? 1 : -1,
+    y: handle.includes('s') ? 1 : -1,
+  };
+  const anchor = {
+    x: direction.x === 1 ? bounds.x : bounds.x + bounds.width,
+    y: direction.y === 1 ? bounds.y : bounds.y + bounds.height,
+  };
+  const margin = typeof layer.margin === 'number' ? layer.margin : 12;
+  const minTile = Math.max(48, Math.min(bounds.width, 80 + margin * 2));
+  resizeSession = {
+    mode: 'qr',
+    layerId: layer.id,
+    imageId: image.id,
+    handle,
+    pointerId,
+    anchor,
+    direction,
+    initialBounds: bounds,
+    margin,
+    minTile,
+  };
+}
+
 function updateTextResize(event, image) {
-  if (!resizeSession || resizeSession.pointerId !== event.pointerId) return;
+  if (!resizeSession || resizeSession.mode !== 'text' || resizeSession.pointerId !== event.pointerId) return;
   const layer = getLayer(resizeSession.imageId, resizeSession.layerId);
   if (!layer) return;
   const pointer = renderer.screenToImage(event.clientX, event.clientY);
@@ -1650,8 +1695,66 @@ function updateTextResize(event, image) {
   renderer.render();
 }
 
+function updateQrResize(event, image) {
+  if (!resizeSession || resizeSession.mode !== 'qr' || resizeSession.pointerId !== event.pointerId) return;
+  const layer = getLayer(resizeSession.imageId, resizeSession.layerId);
+  if (!layer) return;
+  const pointer = renderer.screenToImage(event.clientX, event.clientY);
+  const px = clamp(pointer.x, 0, image.width);
+  const py = clamp(pointer.y, 0, image.height);
+  const { anchor, direction, margin, minTile } = resizeSession;
+  const availableWidth = direction.x === 1 ? image.width - anchor.x : anchor.x;
+  const availableHeight = direction.y === 1 ? image.height - anchor.y : anchor.y;
+  const rawWidth = Math.max(0, (px - anchor.x) * direction.x);
+  const rawHeight = Math.max(0, (py - anchor.y) * direction.y);
+  const fallbackWidth = rawWidth || rawHeight;
+  const fallbackHeight = rawHeight || rawWidth;
+  const candidate = Math.min(fallbackWidth, fallbackHeight);
+  const maxTile = Math.min(
+    Math.max(minTile, availableWidth),
+    Math.max(minTile, availableHeight),
+    Math.max(minTile, Math.min(image.width, image.height)),
+  );
+  const lowerBound = Math.min(minTile, maxTile);
+  const tileSize = clamp(candidate || lowerBound, lowerBound, maxTile);
+  const halfTile = tileSize / 2;
+  const centerX = clamp(anchor.x + halfTile * direction.x, halfTile, image.width - halfTile);
+  const centerY = clamp(anchor.y + halfTile * direction.y, halfTile, image.height - halfTile);
+  const innerSize = Math.max(tileSize - margin * 2, 24);
+  const updates = {
+    size: innerSize,
+    margin,
+    position: {
+      x: clamp(centerX / image.width, 0, 1),
+      y: clamp(centerY / image.height, 0, 1),
+    },
+  };
+  updateLayer(resizeSession.imageId, resizeSession.layerId, updates);
+  renderer.render();
+}
+
 function finishTextResize(pointerId) {
-  if (!resizeSession || (typeof pointerId === 'number' && resizeSession.pointerId !== pointerId)) {
+  if (
+    !resizeSession ||
+    resizeSession.mode !== 'text' ||
+    (typeof pointerId === 'number' && resizeSession.pointerId !== pointerId)
+  ) {
+    return;
+  }
+  const image = getImage(resizeSession.imageId) || getActiveImage();
+  if (image) {
+    pushHistory(image.id);
+  }
+  resizeSession = null;
+  queueOverlaySync();
+}
+
+function finishQrResize(pointerId) {
+  if (
+    !resizeSession ||
+    resizeSession.mode !== 'qr' ||
+    (typeof pointerId === 'number' && resizeSession.pointerId !== pointerId)
+  ) {
     return;
   }
   const image = getImage(resizeSession.imageId) || getActiveImage();
@@ -2607,61 +2710,43 @@ function renderQrPanel(container) {
   const defaults = toolDefaults[layerTypes.QR] || {};
   const current = layer || defaults;
   const isVi = state.locale === 'vi';
-  const initialOpacity = Math.max(10, Math.min(100, Math.round((current.opacity ?? defaults.opacity ?? 1) * 100)));
-  const sizeValue = Math.round(current.size ?? defaults.size ?? 220);
-  const marginValue = Math.round(current.margin ?? defaults.margin ?? 12);
+  const baseSize = typeof current.size === 'number' ? current.size : typeof defaults.size === 'number' ? defaults.size : 220;
+  const baseMargin = typeof current.margin === 'number' ? current.margin : typeof defaults.margin === 'number' ? defaults.margin : 12;
+  const baseOpacity = typeof current.opacity === 'number' ? current.opacity : typeof defaults.opacity === 'number' ? defaults.opacity : 1;
+  const basePosition = current.position || defaults.position || { x: 0.5, y: 0.5 };
   const textValue = typeof current.text === 'string' ? current.text : defaults.text ?? '';
   container.innerHTML = `
     <div class="qr-panel">
       <form id="qrForm" class="form-grid">
         <label class="field">
-          <span>${isVi ? 'Noi dung chu ky' : 'Signature content'}</span>
-          <textarea name="text" rows="3" maxlength="280" placeholder="${isVi ? 'Vi du: Dr. Huynh - Implant - 0972 000 000' : 'Example: Dr. Huynh - Implant - 0972 000 000'}">${textValue}</textarea>
+          <span>${isVi ? 'Nội dung chữ ký' : 'Signature content'}</span>
+          <textarea name="text" rows="3" maxlength="280" placeholder="${isVi ? 'Ví dụ: Bác sĩ Nguyễn – Nha khoa – 0900 000 000' : 'Example: Dr. Nguyen – Dental Clinic – 0900 000 000'}">${textValue}</textarea>
         </label>
-        <div class="field two-col">
-          <label>
-            <span>${isVi ? 'Kich thuoc' : 'Size'}</span>
-            <input type="number" name="size" min="80" max="480" value="${sizeValue}">
-          </label>
-        </div>
-        <div class="field two-col">
-          <label>
-            <span>${isVi ? 'Le' : 'Margin'}</span>
-            <input type="number" name="margin" min="0" max="40" value="${marginValue}">
-          </label>
-        </div>
-        <div class="field">
-          <span>${isVi ? 'Do mo (%)' : 'Opacity (%)'}</span>
-          <div class="field-slider">
-            <input type="range" name="opacity" min="10" max="100" value="${initialOpacity}">
-            <span class="field-value" data-role="qr-opacity-value">${initialOpacity}%</span>
-          </div>
-        </div>
       </form>
       <aside class="qr-preview-card">
         <div class="qr-preview-header">
-          <h4>${isVi ? 'Xem truoc QR' : 'QR preview'}</h4>
+          <h4></h4>
           <span class="qr-preview-status" data-role="qr-state">${
-            layer ? (isVi ? 'Da chen tren anh' : 'Placed on canvas') : (isVi ? 'San sang chen' : 'Ready to add')
+            layer ? (isVi ? 'Đã chèn trên ảnh' : 'Placed on canvas') : (isVi ? 'Sẵn sàng chèn' : 'Ready to add')
           }</span>
         </div>
         <div class="qr-preview-frame" data-role="qr-preview" data-state="${current.dataUrl ? 'ready' : 'empty'}">
-          <img src="${current.dataUrl ?? ''}" alt="${isVi ? 'Ban xem truoc ma QR' : 'QR preview'}" loading="lazy"${current.dataUrl ? '' : ' hidden'}>
+          <img src="${current.dataUrl ?? ''}" alt="${isVi ? 'Bản xem trước mã QR' : 'QR preview'}" loading="lazy"${current.dataUrl ? '' : ' hidden'}>
           <div class="qr-preview-placeholder" data-role="qr-empty"${current.dataUrl ? ' hidden' : ''}>
-            <p>${isVi ? 'Nhap noi dung de tao ma QR' : 'Enter details to generate your QR code.'}</p>
+            <p></p>
           </div>
         </div>
         <div class="qr-preview-actions">
           <button type="button" class="btn secondary" data-action="preview" ${current.dataUrl ? '' : 'disabled'}>
             <svg class="icon"><use href="#icon-camera"></use></svg>
-            <span>${isVi ? 'Quet thu bang camera' : 'Test with camera'}</span>
+            <span>${isVi ? 'Quét thử bằng camera' : 'Test with camera'}</span>
           </button>
           <button type="button" class="btn primary" data-action="create"${layer ? ' hidden' : ''}>
-            ${isVi ? 'Chen vao anh' : 'Add to canvas'}
+            ${isVi ? 'Chèn vào ảnh' : 'Add to canvas'}
           </button>
         </div>
         <p class="qr-preview-hint">
-          ${isVi ? 'Ma QR se nam tren nen mau trang diu de de doc tren anh cua ban.' : 'The code sits on a soft white tile to stay legible on top of your artwork.'}
+          ${isVi ? 'Mã QR sẽ nằm trên nền trắng dịu để dễ đọc trên ảnh của bạn.' : 'The code sits on a soft white tile to stay legible on top of your artwork.'}
         </p>
       </aside>
     </div>
@@ -2673,7 +2758,6 @@ function renderQrPanel(container) {
   const previewPlaceholder = previewFrame?.querySelector('[data-role="qr-empty"]') || null;
   const previewButton = container.querySelector('[data-action="preview"]');
   const createButton = container.querySelector('[data-action="create"]');
-  const opacityLabel = container.querySelector('[data-role="qr-opacity-value"]');
   const statusLabel = container.querySelector('[data-role="qr-state"]');
   let previewToken = 0;
   let currentPreviewDataUrl = current.dataUrl || null;
@@ -2681,11 +2765,11 @@ function renderQrPanel(container) {
     if (!statusLabel) return;
     const activeLayer = getActiveQrLayer();
     if (activeLayer) {
-      statusLabel.textContent = isVi ? 'Da chen tren anh' : 'Placed on canvas';
+      statusLabel.textContent = isVi ? 'Đã chèn trên ảnh' : 'Placed on canvas';
     } else if (currentPreviewDataUrl) {
-      statusLabel.textContent = isVi ? 'San sang chen' : 'Ready to add';
+      statusLabel.textContent = '';
     } else {
-      statusLabel.textContent = isVi ? 'Nhap noi dung de tao QR' : 'Enter details to generate QR';
+      statusLabel.textContent = '';
     }
   };
   const setPreview = dataUrl => {
@@ -2710,39 +2794,39 @@ function renderQrPanel(container) {
     }
     updateStatusLabel();
   };
-  const updateOpacityLabel = percent => {
-    if (opacityLabel) {
-      opacityLabel.textContent = `${Math.round(percent)}%`;
-    }
-  };
-  const sanitizeNumber = (value, fallback, min, max) => {
-    const parsed = parseInt(value, 10);
-    if (!Number.isFinite(parsed)) return clamp(fallback, min, max);
-    return clamp(parsed, min, max);
-  };
   const readFormValues = () => {
-    const data = new FormData(form);
-    const size = sanitizeNumber(data.get('size'), sizeValue, 80, 480);
-    const margin = sanitizeNumber(data.get('margin'), marginValue, 0, 40);
-    const opacityPercent = sanitizeNumber(data.get('opacity'), initialOpacity, 10, 100);
-    const rawText = data.get('text');
+    const latestLayer = getActiveQrLayer();
+    const baseline = latestLayer || defaults;
+    const textField = form.elements.text;
+    const rawText = textField?.value;
     const text = typeof rawText === 'string' ? rawText : '';
-    if (form.elements.size && form.elements.size.value !== String(size)) {
-      form.elements.size.value = size;
-    }
-    if (form.elements.margin && form.elements.margin.value !== String(margin)) {
-      form.elements.margin.value = margin;
-    }
-    if (form.elements.opacity && form.elements.opacity.value !== String(opacityPercent)) {
-      form.elements.opacity.value = opacityPercent;
-    }
-    updateOpacityLabel(opacityPercent);
+    const size = typeof latestLayer?.size === 'number'
+      ? latestLayer.size
+      : typeof baseline.size === 'number'
+        ? baseline.size
+        : 220;
+    const margin = typeof latestLayer?.margin === 'number'
+      ? latestLayer.margin
+      : typeof baseline.margin === 'number'
+        ? baseline.margin
+        : 12;
+    const opacity = typeof latestLayer?.opacity === 'number'
+      ? latestLayer.opacity
+      : typeof baseline.opacity === 'number'
+        ? baseline.opacity
+        : 1;
+    const position = latestLayer?.position
+      ? { ...latestLayer.position }
+      : baseline.position
+        ? { ...baseline.position }
+        : { x: 0.5, y: 0.5 };
     return {
       values: {
         text,
         size,
         margin,
-        opacity: opacityPercent / 100,
+        opacity,
+        position,
       },
       hasContent: text.trim().length > 0,
     };
@@ -2840,9 +2924,10 @@ function renderQrPanel(container) {
   if (!current.dataUrl && textValue.trim().length > 0) {
     const seed = {
       text: textValue,
-      size: sizeValue,
-      margin: marginValue,
-      opacity: initialOpacity / 100,
+      size: baseSize,
+      margin: baseMargin,
+      opacity: baseOpacity,
+      position: { ...basePosition },
     };
     const token = ++previewToken;
     generateQr(seed).then(result => {
@@ -2886,15 +2971,19 @@ async function generateQr(values) {
       resolve({ dataUrl: null });
       return;
     }
+    const baseSize = Math.max(320, Math.round((typeof values.size === 'number' ? values.size : 220) * 2));
+    const baseMargin = clamp(Math.round(values.margin ?? 12), 0, Math.round(baseSize / 4));
     const config = {
       text,
-      width: values.size,
-      height: values.size,
-      margin: values.margin ?? 12,
+      width: baseSize,
+      height: baseSize,
+      margin: baseMargin,
     };
     const correctLevels = [];
     if (window.QRCode.CorrectLevel) {
-      const { L, M } = window.QRCode.CorrectLevel;
+      const { L, M, Q, H } = window.QRCode.CorrectLevel;
+      if (typeof H === 'number') correctLevels.push(H);
+      if (typeof Q === 'number') correctLevels.push(Q);
       if (typeof M === 'number') correctLevels.push(M);
       if (typeof L === 'number') correctLevels.push(L);
     }
