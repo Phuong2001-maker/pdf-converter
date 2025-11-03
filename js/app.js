@@ -97,6 +97,7 @@ let pinchState = null;
 let activeSignaturePresetId = null;
 let canvasResizeObserver = null;
 let lastObservedCanvasSize = { width: 0, height: 0 };
+let lastQrErrorAt = 0;
 
 const syncCanvasCursor = (toolId = state.activeTool) => {
   const isPenTool = toolId === layerTypes.PEN;
@@ -2593,90 +2594,282 @@ function renderWatermarkPanel(container) {
 }
 
 function renderQrPanel(container) {
-  const image = getActiveImage();
-  const layer = image ? getLayer(image.id, state.activeLayerId) : null;
-  const current = layer?.type === layerTypes.QR ? layer : toolDefaults[layerTypes.QR];
-  const disabled = !(layer && layer.type === layerTypes.QR);
+  const getActiveQrLayer = () => {
+    const imageState = getActiveImage();
+    if (!imageState) return null;
+    const activeLayer = getLayer(imageState.id, state.activeLayerId);
+    if (activeLayer && activeLayer.type === layerTypes.QR) {
+      return activeLayer;
+    }
+    return null;
+  };
+  const layer = getActiveQrLayer();
+  const defaults = toolDefaults[layerTypes.QR] || {};
+  const current = layer || defaults;
+  const isVi = state.locale === 'vi';
+  const initialOpacity = Math.max(10, Math.min(100, Math.round((current.opacity ?? defaults.opacity ?? 1) * 100)));
+  const sizeValue = Math.round(current.size ?? defaults.size ?? 220);
+  const marginValue = Math.round(current.margin ?? defaults.margin ?? 12);
+  const textValue = typeof current.text === 'string' ? current.text : defaults.text ?? '';
   container.innerHTML = `
-    <form id="qrForm" class="form-grid">
-      <label class="field">
-        <span>${state.locale === 'vi' ? 'Nội dung chữ ký' : 'Signature content'}</span>
-        <textarea name="text" rows="3" ${disabled ? 'disabled' : ''}>${current.text}</textarea>
-      </label>
-      <div class="field two-col">
-        <label>
-          <span>${state.locale === 'vi' ? 'Kích thước' : 'Size'}</span>
-          <input type="number" name="size" min="80" max="480" value="${current.size}" ${disabled ? 'disabled' : ''}>
+    <div class="qr-panel">
+      <form id="qrForm" class="form-grid">
+        <label class="field">
+          <span>${isVi ? 'Noi dung chu ky' : 'Signature content'}</span>
+          <textarea name="text" rows="3" maxlength="280" placeholder="${isVi ? 'Vi du: Dr. Huynh - Implant - 0972 000 000' : 'Example: Dr. Huynh - Implant - 0972 000 000'}">${textValue}</textarea>
         </label>
-        <label>
-          <span>${state.locale === 'vi' ? 'Lề' : 'Margin'}</span>
-          <input type="number" name="margin" min="0" max="40" value="${current.margin}" ${disabled ? 'disabled' : ''}>
-        </label>
-      </div>
-      <label class="field">
-        <span>${state.locale === 'vi' ? 'Độ mờ (%)' : 'Opacity (%)'}</span>
-        <input type="range" name="opacity" min="10" max="100" value="${Math.round((current.opacity ?? 1) * 100)}" ${disabled ? 'disabled' : ''}>
-      </label>
-      <button type="button" class="btn secondary" data-action="preview"${disabled ? ' disabled' : ''}>
-        <svg class="icon"><use href="#icon-camera"></use></svg>
-        <span>${state.locale === 'vi' ? 'Quét thử bằng camera' : 'Preview'}</span>
-      </button>
-    </form>
-    <button type="button" class="btn primary" data-action="create"${disabled ? '' : ' hidden'}>
-      ${state.locale === 'vi' ? 'Tạo QR chữ ký' : 'Create signature QR'}
-    </button>
+        <div class="field two-col">
+          <label>
+            <span>${isVi ? 'Kich thuoc' : 'Size'}</span>
+            <input type="number" name="size" min="80" max="480" value="${sizeValue}">
+          </label>
+        </div>
+        <div class="field two-col">
+          <label>
+            <span>${isVi ? 'Le' : 'Margin'}</span>
+            <input type="number" name="margin" min="0" max="40" value="${marginValue}">
+          </label>
+        </div>
+        <div class="field">
+          <span>${isVi ? 'Do mo (%)' : 'Opacity (%)'}</span>
+          <div class="field-slider">
+            <input type="range" name="opacity" min="10" max="100" value="${initialOpacity}">
+            <span class="field-value" data-role="qr-opacity-value">${initialOpacity}%</span>
+          </div>
+        </div>
+      </form>
+      <aside class="qr-preview-card">
+        <div class="qr-preview-header">
+          <h4>${isVi ? 'Xem truoc QR' : 'QR preview'}</h4>
+          <span class="qr-preview-status" data-role="qr-state">${
+            layer ? (isVi ? 'Da chen tren anh' : 'Placed on canvas') : (isVi ? 'San sang chen' : 'Ready to add')
+          }</span>
+        </div>
+        <div class="qr-preview-frame" data-role="qr-preview" data-state="${current.dataUrl ? 'ready' : 'empty'}">
+          <img src="${current.dataUrl ?? ''}" alt="${isVi ? 'Ban xem truoc ma QR' : 'QR preview'}" loading="lazy"${current.dataUrl ? '' : ' hidden'}>
+          <div class="qr-preview-placeholder" data-role="qr-empty"${current.dataUrl ? ' hidden' : ''}>
+            <p>${isVi ? 'Nhap noi dung de tao ma QR' : 'Enter details to generate your QR code.'}</p>
+          </div>
+        </div>
+        <div class="qr-preview-actions">
+          <button type="button" class="btn secondary" data-action="preview" ${current.dataUrl ? '' : 'disabled'}>
+            <svg class="icon"><use href="#icon-camera"></use></svg>
+            <span>${isVi ? 'Quet thu bang camera' : 'Test with camera'}</span>
+          </button>
+          <button type="button" class="btn primary" data-action="create"${layer ? ' hidden' : ''}>
+            ${isVi ? 'Chen vao anh' : 'Add to canvas'}
+          </button>
+        </div>
+        <p class="qr-preview-hint">
+          ${isVi ? 'Ma QR se nam tren nen mau trang diu de de doc tren anh cua ban.' : 'The code sits on a soft white tile to stay legible on top of your artwork.'}
+        </p>
+      </aside>
+    </div>
   `;
   const form = container.querySelector('#qrForm');
   if (!form) return;
-  const handleChange = async () => {
-    const data = new FormData(form);
-    const values = {
-      text: data.get('text'),
-      size: parseInt(data.get('size'), 10),
-      margin: parseInt(data.get('margin'), 10),
-      opacity: parseFloat(data.get('opacity')) / 100,
-    };
-    if (layer && layer.type === layerTypes.QR) {
-      const generated = await generateQr(values);
-      updateLayer(image.id, layer.id, { ...values, ...generated });
-      renderer.render();
+  const previewFrame = container.querySelector('[data-role="qr-preview"]');
+  const previewImage = previewFrame?.querySelector('img') || null;
+  const previewPlaceholder = previewFrame?.querySelector('[data-role="qr-empty"]') || null;
+  const previewButton = container.querySelector('[data-action="preview"]');
+  const createButton = container.querySelector('[data-action="create"]');
+  const opacityLabel = container.querySelector('[data-role="qr-opacity-value"]');
+  const statusLabel = container.querySelector('[data-role="qr-state"]');
+  let previewToken = 0;
+  let currentPreviewDataUrl = current.dataUrl || null;
+  const updateStatusLabel = () => {
+    if (!statusLabel) return;
+    const activeLayer = getActiveQrLayer();
+    if (activeLayer) {
+      statusLabel.textContent = isVi ? 'Da chen tren anh' : 'Placed on canvas';
+    } else if (currentPreviewDataUrl) {
+      statusLabel.textContent = isVi ? 'San sang chen' : 'Ready to add';
     } else {
-      Object.assign(toolDefaults[layerTypes.QR], values);
+      statusLabel.textContent = isVi ? 'Nhap noi dung de tao QR' : 'Enter details to generate QR';
     }
   };
-  form.addEventListener('input', handleChange);
-  form.addEventListener('change', handleChange);
-  container.querySelector('[data-action="preview"]')?.addEventListener('click', () => {
-    if (!(layer && layer.type === layerTypes.QR && layer.dataUrl)) return;
+  const setPreview = dataUrl => {
+    currentPreviewDataUrl = dataUrl || null;
+    if (previewFrame) {
+      previewFrame.dataset.state = currentPreviewDataUrl ? 'ready' : 'empty';
+    }
+    if (previewImage) {
+      if (currentPreviewDataUrl) {
+        previewImage.hidden = false;
+        previewImage.src = currentPreviewDataUrl;
+      } else {
+        previewImage.hidden = true;
+        previewImage.removeAttribute('src');
+      }
+    }
+    if (previewPlaceholder) {
+      previewPlaceholder.hidden = Boolean(currentPreviewDataUrl);
+    }
+    if (previewButton) {
+      previewButton.disabled = !currentPreviewDataUrl;
+    }
+    updateStatusLabel();
+  };
+  const updateOpacityLabel = percent => {
+    if (opacityLabel) {
+      opacityLabel.textContent = `${Math.round(percent)}%`;
+    }
+  };
+  const sanitizeNumber = (value, fallback, min, max) => {
+    const parsed = parseInt(value, 10);
+    if (!Number.isFinite(parsed)) return clamp(fallback, min, max);
+    return clamp(parsed, min, max);
+  };
+  const readFormValues = () => {
+    const data = new FormData(form);
+    const size = sanitizeNumber(data.get('size'), sizeValue, 80, 480);
+    const margin = sanitizeNumber(data.get('margin'), marginValue, 0, 40);
+    const opacityPercent = sanitizeNumber(data.get('opacity'), initialOpacity, 10, 100);
+    const rawText = data.get('text');
+    const text = typeof rawText === 'string' ? rawText : '';
+    if (form.elements.size && form.elements.size.value !== String(size)) {
+      form.elements.size.value = size;
+    }
+    if (form.elements.margin && form.elements.margin.value !== String(margin)) {
+      form.elements.margin.value = margin;
+    }
+    if (form.elements.opacity && form.elements.opacity.value !== String(opacityPercent)) {
+      form.elements.opacity.value = opacityPercent;
+    }
+    updateOpacityLabel(opacityPercent);
+    return {
+      values: {
+        text,
+        size,
+        margin,
+        opacity: opacityPercent / 100,
+      },
+      hasContent: text.trim().length > 0,
+    };
+  };
+  const handleChange = async () => {
+    const { values, hasContent } = readFormValues();
+    const hostImage = getActiveImage();
+    const activeLayer = getActiveQrLayer();
+    const applyUpdate = payload => {
+      if (activeLayer && hostImage) {
+        updateLayer(hostImage.id, activeLayer.id, payload);
+        renderer.render();
+      }
+      Object.assign(toolDefaults[layerTypes.QR], payload);
+    };
+    if (!hasContent) {
+      previewToken += 1;
+      applyUpdate({ ...values, dataUrl: null });
+      setPreview(null);
+      return;
+    }
+    const token = ++previewToken;
+    const generated = await generateQr(values);
+    if (token !== previewToken) return;
+    const payload = { ...values };
+    if (generated.error) {
+      applyUpdate(payload);
+      setPreview(null);
+      return;
+    }
+    if (generated.dataUrl) {
+      payload.dataUrl = generated.dataUrl;
+    }
+    applyUpdate(payload);
+    if (generated.dataUrl) {
+      setPreview(generated.dataUrl);
+    }
+  };
+  const handlePreviewClick = () => {
+    const source = getActiveQrLayer()?.dataUrl || currentPreviewDataUrl;
+    if (!source) return;
     const canvas = document.getElementById('qrPreviewCanvas');
     if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
     const img = new Image();
     img.onload = () => {
-      const ctx = canvas.getContext('2d');
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const size = Math.min(canvas.width, canvas.height) - 24;
       ctx.drawImage(img, (canvas.width - size) / 2, (canvas.height - size) / 2, size, size);
       showQrPreview();
     };
-    img.src = layer.dataUrl;
-  });
-  container.querySelector('[data-action="create"]')?.addEventListener('click', async () => {
-    const imageState = getActiveImage();
-    if (!imageState) return;
-    const values = toolDefaults[layerTypes.QR];
-    const generated = await generateQr(values);
-    const newLayer = addLayer(imageState.id, {
+    img.src = source;
+  };
+  const handleCreateClick = async () => {
+    const hostImage = getActiveImage();
+    if (!hostImage) return;
+    const { values, hasContent } = readFormValues();
+    if (!hasContent) return;
+    let dataUrl = currentPreviewDataUrl;
+    if (!dataUrl) {
+      const generated = await generateQr(values);
+      if (generated.error || !generated.dataUrl) {
+        const now = Date.now();
+        if (now - lastQrErrorAt > 1500) {
+          showToast({
+            title: isVi ? 'QR quá dài' : 'QR too long',
+            message: isVi
+              ? 'Rút gọn nội dung hoặc chia thành nhiều mã trước khi chèn.'
+              : 'Shorten the content or split it across multiple QR codes before adding.',
+            tone: 'warning',
+          });
+          lastQrErrorAt = now;
+        }
+        return;
+      }
+      dataUrl = generated.dataUrl;
+    }
+    const payload = {
       type: layerTypes.QR,
       ...values,
-      ...generated,
-    });
+      ...(dataUrl ? { dataUrl } : {}),
+    };
+    const newLayer = addLayer(hostImage.id, payload);
+    Object.assign(toolDefaults[layerTypes.QR], { ...values, dataUrl });
     setActiveLayer(newLayer.id);
     renderer.render();
     renderToolPanel(layerTypes.QR);
-  });
+  };
+  form.addEventListener('input', handleChange);
+  form.addEventListener('change', handleChange);
+  previewButton?.addEventListener('click', handlePreviewClick);
+  createButton?.addEventListener('click', handleCreateClick);
+  setPreview(current.dataUrl || null);
+  if (!current.dataUrl && textValue.trim().length > 0) {
+    const seed = {
+      text: textValue,
+      size: sizeValue,
+      margin: marginValue,
+      opacity: initialOpacity / 100,
+    };
+    const token = ++previewToken;
+    generateQr(seed).then(result => {
+      if (token !== previewToken) return;
+      if (result.error || !result.dataUrl) {
+        if (!getActiveQrLayer()) {
+          Object.assign(toolDefaults[layerTypes.QR], seed);
+        }
+        setPreview(null);
+        return;
+      }
+      if (!getActiveQrLayer()) {
+        Object.assign(toolDefaults[layerTypes.QR], { ...seed, dataUrl: result.dataUrl });
+      }
+      setPreview(result.dataUrl);
+    });
+  }
   return () => {
+    previewToken += 1;
     form.removeEventListener('input', handleChange);
     form.removeEventListener('change', handleChange);
+    if (previewButton) {
+      previewButton.removeEventListener('click', handlePreviewClick);
+    }
+    if (createButton) {
+      createButton.removeEventListener('click', handleCreateClick);
+    }
   };
 }
 
@@ -2687,18 +2880,56 @@ async function generateQr(values) {
       return;
     }
     const temp = document.createElement('div');
-    const qr = new window.QRCode(temp, {
-      text: values.text || '',
+    const text = typeof values.text === 'string' ? values.text : '';
+    if (!text) {
+      temp.remove();
+      resolve({ dataUrl: null });
+      return;
+    }
+    const config = {
+      text,
       width: values.size,
       height: values.size,
       margin: values.margin ?? 12,
-    });
+    };
+    const correctLevels = [];
+    if (window.QRCode.CorrectLevel) {
+      const { L, M } = window.QRCode.CorrectLevel;
+      if (typeof M === 'number') correctLevels.push(M);
+      if (typeof L === 'number') correctLevels.push(L);
+    }
+    if (!correctLevels.length) {
+      correctLevels.push(2, 1);
+    }
+    let lastError = null;
+    let created = false;
+    for (const level of correctLevels) {
+      if (created) break;
+      temp.innerHTML = '';
+      config.correctLevel = level;
+      try {
+        // eslint-disable-next-line no-new
+        new window.QRCode(temp, config);
+        created = true;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    if (!created) {
+      temp.remove();
+      resolve({ dataUrl: null, error: lastError || new Error('QR generation failed') });
+      return;
+    }
     setTimeout(() => {
       const dataUrl = temp.querySelector('img')?.src || temp.querySelector('canvas')?.toDataURL('image/png');
       temp.remove();
-      resolve({ dataUrl });
+      if (dataUrl) {
+        resolve({ dataUrl });
+      } else {
+        resolve({ dataUrl: null, error: new Error('QR render failed') });
+      }
     }, 40);
-  });
+  }).catch(error => ({ dataUrl: null, error }));
 }
 
 function renderBlurPanel(container) {
@@ -2820,3 +3051,4 @@ function buildExportFileName(name, format) {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+

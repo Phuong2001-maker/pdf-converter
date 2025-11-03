@@ -1164,6 +1164,114 @@ button:disabled {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.qr-panel {
+  display: block;
+}
+
+.qr-panel form {
+  margin-bottom: 18px;
+}
+
+.qr-preview-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  border-radius: var(--radius-lg);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 16%, transparent);
+  background: color-mix(in srgb, var(--color-muted-surface) 70%, transparent 30%);
+  box-shadow: var(--shadow-sm);
+  width: min(320px, 100%);
+  min-width: 0;
+  margin: 0 auto;
+}
+
+.qr-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.qr-preview-header h4 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.qr-preview-status {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--color-subtext);
+  white-space: nowrap;
+}
+
+.qr-preview-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--radius-md);
+  border: 1px dashed color-mix(in srgb, var(--color-primary) 28%, transparent);
+  background: color-mix(in srgb, var(--color-surface) 90%, transparent 10%);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.qr-preview-frame[data-state="ready"] {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--color-primary) 22%, transparent);
+  background: color-mix(in srgb, var(--color-surface) 96%, transparent 4%);
+}
+
+.qr-preview-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 18px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-surface) 96%, transparent 4%), color-mix(in srgb, var(--color-surface) 88%, transparent 12%));
+}
+
+.qr-preview-placeholder {
+  text-align: center;
+  font-size: 0.86rem;
+  color: var(--color-subtext);
+  padding: 0 12px;
+  line-height: 1.4;
+}
+
+.qr-preview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.qr-preview-actions .btn {
+  flex: 1 1 140px;
+  justify-content: center;
+}
+
+.qr-preview-hint {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--color-subtext);
+  line-height: 1.4;
+}
+
+.qr-panel textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.qr-panel > * {
+  position: relative;
+  z-index: 0;
+}
+
+.qr-panel {
+  position: relative;
+}
+
 .field-slider {
   display: flex;
   align-items: center;
