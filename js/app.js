@@ -95,6 +95,8 @@ let renderScheduled = false;
 const pointerCache = new Map();
 let pinchState = null;
 let activeSignaturePresetId = null;
+let canvasResizeObserver = null;
+let lastObservedCanvasSize = { width: 0, height: 0 };
 
 const syncCanvasCursor = (toolId = state.activeTool) => {
   const isPenTool = toolId === layerTypes.PEN;
@@ -699,6 +701,49 @@ function setupTextToolbar() {
   });
 }
 
+function ensureCanvasResizeObserver() {
+  if (!canvas) return;
+  const container = canvas.parentElement;
+  if (!container || typeof ResizeObserver !== 'function') return;
+  if (canvasResizeObserver) {
+    canvasResizeObserver.observe(container);
+    return;
+  }
+  canvasResizeObserver = new ResizeObserver(entries => {
+    entries.forEach(entry => {
+      const { width, height } = entry.contentRect;
+      if (!width || !height) return;
+      if (
+        Math.abs(width - lastObservedCanvasSize.width) < 0.5 &&
+        Math.abs(height - lastObservedCanvasSize.height) < 0.5
+      ) {
+        return;
+      }
+      lastObservedCanvasSize = { width, height };
+      const image = getActiveImage();
+      const previousScale = renderer.view.scale;
+      const previousOffset = { x: renderer.view.offset.x, y: renderer.view.offset.y };
+      renderer.resize(width, height);
+      if (!image) return;
+      const nextOffset = clampViewOffset(image, previousOffset, previousScale);
+      renderer.setView({ scale: previousScale, offset: nextOffset });
+      const currentPan = image.pan || { x: 0, y: 0 };
+      const panChanged =
+        Math.abs(currentPan.x - renderer.view.offset.x) > 0.5 ||
+        Math.abs(currentPan.y - renderer.view.offset.y) > 0.5;
+      const zoomChanged = Math.abs((image.zoom || 1) - renderer.view.scale) > 0.001;
+      if (panChanged || zoomChanged) {
+        updateImage(image.id, {
+          zoom: renderer.view.scale,
+          pan: { x: renderer.view.offset.x, y: renderer.view.offset.y },
+        });
+        updateZoomLabel(image);
+      }
+    });
+  });
+  canvasResizeObserver.observe(container);
+}
+
 const TOOL_DEFINITIONS = [
   { id: layerTypes.TEXT, icon: 'icon-type' },
   { id: layerTypes.PEN, icon: 'icon-pen' },
@@ -712,6 +757,7 @@ const TOOL_DEFINITIONS = [
 function scheduleRendererResize(image = null) {
   const container = canvas.parentElement;
   if (!container) return;
+  ensureCanvasResizeObserver();
   let attempts = 0;
   const attemptResize = () => {
     const rect = container.getBoundingClientRect();
@@ -797,6 +843,7 @@ function init() {
   queueOverlaySync();
   const container = canvas.parentElement;
   if (container) {
+    ensureCanvasResizeObserver();
     const rect = container.getBoundingClientRect();
     if (rect.width > 0 && rect.height > 0) {
       renderer.resize(rect.width, rect.height);
@@ -1732,8 +1779,8 @@ function clampViewOffset(image, offset, scale) {
   const viewWidth = renderer.bounds.width;
   const viewHeight = renderer.bounds.height;
   const current = offset || renderer.view.offset;
-  const offsetX = typeof current.x === 'number' ? current.x : 0;
-  const offsetY = typeof current.y === 'number' ? current.y : 0;
+  const offsetX = Number.isFinite(current.x) ? current.x : 0;
+  const offsetY = Number.isFinite(current.y) ? current.y : 0;
   const contentWidth = image.width * scale;
   const contentHeight = image.height * scale;
   let clampedX;
@@ -1741,14 +1788,28 @@ function clampViewOffset(image, offset, scale) {
     clampedX = (viewWidth - contentWidth) / 2;
   } else {
     const minX = viewWidth - contentWidth;
-    clampedX = clamp(offsetX, minX, 0);
+    const centeredX = clamp((viewWidth - contentWidth) / 2, minX, 0);
+    if (offsetX > 0) {
+      clampedX = centeredX;
+    } else if (offsetX < minX) {
+      clampedX = minX;
+    } else {
+      clampedX = clamp(offsetX, minX, 0);
+    }
   }
   let clampedY;
   if (contentHeight <= viewHeight) {
     clampedY = (viewHeight - contentHeight) / 2;
   } else {
     const minY = viewHeight - contentHeight;
-    clampedY = clamp(offsetY, minY, 0);
+    const centeredY = clamp((viewHeight - contentHeight) / 2, minY, 0);
+    if (offsetY > 0) {
+      clampedY = centeredY;
+    } else if (offsetY < minY) {
+      clampedY = minY;
+    } else {
+      clampedY = clamp(offsetY, minY, 0);
+    }
   }
   return { x: clampedX, y: clampedY };
 }

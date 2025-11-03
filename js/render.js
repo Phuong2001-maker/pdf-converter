@@ -116,13 +116,29 @@ export class CanvasRenderer {
       this.view.offset.x = (this.bounds.width - contentWidth) / 2;
     } else {
       const minX = this.bounds.width - contentWidth;
-      this.view.offset.x = clamp(this.view.offset.x, minX, 0);
+      const centeredX = clamp((this.bounds.width - contentWidth) / 2, minX, 0);
+      const currentX = Number.isFinite(this.view.offset.x) ? this.view.offset.x : centeredX;
+      if (currentX > 0) {
+        this.view.offset.x = centeredX;
+      } else if (currentX < minX) {
+        this.view.offset.x = minX;
+      } else {
+        this.view.offset.x = clamp(currentX, minX, 0);
+      }
     }
     if (contentHeight <= this.bounds.height) {
       this.view.offset.y = (this.bounds.height - contentHeight) / 2;
     } else {
       const minY = this.bounds.height - contentHeight;
-      this.view.offset.y = clamp(this.view.offset.y, minY, 0);
+      const centeredY = clamp((this.bounds.height - contentHeight) / 2, minY, 0);
+      const currentY = Number.isFinite(this.view.offset.y) ? this.view.offset.y : centeredY;
+      if (currentY > 0) {
+        this.view.offset.y = centeredY;
+      } else if (currentY < minY) {
+        this.view.offset.y = minY;
+      } else {
+        this.view.offset.y = clamp(currentY, minY, 0);
+      }
     }
 
     const transform = this.getTransform();
