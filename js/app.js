@@ -448,7 +448,10 @@ const toolDefaults = {
     color: 'rgba(37, 99, 235, 0.28)',
   },
   [layerTypes.QR]: {
+    inputType: 'text',
     text: '',
+    textContent: '',
+    link: '',
     size: 220,
     margin: 12,
     opacity: 1,
@@ -2710,43 +2713,148 @@ function renderQrPanel(container) {
   const defaults = toolDefaults[layerTypes.QR] || {};
   const current = layer || defaults;
   const isVi = state.locale === 'vi';
+  const ensureString = value => (typeof value === 'string' ? value : '');
+  const resolveInputType = source => (source && source.inputType === 'link' ? 'link' : 'text');
+  const defaultInputType = resolveInputType(defaults);
+  const layerInputType = layer ? resolveInputType(layer) : null;
+  const inputType = layerInputType || defaultInputType;
+  const defaultTextContent = ensureString(
+    defaults.textContent ?? (defaultInputType === 'text' ? defaults.text : '')
+  );
+  const defaultLinkContent = ensureString(
+    defaults.link ?? (defaultInputType === 'link' ? defaults.text : '')
+  );
+  const textFieldValue = ensureString(
+    layer
+      ? layer.textContent ?? (layerInputType === 'text' ? layer.text : defaultTextContent)
+      : defaultTextContent
+  );
+  const linkFieldValue = ensureString(
+    layer
+      ? layer.link ?? (layerInputType === 'link' ? layer.text : defaultLinkContent)
+      : defaultLinkContent
+  );
+  const normalizedInitialLink = linkFieldValue.trim();
+  const initialContent = inputType === 'link' ? linkFieldValue : textFieldValue;
   const baseSize = typeof current.size === 'number' ? current.size : typeof defaults.size === 'number' ? defaults.size : 220;
   const baseMargin = typeof current.margin === 'number' ? current.margin : typeof defaults.margin === 'number' ? defaults.margin : 12;
   const baseOpacity = typeof current.opacity === 'number' ? current.opacity : typeof defaults.opacity === 'number' ? defaults.opacity : 1;
   const basePosition = current.position || defaults.position || { x: 0.5, y: 0.5 };
-  const textValue = typeof current.text === 'string' ? current.text : defaults.text ?? '';
+  const copy = isVi
+    ? {
+        introBody: 'Nhập nội dung chữ ký tiếng Việt có dấu hoặc dán liên kết web, ứng dụng sẽ tạo mã QR rõ nét để đặt lên ảnh.',
+        contentLegend: 'Loại nội dung',
+        textOption: 'Văn bản',
+        textOptionCaption: 'QR chứa trọn nội dung chữ ký, hỗ trợ tiếng Việt đầy đủ dấu.',
+        linkOption: 'Liên kết',
+        linkOptionCaption: 'QR dẫn đến website, tài liệu hoặc trang đặt lịch.',
+        textLabel: 'Nội dung chữ ký',
+        textHelp: 'Hỗ trợ tiếng Việt có dấu và nhiều ngôn ngữ khác.',
+        linkLabel: 'Đường dẫn QR',
+        linkHelp: 'Dán URL website, tài liệu hoặc trang cần chia sẻ.',
+        placeholderDefault: 'Nhập chữ ký hoặc dán liên kết để tạo mã QR.',
+        placeholderTooLong: 'Nội dung quá dài, hãy rút gọn hoặc chia thành nhiều mã.',
+        placeholderGeneric: 'Không thể tạo mã QR với nội dung này. Vui lòng rút gọn hoặc kiểm tra lại.',
+        textPlaceholder: 'Ví dụ: Bác sĩ Nguyễn - Phòng nha khoa - 0900 000 000',
+        linkPlaceholder: 'https://congty.com/chu-ky-so',
+        previewPlaced: 'Đã chèn trên ảnh',
+        previewReady: 'Đã tạo bản xem trước',
+        previewEmpty: 'Nhập nội dung để tạo mã',
+        previewTooLong: 'Nội dung vượt giới hạn QR',
+        previewError: 'Không thể hiển thị mã QR',
+        previewButton: 'Quét thử bằng camera',
+        createButton: 'Chèn vào ảnh',
+        hint: 'Mã QR nằm trên nền trắng nhẹ để dễ đọc trên ảnh của bạn.',
+        toastTitle: 'QR quá dài',
+        toastMessage: 'Rút gọn nội dung hoặc chia thành nhiều mã trước khi chèn.'
+      }
+    : {
+        introBody: 'Enter your signature text or paste a link. We will generate a crisp QR tile ready for your artwork.',
+        contentLegend: 'Content type',
+        textOption: 'Text',
+        textOptionCaption: 'Embed the signature details directly inside the QR.',
+        linkOption: 'Link',
+        linkOptionCaption: 'Point the code to a website, document, or booking page.',
+        textLabel: 'Signature text',
+        textHelp: 'Supports Vietnamese diacritics and many other languages.',
+        linkLabel: 'QR link',
+        linkHelp: 'Paste the website or document URL to encode.',
+        placeholderDefault: 'Enter text or paste a link to generate the QR code.',
+        placeholderTooLong: 'Content is too long. Please shorten it or split it across multiple codes.',
+        placeholderGeneric: 'Unable to generate a QR code for this content. Try shortening or adjusting it.',
+        textPlaceholder: 'Example: Dr. Nguyen - Dental Clinic - 0900 000 000',
+        linkPlaceholder: 'https://company.com/signature',
+        previewPlaced: 'Placed on canvas',
+        previewReady: 'Preview ready',
+        previewEmpty: 'Enter content to generate',
+        previewTooLong: 'Content exceeds QR limits',
+        previewError: 'Unable to show QR preview',
+        previewButton: 'Test with camera',
+        createButton: 'Add to canvas',
+        hint: 'The QR code sits on a soft white tile so it stays legible on your artwork.',
+        toastTitle: 'QR too long',
+        toastMessage: 'Shorten the content or split it across multiple QR codes before adding it.'
+      };
+  const escapeHtml = value => ensureString(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const escapeAttr = value => escapeHtml(value).replace(/"/g, '&quot;');
   container.innerHTML = `
-    <div class="qr-panel">
-      <form id="qrForm" class="form-grid">
-        <label class="field">
-          <span>${isVi ? 'Nội dung chữ ký' : 'Signature content'}</span>
-          <textarea name="text" rows="3" maxlength="280" placeholder="${isVi ? '' : 'Example: Dr. Nguyen – Dental Clinic – 0900 000 000'}">${textValue}</textarea>
+    <div class='qr-panel'>
+      <div class='qr-panel-intro'>
+        <p>${copy.introBody}</p>
+      </div>
+      <form id='qrForm' class='form-grid qr-form'>
+        <fieldset class='field qr-fieldset'>
+          <legend>${copy.contentLegend}</legend>
+          <div class='qr-choice-group'>
+            <label class='qr-choice-card'>
+              <input type='radio' name='inputType' value='text'${inputType === 'text' ? ' checked' : ''}>
+              <span class='qr-choice-content'>
+                <span class='qr-choice-title'>${copy.textOption}</span>
+                <span class='qr-choice-caption'>${copy.textOptionCaption}</span>
+              </span>
+            </label>
+            <label class='qr-choice-card'>
+              <input type='radio' name='inputType' value='link'${inputType === 'link' ? ' checked' : ''}>
+              <span class='qr-choice-content'>
+                <span class='qr-choice-title'>${copy.linkOption}</span>
+                <span class='qr-choice-caption'>${copy.linkOptionCaption}</span>
+              </span>
+            </label>
+          </div>
+        </fieldset>
+        <label class='field' data-role='text-field'${inputType === 'link' ? ' hidden' : ''}>
+          <span>${copy.textLabel}</span>
+          <textarea class='qr-textarea' name='text' rows='3' maxlength='720' placeholder='${escapeAttr(copy.textPlaceholder)}'>${escapeHtml(textFieldValue)}</textarea>
+          <small>${copy.textHelp}</small>
+        </label>
+        <label class='field' data-role='link-field'${inputType === 'text' ? ' hidden' : ''}>
+          <span>${copy.linkLabel}</span>
+          <input type='url' name='link' inputmode='url' placeholder='${escapeAttr(copy.linkPlaceholder)}' value='${escapeAttr(linkFieldValue)}' spellcheck='false' autocomplete='off' maxlength='2048'>
+          <small>${copy.linkHelp}</small>
         </label>
       </form>
-      <aside class="qr-preview-card">
-        <div class="qr-preview-header">
+      <aside class='qr-preview-card'>
+        <div class='qr-preview-header'>
           <h4></h4>
-          <span class="qr-preview-status" data-role="qr-state">${
-            layer ? (isVi ? 'Đã chèn trên ảnh' : 'Placed on canvas') : (isVi ? 'Sẵn sàng chèn' : 'Ready to add')
-          }</span>
+          <span class='qr-preview-status' data-role='qr-state'>${layer ? copy.previewPlaced : current.dataUrl ? copy.previewReady : copy.previewEmpty}</span>
         </div>
-        <div class="qr-preview-frame" data-role="qr-preview" data-state="${current.dataUrl ? 'ready' : 'empty'}">
-          <img src="${current.dataUrl ?? ''}" alt="${isVi ? 'Bản xem trước mã QR' : 'QR preview'}" loading="lazy"${current.dataUrl ? '' : ' hidden'}>
-          <div class="qr-preview-placeholder" data-role="qr-empty"${current.dataUrl ? ' hidden' : ''}>
-            <p></p>
+        <div class='qr-preview-frame' data-role='qr-preview' data-state='${current.dataUrl ? 'ready' : 'empty'}'>
+          <img src='${current.dataUrl ?? ''}' alt='${isVi ? 'Bản xem trước mã QR' : 'QR preview'}' loading='lazy'${current.dataUrl ? '' : ' hidden'}>
+          <div class='qr-preview-placeholder' data-role='qr-empty'${current.dataUrl ? ' hidden' : ''}>
+            <p>${copy.placeholderDefault}</p>
           </div>
         </div>
-        <div class="qr-preview-actions">
-          <button type="button" class="btn secondary" data-action="preview" ${current.dataUrl ? '' : 'disabled'}>
-            <svg class="icon"><use href="#icon-camera"></use></svg>
-            <span>${isVi ? 'Quét thử bằng camera' : 'Test with camera'}</span>
+        <div class='qr-preview-actions'>
+          <button type='button' class='btn secondary' data-action='preview' ${current.dataUrl ? '' : 'disabled'}>
+            <svg class='icon'><use href='#icon-camera'></use></svg>
+            <span>${copy.previewButton}</span>
           </button>
-          <button type="button" class="btn primary" data-action="create"${layer ? ' hidden' : ''}>
-            ${isVi ? 'Chèn vào ảnh' : 'Add to canvas'}
+          <button type='button' class='btn primary' data-action='create'${layer ? ' hidden' : ''}>
+            ${copy.createButton}
           </button>
         </div>
-        <p class="qr-preview-hint">
-          ${isVi ? 'Mã QR sẽ nằm trên nền trắng dịu để dễ đọc trên ảnh của bạn.' : 'The code sits on a soft white tile to stay legible on top of your artwork.'}
+        <p class='qr-preview-hint'>
+          ${copy.hint}
         </p>
       </aside>
     </div>
@@ -2759,23 +2867,69 @@ function renderQrPanel(container) {
   const previewButton = container.querySelector('[data-action="preview"]');
   const createButton = container.querySelector('[data-action="create"]');
   const statusLabel = container.querySelector('[data-role="qr-state"]');
+  let previewError = null;
+  let previewErrorCode = null;
+  const placeholderTextEl = previewPlaceholder?.querySelector('p') || null;
+  const inputTypeRadios = Array.from(form.querySelectorAll('input[name="inputType"]'));
+  const textFieldWrapper = form.querySelector('[data-role="text-field"]');
+  const linkFieldWrapper = form.querySelector('[data-role="link-field"]');
+  const getSelectedInputType = () => {
+    const node = form.elements.inputType;
+    const raw = typeof node?.value === 'string' ? node.value : '';
+    return raw === 'link' ? 'link' : 'text';
+  };
+  const syncInputType = () => {
+    const selected = getSelectedInputType();
+    textFieldWrapper?.toggleAttribute('hidden', selected !== 'text');
+    linkFieldWrapper?.toggleAttribute('hidden', selected !== 'link');
+  };
+  const handleInputTypeToggle = () => {
+    syncInputType();
+  };
+  inputTypeRadios.forEach(radio => {
+    radio.addEventListener('change', handleInputTypeToggle);
+  });
+  syncInputType();
   let previewToken = 0;
   let currentPreviewDataUrl = current.dataUrl || null;
-  const updateStatusLabel = () => {
-    if (!statusLabel) return;
+  const describeStatus = () => {
+    if (previewErrorCode === 'too-long') {
+      return copy.previewTooLong;
+    }
+    if (previewErrorCode) {
+      return copy.previewError;
+    }
     const activeLayer = getActiveQrLayer();
     if (activeLayer) {
-      statusLabel.textContent = isVi ? 'Đã chèn trên ảnh' : 'Placed on canvas';
-    } else if (currentPreviewDataUrl) {
-      statusLabel.textContent = '';
-    } else {
-      statusLabel.textContent = '';
+      return copy.previewPlaced;
     }
+    if (currentPreviewDataUrl) {
+      return copy.previewReady;
+    }
+    return copy.previewEmpty;
+  };
+  const updateStatusLabel = () => {
+    if (!statusLabel) return;
+    statusLabel.textContent = describeStatus();
+    const activeLayer = getActiveQrLayer();
+    const statusState = previewErrorCode
+      ? 'error'
+      : activeLayer
+        ? 'placed'
+        : currentPreviewDataUrl
+          ? 'ready'
+          : 'idle';
+    statusLabel.dataset.state = statusState;
   };
   const setPreview = dataUrl => {
     currentPreviewDataUrl = dataUrl || null;
+    if (currentPreviewDataUrl) {
+      previewError = null;
+      previewErrorCode = null;
+    }
     if (previewFrame) {
-      previewFrame.dataset.state = currentPreviewDataUrl ? 'ready' : 'empty';
+      const state = previewErrorCode ? 'error' : currentPreviewDataUrl ? 'ready' : 'empty';
+      previewFrame.dataset.state = state;
     }
     if (previewImage) {
       if (currentPreviewDataUrl) {
@@ -2787,7 +2941,21 @@ function renderQrPanel(container) {
       }
     }
     if (previewPlaceholder) {
-      previewPlaceholder.hidden = Boolean(currentPreviewDataUrl);
+      const showPlaceholder = !currentPreviewDataUrl;
+      previewPlaceholder.hidden = !showPlaceholder;
+      if (placeholderTextEl) {
+        if (!showPlaceholder) {
+          placeholderTextEl.textContent = copy.placeholderDefault;
+        } else if (previewErrorCode === 'too-long') {
+          placeholderTextEl.textContent = copy.placeholderTooLong;
+        } else if (previewErrorCode) {
+          placeholderTextEl.textContent = copy.placeholderGeneric;
+        } else {
+          placeholderTextEl.textContent = copy.placeholderDefault;
+        }
+      }
+    } else if (placeholderTextEl) {
+      placeholderTextEl.textContent = copy.placeholderDefault;
     }
     if (previewButton) {
       previewButton.disabled = !currentPreviewDataUrl;
@@ -2797,9 +2965,13 @@ function renderQrPanel(container) {
   const readFormValues = () => {
     const latestLayer = getActiveQrLayer();
     const baseline = latestLayer || defaults;
-    const textField = form.elements.text;
-    const rawText = textField?.value;
-    const text = typeof rawText === 'string' ? rawText : '';
+    const selectedType = getSelectedInputType();
+    const textNode = form.elements.text;
+    const linkNode = form.elements.link;
+    const rawText = typeof textNode?.value === 'string' ? textNode.value : '';
+    const rawLink = typeof linkNode?.value === 'string' ? linkNode.value : '';
+    const normalizedLink = rawLink.trim();
+    const qrContent = selectedType === 'link' ? normalizedLink : rawText;
     const size = typeof latestLayer?.size === 'number'
       ? latestLayer.size
       : typeof baseline.size === 'number'
@@ -2822,13 +2994,16 @@ function renderQrPanel(container) {
         : { x: 0.5, y: 0.5 };
     return {
       values: {
-        text,
+        text: qrContent,
+        inputType: selectedType,
+        textContent: rawText,
+        link: normalizedLink,
         size,
         margin,
         opacity,
         position,
       },
-      hasContent: text.trim().length > 0,
+      hasContent: selectedType === 'link' ? normalizedLink.length > 0 : rawText.trim().length > 0,
     };
   };
   const handleChange = async () => {
@@ -2844,6 +3019,8 @@ function renderQrPanel(container) {
     };
     if (!hasContent) {
       previewToken += 1;
+      previewError = null;
+      previewErrorCode = null;
       applyUpdate({ ...values, dataUrl: null });
       setPreview(null);
       return;
@@ -2853,10 +3030,17 @@ function renderQrPanel(container) {
     if (token !== previewToken) return;
     const payload = { ...values };
     if (generated.error) {
+      previewError = generated.error;
+      previewErrorCode = generated.reason
+        || (typeof generated.error?.message === 'string' && generated.error.message.toLowerCase().includes('too long')
+          ? 'too-long'
+          : 'render-failed');
       applyUpdate(payload);
       setPreview(null);
       return;
     }
+    previewError = null;
+    previewErrorCode = null;
     if (generated.dataUrl) {
       payload.dataUrl = generated.dataUrl;
     }
@@ -2890,13 +3074,17 @@ function renderQrPanel(container) {
     if (!dataUrl) {
       const generated = await generateQr(values);
       if (generated.error || !generated.dataUrl) {
+        previewError = generated.error || null;
+        previewErrorCode = generated.reason
+          || (typeof generated.error?.message === 'string' && generated.error.message.toLowerCase().includes('too long')
+            ? 'too-long'
+            : 'render-failed');
+        setPreview(null);
         const now = Date.now();
         if (now - lastQrErrorAt > 1500) {
           showToast({
-            title: isVi ? 'QR quá dài' : 'QR too long',
-            message: isVi
-              ? 'Rút gọn nội dung hoặc chia thành nhiều mã trước khi chèn.'
-              : 'Shorten the content or split it across multiple QR codes before adding.',
+            title: copy.toastTitle,
+            message: copy.toastMessage,
             tone: 'warning',
           });
           lastQrErrorAt = now;
@@ -2920,10 +3108,18 @@ function renderQrPanel(container) {
   form.addEventListener('change', handleChange);
   previewButton?.addEventListener('click', handlePreviewClick);
   createButton?.addEventListener('click', handleCreateClick);
+  previewError = null;
+  previewErrorCode = null;
   setPreview(current.dataUrl || null);
-  if (!current.dataUrl && textValue.trim().length > 0) {
+  const hasInitialSeed = inputType === 'link'
+    ? normalizedInitialLink.length > 0
+    : initialContent.trim().length > 0;
+  if (!current.dataUrl && hasInitialSeed) {
     const seed = {
-      text: textValue,
+      text: inputType === 'link' ? normalizedInitialLink : initialContent,
+      inputType,
+      textContent: textFieldValue,
+      link: normalizedInitialLink,
       size: baseSize,
       margin: baseMargin,
       opacity: baseOpacity,
@@ -2933,12 +3129,21 @@ function renderQrPanel(container) {
     generateQr(seed).then(result => {
       if (token !== previewToken) return;
       if (result.error || !result.dataUrl) {
+        previewError = result.error || null;
+        previewErrorCode = result.reason
+          || (typeof result.error?.message === 'string' && result.error.message.toLowerCase().includes('too long')
+            ? 'too-long'
+            : result.error
+              ? 'render-failed'
+              : previewErrorCode);
         if (!getActiveQrLayer()) {
           Object.assign(toolDefaults[layerTypes.QR], seed);
         }
         setPreview(null);
         return;
       }
+      previewError = null;
+      previewErrorCode = null;
       if (!getActiveQrLayer()) {
         Object.assign(toolDefaults[layerTypes.QR], { ...seed, dataUrl: result.dataUrl });
       }
@@ -2955,9 +3160,11 @@ function renderQrPanel(container) {
     if (createButton) {
       createButton.removeEventListener('click', handleCreateClick);
     }
+    inputTypeRadios.forEach(radio => {
+      radio.removeEventListener('change', handleInputTypeToggle);
+    });
   };
 }
-
 async function generateQr(values) {
   return new Promise(resolve => {
     if (!window.QRCode) {
@@ -2965,7 +3172,8 @@ async function generateQr(values) {
       return;
     }
     const temp = document.createElement('div');
-    const text = typeof values.text === 'string' ? values.text : '';
+    const rawText = typeof values.text === 'string' ? values.text : '';
+    const text = typeof rawText.normalize === 'function' ? rawText.normalize('NFC') : rawText;
     if (!text) {
       temp.remove();
       resolve({ dataUrl: null });
@@ -3006,19 +3214,26 @@ async function generateQr(values) {
     }
     if (!created) {
       temp.remove();
-      resolve({ dataUrl: null, error: lastError || new Error('QR generation failed') });
+      resolve({
+        dataUrl: null,
+        error: lastError || new Error('QR generation failed'),
+        reason:
+          typeof lastError?.message === 'string' && lastError.message.toLowerCase().includes('too long')
+            ? 'too-long'
+            : undefined,
+      });
       return;
     }
     setTimeout(() => {
       const dataUrl = temp.querySelector('img')?.src || temp.querySelector('canvas')?.toDataURL('image/png');
       temp.remove();
       if (dataUrl) {
-        resolve({ dataUrl });
+        resolve({ dataUrl, reason: null });
       } else {
-        resolve({ dataUrl: null, error: new Error('QR render failed') });
+        resolve({ dataUrl: null, error: new Error('QR render failed'), reason: 'render-failed' });
       }
     }, 40);
-  }).catch(error => ({ dataUrl: null, error }));
+  }).catch(error => ({ dataUrl: null, error, reason: 'render-failed' }));
 }
 
 function renderBlurPanel(container) {
