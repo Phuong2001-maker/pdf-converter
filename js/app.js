@@ -2720,7 +2720,7 @@ function renderQrPanel(container) {
       <form id="qrForm" class="form-grid">
         <label class="field">
           <span>${isVi ? 'Nội dung chữ ký' : 'Signature content'}</span>
-          <textarea name="text" rows="3" maxlength="280" placeholder="${isVi ? 'Ví dụ: Bác sĩ Nguyễn – Nha khoa – 0900 000 000' : 'Example: Dr. Nguyen – Dental Clinic – 0900 000 000'}">${textValue}</textarea>
+          <textarea name="text" rows="3" maxlength="280" placeholder="${isVi ? '' : 'Example: Dr. Nguyen – Dental Clinic – 0900 000 000'}">${textValue}</textarea>
         </label>
       </form>
       <aside class="qr-preview-card">
