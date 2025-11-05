@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Collage</title>
+  <style>
+    :root{
+      --bg:#f6f7fb; --card:#fff; --text:#1c2430; --muted:#6b7483; --primary:#4c85ff; --border:#e6e9f2; --shadow:0 10px 30px rgba(16,24,40,.06);
+      --radius:14px; --mini-bg:#2c2f36; --mini-line:#a6b0c3;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+
+    /* Fullscreen 70/30 layout */
+    .app{display:grid;grid-template-columns:7fr 3fr;gap:16px;height:100vh;padding:16px}
+    @media (max-width: 980px){.app{grid-template-columns:1fr}}
+
+    .panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+
+    /* Workspace */
+    .workspace{display:flex;flex-direction:column;gap:12px;min-height:0}
+    .canvasWrap{position:relative;background:#f1f3f9;border:1px dashed var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;height:100%;overflow:hidden}
+    #preview{display:block;max-width:100%;max-height:100%;background: repeating-conic-gradient(#e9ecf5 0% 25%, transparent 0% 50%) 50%/24px 24px;border-radius:10px}
+
+    /* Right controls */
+    .controls{display:flex;flex-direction:column;min-height:0}
+    .controls header{padding:14px 16px;border-bottom:1px solid var(--border)}
+    .controls header h2{margin:0;font-size:18px}
+    .controls .content{padding:12px 16px;display:flex;flex-direction:column;gap:14px;overflow:auto}
+
+    .drop{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;padding:24px;border:2px dashed #cbd5e1;border-radius:12px;background:#f8faff;text-align:center;cursor:pointer}
+    .drop input{display:none}
+
+    .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px}
+    .thumb{position:relative;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#fff}
+    .thumb img{width:100%;height:80px;object-fit:cover;display:block}
+    .thumb .rm{position:absolute;top:6px;right:6px;background:#fff;border:1px solid #e6e6e6;border-radius:8px;padding:2px 6px;cursor:pointer;font-size:12px}
+    .thumb .handle{position:absolute;bottom:6px;left:6px;background:#fff;border:1px solid #e6e6e6;border-radius:8px;padding:2px 6px;font-size:12px;cursor:grab}
+
+    .row{display:flex;align-items:center;gap:10px}
+    .row label{min-width:160px;color:var(--muted)}
+    .row input[type="range"]{flex:1}
+    select, .toggle{padding:10px;border-radius:10px;border:1px solid var(--border);background:#fff}
+
+    .footer{padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px}
+    .btn{appearance:none;border:0;border-radius:10px;padding:10px 14px;background:var(--primary);color:#fff;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 8px 18px rgba(76,133,255,.25)}
+
+    /* Layout picker */
+    .countTabs{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+    .countTabs .tab{padding:6px 10px;border-radius:999px;border:1px solid var(--border);background:#fff;cursor:pointer;font-weight:600;color:#4b5563}
+    .countTabs .tab.active{background:var(--primary);border-color:var(--primary);color:#fff}
+    .presetGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-top:8px}
+    .preset{border:1px solid var(--border);border-radius:10px;padding:8px;background:#fff;cursor:pointer}
+    .preset:hover{box-shadow:0 8px 20px rgba(16,24,40,.08)}
+    .mini{width:100%;aspect-ratio:1/1;background:var(--mini-bg);border-radius:8px;position:relative;overflow:hidden}
+    .mini .cell{position:absolute;background:transparent;border:2px solid var(--mini-line);border-radius:4px}
+    .preset.active{outline:2px solid var(--primary)}
+    .sectionLabel{margin-top:10px;color:var(--muted);font-weight:600}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="panel workspace">
+      <div class="canvasWrap">
+        <canvas id="preview"></canvas>
+      </div>
+    </section>
+
+    <aside class="panel controls">
+      <header><h2>Thiết lập</h2></header>
+      <div class="content">
+        <label class="drop" id="drop">
+          <input id="file" type="file" accept="image/*" multiple />
+          <div><strong>Tải ảnh lên</strong></div>
+          <div style="color:var(--muted);font-size:12px">Hỗ trợ kéo-thả. Nhiều ảnh.</div>
+        </label>
+
+        <div class="thumbs" id="thumbs"></div>
+
+        <div class="row"><label>Bố cục (2–12 ảnh)</label></div>
+        <div class="countTabs" id="countTabs"></div>
+        <div class="presetGrid" id="presetGrid"></div>
+
+        <div class="sectionLabel">Hình dạng (preset shape)</div>
+        <div class="presetGrid" id="shapeGrid"></div>
+
+        <div class="row">
+          <label>Khoảng cách</label>
+          <input id="gap" type="range" min="0" max="60" step="1" value="16" />
+        </div>
+        <div class="row">
+          <label>Bo góc</label>
+          <input id="radius" type="range" min="0" max="80" step="1" value="20" />
+        </div>
+        <div class="row">
+          <label>Nền</label>
+          <input id="bg" type="color" value="#ffffff" />
+        </div>
+      </div>
+      <div class="footer">
+        <button class="btn" id="btnExport">Xuất ảnh</button>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    const els = {
+      canvas: document.getElementById('preview'),
+      ctx: document.getElementById('preview').getContext('2d'),
+      file: document.getElementById('file'),
+      drop: document.getElementById('drop'),
+      thumbs: document.getElementById('thumbs'),
+      countTabs: document.getElementById('countTabs'),
+      presetGrid: document.getElementById('presetGrid'),
+      shapeGrid: document.getElementById('shapeGrid'),
+      gap: document.getElementById('gap'),
+      radius: document.getElementById('radius'),
+      bg: document.getElementById('bg'),
+      btnExport: document.getElementById('btnExport'),
+    };
+
+    const state = {
+      images: [], // {file,url,img,zoom,offsetX,offsetY}
+      draggingIndex: null,
+      layout: null, // normalized cells {x,y,w,h,shape?}
+      countSelected: 2,
+    };
+
+    // Resize canvas to fit workspace (devicePixelRatio aware)
+    function resizeCanvas(){
+      const wrap = document.querySelector('.canvasWrap');
+      const rect = wrap.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const w = Math.max(1, Math.floor(rect.width * dpr));
+      const h = Math.max(1, Math.floor(rect.height * dpr));
+      els.canvas.width = w; els.canvas.height = h;
+      els.canvas.style.width = rect.width + 'px';
+      els.canvas.style.height = rect.height + 'px';
+      render();
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    // Drag & drop upload
+    ['dragenter','dragover'].forEach(ev=>{
+      els.drop.addEventListener(ev, e=>{e.preventDefault(); els.drop.style.borderColor = '#4c85ff'});
+    });
+    ;['dragleave','drop'].forEach(ev=>{
+      els.drop.addEventListener(ev, e=>{e.preventDefault(); els.drop.style.borderColor = '#cbd5e1'});
+    });
+    els.drop.addEventListener('drop', e=>{
+      const files = [...e.dataTransfer.files].filter(f=>/^image\//.test(f.type));
+      addFiles(files);
+    });
+
+    els.file.addEventListener('change', e=> addFiles([...e.target.files]));
+
+    function addFiles(files){
+      const tasks = files.map(f=> new Promise(res=>{
+        const url = URL.createObjectURL(f);
+        const img = new Image(); img.onload = ()=> res({file:f,url,img,zoom:1,offsetX:0,offsetY:0}); img.src = url;
+      }));
+      Promise.all(tasks).then(items=>{ state.images.push(...items); renderThumbs(); render(); });
+    }
+
+    function renderThumbs(){
+      els.thumbs.innerHTML = '';
+      state.images.forEach((it, idx)=>{
+        const div = document.createElement('div'); div.className='thumb';
+        const im = document.createElement('img'); im.src = it.url; div.appendChild(im);
+        const rm = document.createElement('button'); rm.textContent='×'; rm.className='rm'; rm.onclick=()=>{ state.images.splice(idx,1); URL.revokeObjectURL(it.url); renderThumbs(); render(); };
+        const handle = document.createElement('div'); handle.className='handle'; handle.textContent = '#'+(idx+1);
+        handle.draggable = true;
+        handle.addEventListener('dragstart', e=>{ state.draggingIndex = idx; e.dataTransfer.setData('text/plain', idx);});
+        div.addEventListener('dragover', e=> e.preventDefault());
+        div.addEventListener('drop', e=>{ e.preventDefault(); const from = state.draggingIndex; const to = idx; if(from==null) return; const [m]=state.images.splice(from,1); state.images.splice(to,0,m); state.draggingIndex=null; renderThumbs(); render(); });
+        div.appendChild(rm); div.appendChild(handle);
+        els.thumbs.appendChild(div);
+      });
+    }
+
+    // Convert normalized cells -> canvas rects with gap
+    function computeLayoutFromCells(cells, W, H, gap){
+      if(!cells) return [];
+      return cells.map(c=>({x:c.x*W + gap/2, y:c.y*H + gap/2, w:Math.max(0,c.w*W - gap), h:Math.max(0,c.h*H - gap), shape:c.shape}));
+    }
+    function autoGrid(n){
+      if(n<=0) return [];
+      const cols = Math.ceil(Math.sqrt(n));
+      const rows = Math.ceil(n/cols);
+      const res=[]; let k=0;
+      for(let j=0;j<rows;j++){
+        for(let i=0;i<cols;i++){
+          if(k++>=n) break; res.push({x:i/cols,y:j/rows,w:1/cols,h:1/rows});
+        }
+      }
+      return res;
+    }
+
+    function drawImageMasked(ctx, img, rect, radius, imgState, shape){
+      const {x,y,w,h}=rect; const r=Math.min(radius, w/2, h/2);
+      ctx.save();
+      let path;
+      if(shape && shape.type){ path = buildShapePath(shape, x,y,w,h,r); }
+      if(!path){
+        path = new Path2D();
+        path.moveTo(x+r, y);
+        path.arcTo(x+w, y, x+w, y+h, r);
+        path.arcTo(x+w, y+h, x, y+h, r);
+        path.arcTo(x, y+h, x, y, r);
+        path.arcTo(x, y, x+w, y, r);
+        path.closePath();
+      }
+      ctx.clip(path);
+      const zx = imgState.zoom || 1;
+      const iw = img.width, ih = img.height;
+      const rectRatio = w/h, imgRatio = iw/ih;
+      let drawW, drawH;
+      if(imgRatio > rectRatio){ drawH = h * zx; drawW = drawH * imgRatio; } else { drawW = w * zx; drawH = drawW / imgRatio; }
+      const dx = x + (w-drawW)/2 + (imgState.offsetX||0);
+      const dy = y + (h-drawH)/2 + (imgState.offsetY||0);
+      ctx.drawImage(img, dx, dy, drawW, drawH);
+      ctx.restore();
+    }
+
+    function buildShapePath(shape, x,y,w,h,r){
+      const p = new Path2D();
+      switch(shape.type){
+        case 'circle':{
+          const cx = x + w/2, cy = y + h/2; const rad = Math.min(w,h)/2; p.arc(cx,cy,rad,0,Math.PI*2); return p;
+        }
+        case 'heart':{
+          const cx = x + w/2, cy = y + h*0.6; const s = Math.min(w,h)/2;
+          p.moveTo(cx, cy);
+          p.bezierCurveTo(cx - s, cy - s, x, y + h*0.25, x + w*0.25, y + h*0.2);
+          p.bezierCurveTo(x + w*0.38, y, cx, y + h*0.2, cx, y + h*0.35);
+          p.bezierCurveTo(cx, y + h*0.2, x + w*0.62, y, x + w*0.75, y + h*0.2);
+          p.bezierCurveTo(x + w, y + h*0.25, cx + s, cy - s, cx, cy);
+          p.closePath(); return p;
+        }
+        case 'wave':{
+          p.moveTo(x, y);
+          p.bezierCurveTo(x + w*0.15, y + h*0.2, x + w*0.35, y + h*0.1, x + w*0.5, y + h*0.5);
+          p.bezierCurveTo(x + w*0.65, y + h*0.9, x + w*0.85, y + h*0.8, x + w, y + h);
+          p.lineTo(x+w, y+h);
+          p.lineTo(x+w, y);
+          p.closePath(); return p;
+        }
+        case 'star':{
+          const cx=x+w/2, cy=y+h/2; const outer=Math.min(w,h)/2; const inner=outer*0.5; const spikes=5; let rot=Math.PI/2*3; let step=Math.PI/spikes;
+          p.moveTo(cx,cy-outer);
+          for(let i=0;i<spikes;i++){
+            p.lineTo(cx+Math.cos(rot)*outer, cy+Math.sin(rot)*outer); rot+=step;
+            p.lineTo(cx+Math.cos(rot)*inner, cy+Math.sin(rot)*inner); rot+=step;
+          }
+          p.lineTo(cx,cy-outer); p.closePath(); return p;
+        }
+        case 'droplet':{
+          const cx=x+w/2, topY=y; const baseY=y+h*0.7;
+          p.moveTo(cx, topY);
+          p.bezierCurveTo(x+w, y+h*0.2, x+w*0.9, baseY, cx, y+h);
+          p.bezierCurveTo(x+w*0.1, baseY, x, y+h*0.2, cx, topY);
+          p.closePath(); return p;
+        }
+        case 'triangle':{
+          p.moveTo(x+w/2, y); p.lineTo(x+w, y+h); p.lineTo(x, y+h); p.closePath(); return p;
+        }
+        case 'hexagon':{
+          const a = Math.min(w,h)/2; const cx=x+w/2, cy=y+h/2;
+          for(let i=0;i<6;i++){ const ang=Math.PI/3*i - Math.PI/6; const px=cx+a*Math.cos(ang), py=cy+a*Math.sin(ang); if(i===0) p.moveTo(px,py); else p.lineTo(px,py);} p.closePath(); return p;
+        }
+        case 'diamond':{
+          p.moveTo(x+w/2,y); p.lineTo(x+w,y+h/2); p.lineTo(x+w/2,y+h); p.lineTo(x,y+h/2); p.closePath(); return p;
+        }
+        default: return null;
+      }
+    }
+
+    function render(){
+      const W = els.canvas.width; const H = els.canvas.height;
+      const gap = parseInt(els.gap.value,10); const radius = parseInt(els.radius.value,10);
+      els.ctx.save();
+      els.ctx.setTransform(1,0,0,1,0,0);
+      els.ctx.fillStyle = els.bg.value; els.ctx.fillRect(0,0,W,H);
+      const n = Math.min(state.images.length, state.layout? state.layout.length : state.images.length);
+      const cells = state.layout? state.layout.slice(0,n) : autoGrid(n);
+      const rects = computeLayoutFromCells(cells, W, H, gap);
+      rects.forEach((r, i)=>{ const img = state.images[i]?.img; const sh = cells[i]?.shape; if(!img) return; drawImageMasked(els.ctx, img, r, radius, state.images[i], sh); });
+      els.ctx.restore();
+    }
+
+    // Interactions: disable wheel zoom completely
+    els.canvas.addEventListener('wheel', (e)=>{ e.preventDefault(); }, {passive:false});
+
+    // Optional: still allow panning with mouse drag? Keep logic but can be disabled by commenting.
+    let hoverIndex = -1; let isPanning=false; let panStart={x:0,y:0};
+    function locateCell(px,py){
+      const W = els.canvas.width, H=els.canvas.height; const gap=parseInt(els.gap.value,10);
+      const n = Math.min(state.images.length, state.layout? state.layout.length : state.images.length);
+      const cells = state.layout? state.layout.slice(0,n) : autoGrid(n);
+      const rects = computeLayoutFromCells(cells, W, H, gap);
+      for(let i=0;i<rects.length;i++){ const r=rects[i]; if(px>=r.x && px<=r.x+r.w && py>=r.y && py<=r.y+r.h) return i; }
+      return -1;
+    }
+    const previewRect = ()=> els.canvas.getBoundingClientRect();
+    els.canvas.addEventListener('mousemove', e=>{ const b=previewRect(); hoverIndex = locateCell((e.clientX-b.left)*(els.canvas.width/b.width), (e.clientY-b.top)*(els.canvas.height/b.height)); });
+    els.canvas.addEventListener('mousedown', e=>{ if(hoverIndex<0) return; isPanning=true; panStart={x:e.clientX,y:e.clientY}; e.preventDefault(); });
+    window.addEventListener('mouseup', ()=> isPanning=false);
+    window.addEventListener('mousemove', e=>{ if(!isPanning || hoverIndex<0) return; const it=state.images[hoverIndex]; it.offsetX += (e.clientX-panStart.x)*(els.canvas.width/previewRect().width); it.offsetY += (e.clientY-panStart.y)*(els.canvas.height/previewRect().height); panStart={x:e.clientX,y:e.clientY}; render(); });
+
+    // Live update on controls
+    ['input','change'].forEach(ev=>{
+      [els.gap, els.radius, els.bg].forEach(el=> el.addEventListener(ev, render));
+    });
+
+    // Export PNG
+    els.btnExport.addEventListener('click', ()=>{
+      els.canvas.toBlob((blob)=>{
+        const url = URL.createObjectURL(blob);
+        const a=document.createElement('a');
+        a.href=url; a.download = 'collage.png';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(()=>URL.revokeObjectURL(url), 3000);
+      }, 'image/png');
+    });
+
+    // ===== Layout Picker (2..12) =====
+    function setupLayoutPicker(){
+      for(let i=2;i<=12;i++){
+        const t=document.createElement('button'); t.className='tab'+(i===state.countSelected?' active':''); t.textContent=i; t.addEventListener('click',()=>{ state.countSelected=i; updateTabs(); renderPresets(); }); els.countTabs.appendChild(t);
+      }
+      renderPresets();
+      function updateTabs(){ [...els.countTabs.children].forEach((c,idx)=> c.classList.toggle('active', idx+2===state.countSelected)); }
+    }
+
+    function renderPresets(){
+      els.presetGrid.innerHTML='';
+      const presets = getPresets(state.countSelected);
+      presets.forEach((cells)=>{
+        const card=document.createElement('div'); card.className='preset';
+        const mini=document.createElement('div'); mini.className='mini'; card.appendChild(mini);
+        cells.forEach(c=>{ const d=document.createElement('div'); d.className='cell'; d.style.left=(c.x*100)+'%'; d.style.top=(c.y*100)+'%'; d.style.width=(c.w*100)+'%'; d.style.height=(c.h*100)+'%'; mini.appendChild(d); });
+        card.addEventListener('click', ()=>{ [...els.presetGrid.children].forEach(n=>n.classList.remove('active')); card.classList.add('active'); state.layout = cells.map(c=>({...c})); render(); });
+        els.presetGrid.appendChild(card);
+      });
+
+      // Shape presets
+      els.shapeGrid.innerHTML='';
+      const S = getShapePresets();
+      S.forEach(cells=>{
+        const card=document.createElement('div'); card.className='preset';
+        const mini=document.createElement('div'); mini.className='mini'; card.appendChild(mini);
+        cells.forEach(c=>{ const d=document.createElement('div'); d.className='cell'; d.style.left=(c.x*100)+'%'; d.style.top=(c.y*100)+'%'; d.style.width=(c.w*100)+'%'; d.style.height=(c.h*100)+'%'; mini.appendChild(d); });
+        card.addEventListener('click', ()=>{ [...els.shapeGrid.children].forEach(n=>n.classList.remove('active')); card.classList.add('active'); state.layout = cells.map(c=>({...c})); render(); });
+        els.shapeGrid.appendChild(card);
+      });
+    }
+
+    function getPresets(n){
+      const grid = (r,c)=>{const a=[]; for(let j=0;j<r;j++)for(let i=0;i<c;i++) a.push({x:i/c,y:j/r,w:1/c,h:1/r}); return a;};
+      const headerGrid = (hRatio, rows, cols)=>{ const a=[{x:0,y:0,w:1,h:hRatio}]; const y0=hRatio; const rh=1-hRatio; for(let j=0;j<rows;j++)for(let i=0;i<cols;i++) a.push({x:i/cols,y:y0+j*rh/rows,w:1/cols,h:rh/rows}); return a; };
+      const sideGrid = (wRatio, rows)=>{ const a=[{x:0,y:0,w:wRatio,h:1}]; const x0=wRatio; const rw=1-wRatio; for(let j=0;j<rows;j++) a.push({x:x0,y:j/rows,w:rw,h:1/rows}); return a; };
+      switch(n){
+        case 2: return [ [{x:0,y:0,w:.5,h:1},{x:.5,y:0,w:.5,h:1}], [{x:0,y:0,w:1,h:.5},{x:0,y:.5,w:1,h:.5}], [{x:0,y:0,w:.6,h:1},{x:.6,y:0,w:.4,h:1}], [{x:0,y:0,w:.4,h:1},{x:.4,y:0,w:.6,h:1}] ];
+        case 3: return [ [{x:0,y:0,w:1,h:.6},{x:0,y:.6,w:.5,h:.4},{x:.5,y:.6,w:.5,h:.4}], [{x:0,y:0,w:.6,h:1},{x:.6,y:0,w:.4,h:.5},{x:.6,y:.5,w:.4,h:.5}], [{x:0,y:0,w:1/3,h:1},{x:1/3,y:0,w:1/3,h:1},{x:2/3,y:0,w:1/3,h:1}] ];
+        case 4: return [ grid(2,2), headerGrid(.5,1,2), headerGrid(.4,2,2), sideGrid(.4,3) ];
+        case 5: return [ headerGrid(.5,1,4), headerGrid(.4,2,2).slice(0,5), sideGrid(.4,4), [{x:0,y:0,w:.66,h:1},{x:.66,y:0,w:.34,h:.5},{x:.66,y:.5,w:.34,h:.5},{x:0,y:0,w:.33,h:.5},{x:.33,y:0,w:.33,h:.5}] ];
+        case 6: return [ grid(2,3), grid(3,2), headerGrid(.4,2,3), sideGrid(.33,4) ];
+        case 7: return [ headerGrid(.4,2,3).slice(0,7), sideGrid(.33,6).slice(0,7), grid(3,3).slice(0,7) ];
+        case 8: return [ grid(2,4), grid(4,2), headerGrid(.35,3,3).slice(0,8), sideGrid(.3,7).slice(0,8) ];
+        case 9: return [ grid(3,3), headerGrid(.33,2,3).slice(0,9), sideGrid(.33,8).slice(0,9) ];
+        case 10: return [ grid(2,5), grid(5,2), headerGrid(.3,3,3).slice(0,10), sideGrid(.28,9).slice(0,10) ];
+        case 11: return [ grid(3,4).slice(0,11), headerGrid(.28,3,3).slice(0,11), sideGrid(.26,10).slice(0,11) ];
+        case 12: return [ grid(3,4), grid(4,3), headerGrid(.3,3,4) ];
+        default: return [ autoGrid(n) ];
+      }
+    }
+
+    function getShapePresets(){
+      return [
+        // 2
+        {name:'2: hai hình tròn', cells:[{x:0,y:0,w:.5,h:1, shape:{type:'circle'}},{x:.5,y:0,w:.5,h:1, shape:{type:'circle'}}]},
+        {name:'2: tim + tam giác', cells:[{x:0,y:0,w:.5,h:1, shape:{type:'heart'}},{x:.5,y:0,w:.5,h:1, shape:{type:'triangle'}}]},
+        {name:'2: kim cương', cells:[{x:0,y:0,w:.5,h:1, shape:{type:'diamond'}},{x:.5,y:0,w:.5,h:1, shape:{type:'diamond'}}]},
+        // 3
+        {name:'3: tim ở giữa', cells:[{x:0,y:0,w:.33,h:1},{x:.33,y:0,w:.34,h:1, shape:{type:'heart'}},{x:.67,y:0,w:.33,h:1}]},
+        {name:'3: tam giác', cells:[{x:0,y:0,w:.33,h:1, shape:{type:'triangle'}},{x:.33,y:0,w:.34,h:1, shape:{type:'triangle'}},{x:.67,y:0,w:.33,h:1, shape:{type:'triangle'}}]},
+        // 4
+        {name:'4: bốn hình tròn', cells:[{x:0,y:0,w:.5,h:.5, shape:{type:'circle'}},{x:.5,y:0,w:.5,h:.5, shape:{type:'circle'}},{x:0,y:.5,w:.5,h:.5, shape:{type:'circle'}},{x:.5,y:.5,w:.5,h:.5, shape:{type:'circle'}}]},
+        {name:'4: lục giác', cells:[{x:0,y:0,w:.5,h:.5, shape:{type:'hexagon'}},{x:.5,y:0,w:.5,h:.5, shape:{type:'hexagon'}},{x:0,y:.5,w:.5,h:.5, shape:{type:'hexagon'}},{x:.5,y:.5,w:.5,h:.5, shape:{type:'hexagon'}}]},
+        // 5
+        {name:'5: sao trung tâm', cells:[{x:.25,y:.25,w:.5,h:.5, shape:{type:'star'}},{x:0,y:0,w:.25,h:.25},{x:.75,y:0,w:.25,h:.25},{x:0,y:.75,w:.25,h:.25},{x:.75,y:.75,w:.25,h:.25}]},
+        // 6
+        {name:'6: wave dọc + 5 ô nhỏ', cells:[{x:0,y:0,w:.4,h:1, shape:{type:'wave'}},{x:.4,y:0,w:.6,h:.2},{x:.4,y:.2,w:.6,h:.2},{x:.4,y:.4,w:.6,h:.2},{x:.4,y:.6,w:.6,h:.2},{x:.4,y:.8,w:.6,h:.2}]},
+        // 8
+        {name:'8: droplet giữa', cells:[{x:0,y:0,w:1,h:1, shape:{type:'droplet'}},{x:0,y:0,w:.25,h:.25},{x:.75,y:0,w:.25,h:.25},{x:0,y:.75,w:.25,h:.25},{x:.75,y:.75,w:.25,h:.25},{x:.25,y:0,w:.25,h:.25},{x:.5,y:0,w:.25,h:.25},{x:.25,y:.75,w:.25,h:.25}]},
+        // 10
+        {name:'10: lưới tròn 2x5', cells:(()=>{const a=[]; for(let j=0;j<2;j++)for(let i=0;i<5;i++) a.push({x:i/5,y:j/2,w:1/5,h:1/2, shape:{type:'circle'}}); return a;})()},
+        // 12
+        {name:'12: lưới tròn 3x4', cells:(()=>{const a=[]; for(let j=0;j<3;j++)for(let i=0;i<4;i++) a.push({x:i/4,y:j/3,w:1/4,h:1/3, shape:{type:'circle'}}); return a;})()},
+      ];
+    }
+
+    // Init
+    (function init(){ resizeCanvas(); setupLayoutPicker(); })();
+  </script>
+</body>
+</html>
