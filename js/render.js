@@ -400,24 +400,45 @@ export class CanvasRenderer {
   }
 
   drawLogoLayer(ctx, image, layer) {
-    const {
-      asset,
-      position = { x: 0.5, y: 0.5 },
-      scale = 1,
-      rotation = 0,
-      opacity = 1,
-      width = 200,
-      height = 200,
-    } = layer;
+    const { asset } = layer;
     if (!asset) return;
-    const drawWidth = width * scale;
-    const drawHeight = height * scale;
-    const x = position.x * image.width;
-    const y = position.y * image.height;
+    const baseWidth = Number.isFinite(layer.width) ? layer.width : asset.naturalWidth || asset.width || 0;
+    const baseHeight = Number.isFinite(layer.height) ? layer.height : asset.naturalHeight || asset.height || 0;
+    if (!baseWidth || !baseHeight) return;
+    const scale = Number.isFinite(layer.scale) ? layer.scale : 1;
+    const rotation = Number.isFinite(layer.rotation) ? layer.rotation : 0;
+    const opacity = Number.isFinite(layer.opacity) ? layer.opacity : 1;
+    const drawWidth = Math.max(1, baseWidth * scale);
+    const drawHeight = Math.max(1, baseHeight * scale);
+    const rotationRad = (rotation * Math.PI) / 180;
+    const cos = Math.cos(rotationRad);
+    const sin = Math.sin(rotationRad);
+    const boundWidth = Math.abs(drawWidth * cos) + Math.abs(drawHeight * sin);
+    const boundHeight = Math.abs(drawWidth * sin) + Math.abs(drawHeight * cos);
+    const widthRatio = clamp(boundWidth / image.width, 0, 1);
+    const heightRatio = clamp(boundHeight / image.height, 0, 1);
+    const halfWidthRatio = widthRatio >= 1 ? 0.5 : widthRatio / 2;
+    const halfHeightRatio = heightRatio >= 1 ? 0.5 : heightRatio / 2;
+    const position = {
+      x: clamp(layer.position?.x ?? 0.5, halfWidthRatio, 1 - halfWidthRatio),
+      y: clamp(layer.position?.y ?? 0.5, halfHeightRatio, 1 - halfHeightRatio),
+    };
+    const centerX = position.x * image.width;
+    const centerY = position.y * image.height;
+    const bounds = {
+      x: widthRatio >= 1 ? 0 : clamp(position.x - widthRatio / 2, 0, 1 - widthRatio),
+      y: heightRatio >= 1 ? 0 : clamp(position.y - heightRatio / 2, 0, 1 - heightRatio),
+      width: widthRatio,
+      height: heightRatio,
+    };
+    if (!layer.position || layer.position.x !== position.x || layer.position.y !== position.y) {
+      layer.position = { ...position };
+    }
+    layer.bounds = bounds;
     ctx.save();
-    ctx.globalAlpha = opacity;
-    ctx.translate(x, y);
-    ctx.rotate((rotation * Math.PI) / 180);
+    ctx.globalAlpha = clamp(opacity, 0, 1);
+    ctx.translate(centerX, centerY);
+    ctx.rotate(rotationRad);
     ctx.drawImage(asset, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
     ctx.restore();
   }

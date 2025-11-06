@@ -139,6 +139,66 @@ const getLayerBounds = (layer, image) => {
     height: layer.bounds.height * image.height,
   };
 };
+const normalizeAngle = degrees => {
+  if (!Number.isFinite(degrees)) return 0;
+  let angle = degrees % 360;
+  if (angle > 180) {
+    angle -= 360;
+  } else if (angle <= -180) {
+    angle += 360;
+  }
+  return angle;
+};
+const LOGO_MIN_SCALE = 0.08;
+const LOGO_MAX_SCALE = 8;
+const resolveLogoMetrics = (layer, image) => {
+  if (!layer || layer.type !== layerTypes.LOGO || !image) return null;
+  const baseWidth = Number.isFinite(layer.width) ? layer.width : layer.asset?.naturalWidth || layer.asset?.width || 0;
+  const baseHeight = Number.isFinite(layer.height) ? layer.height : layer.asset?.naturalHeight || layer.asset?.height || 0;
+  if (!baseWidth || !baseHeight) return null;
+  const scale = Number.isFinite(layer.scale) ? layer.scale : 1;
+  const rotation = Number.isFinite(layer.rotation) ? layer.rotation : 0;
+  const drawWidth = Math.max(1, baseWidth * scale);
+  const drawHeight = Math.max(1, baseHeight * scale);
+  const rotationRad = (rotation * Math.PI) / 180;
+  const cos = Math.cos(rotationRad);
+  const sin = Math.sin(rotationRad);
+  const boundWidth = Math.abs(drawWidth * cos) + Math.abs(drawHeight * sin);
+  const boundHeight = Math.abs(drawWidth * sin) + Math.abs(drawHeight * cos);
+  const widthRatio = clamp(boundWidth / image.width, 0, 1);
+  const heightRatio = clamp(boundHeight / image.height, 0, 1);
+  const halfWidthRatio = widthRatio >= 1 ? 0.5 : widthRatio / 2;
+  const halfHeightRatio = heightRatio >= 1 ? 0.5 : heightRatio / 2;
+  const position = {
+    x: clamp(layer.position?.x ?? 0.5, halfWidthRatio, 1 - halfWidthRatio),
+    y: clamp(layer.position?.y ?? 0.5, halfHeightRatio, 1 - halfHeightRatio),
+  };
+  const bounds = {
+    x: widthRatio >= 1 ? 0 : clamp(position.x - widthRatio / 2, 0, 1 - widthRatio),
+    y: heightRatio >= 1 ? 0 : clamp(position.y - heightRatio / 2, 0, 1 - heightRatio),
+    width: widthRatio,
+    height: heightRatio,
+  };
+  return {
+    baseWidth,
+    baseHeight,
+    scale,
+    rotation,
+    rotationRad,
+    drawWidth,
+    drawHeight,
+    boundWidth,
+    boundHeight,
+    widthRatio,
+    heightRatio,
+    bounds,
+    center: {
+      x: position.x * image.width,
+      y: position.y * image.height,
+    },
+    position,
+  };
+};
 const isPointInsideBounds = (bounds, px, py) => {
   if (!bounds) return false;
   return px >= bounds.x && px <= bounds.x + bounds.width && py >= bounds.y && py <= bounds.y + bounds.height;
@@ -178,9 +238,15 @@ const reanchorTextLayerToAlign = (image, layer, alignOverride) => {
 const hideSelectionOverlay = () => {
   if (!selectionOverlay) return;
   selectionOverlay.classList.remove('is-active');
+  selectionOverlay.classList.remove('is-rotating');
   selectionOverlay.style.width = '0px';
   selectionOverlay.style.height = '0px';
   selectionOverlay.dataset.layerId = '';
+  delete selectionOverlay.dataset.layerType;
+  const transformBox = selectionOverlay.querySelector('.transform-box');
+  if (transformBox) {
+    transformBox.style.transform = 'rotate(0deg)';
+  }
 };
 const syncSelectionOverlay = () => {
   if (!selectionOverlay) return;
@@ -190,11 +256,42 @@ const syncSelectionOverlay = () => {
     return;
   }
   const layer = getLayer(image.id, state.activeLayerId);
-  if (
-    !layer ||
-    layer.visible === false ||
-    (layer.type !== layerTypes.TEXT && layer.type !== layerTypes.QR)
-  ) {
+  if (!layer || layer.visible === false) {
+    hideSelectionOverlay();
+    return;
+  }
+  selectionOverlay.dataset.layerId = layer.id;
+  selectionOverlay.dataset.layerType = layer.type;
+  const transformBox = selectionOverlay.querySelector('.transform-box');
+  if (transformBox) {
+    transformBox.style.transform = 'rotate(0deg)';
+  }
+  if (layer.type === layerTypes.LOGO) {
+    const metrics = resolveLogoMetrics(layer, image);
+    if (!metrics || metrics.drawWidth < 1 || metrics.drawHeight < 1) {
+      hideSelectionOverlay();
+      return;
+    }
+    const halfWidth = metrics.drawWidth / 2;
+    const halfHeight = metrics.drawHeight / 2;
+    const topLeft = renderer.imageToScreen(metrics.center.x - halfWidth, metrics.center.y - halfHeight);
+    const bottomRight = renderer.imageToScreen(metrics.center.x + halfWidth, metrics.center.y + halfHeight);
+    const width = bottomRight.x - topLeft.x;
+    const height = bottomRight.y - topLeft.y;
+    if (!Number.isFinite(width) || !Number.isFinite(height) || width < 1 || height < 1) {
+      hideSelectionOverlay();
+      return;
+    }
+    selectionOverlay.style.transform = `translate3d(${topLeft.x}px, ${topLeft.y}px, 0)`;
+    selectionOverlay.style.width = `${width}px`;
+    selectionOverlay.style.height = `${height}px`;
+    if (transformBox) {
+      transformBox.style.transform = `rotate(${metrics.rotation}deg)`;
+    }
+    selectionOverlay.classList.add('is-active');
+    return;
+  }
+  if (layer.type !== layerTypes.TEXT && layer.type !== layerTypes.QR) {
     hideSelectionOverlay();
     return;
   }
@@ -214,7 +311,6 @@ const syncSelectionOverlay = () => {
   selectionOverlay.style.transform = `translate3d(${topLeft.x}px, ${topLeft.y}px, 0)`;
   selectionOverlay.style.width = `${width}px`;
   selectionOverlay.style.height = `${height}px`;
-  selectionOverlay.dataset.layerId = layer.id;
   selectionOverlay.classList.add('is-active');
 };
 const queueOverlaySync = () => {
@@ -812,6 +908,7 @@ function setupSelectionOverlay() {
   if (!selectionOverlay) return;
   selectionOverlay.innerHTML = `
     <div class="transform-box" data-role="box">
+      <div class="transform-handle handle-rotate" data-handle="rotate" role="button" aria-label="Rotate layer"></div>
       <div class="transform-handle handle-nw" data-handle="nw" role="button" aria-label="Resize northwest"></div>
       <div class="transform-handle handle-ne" data-handle="ne" role="button" aria-label="Resize northeast"></div>
       <div class="transform-handle handle-sw" data-handle="sw" role="button" aria-label="Resize southwest"></div>
@@ -1293,7 +1390,12 @@ function handleSelectionPointerDown(event) {
   const image = getActiveImage();
   if (!image) return;
   const layer = getLayer(image.id, state.activeLayerId);
-  if (!layer || (layer.type !== layerTypes.TEXT && layer.type !== layerTypes.QR)) return;
+  if (
+    !layer ||
+    (layer.type !== layerTypes.TEXT && layer.type !== layerTypes.QR && layer.type !== layerTypes.LOGO)
+  ) {
+    return;
+  }
   rememberPointer(event);
   if (isSpacePressed) {
     startPan(event, image);
@@ -1322,6 +1424,12 @@ function handleSelectionPointerDown(event) {
       startTextResize(layer, handle, pointer, event.pointerId);
     } else if (layer.type === layerTypes.QR) {
       startQrResize(layer, handle, pointer, event.pointerId);
+    } else if (layer.type === layerTypes.LOGO) {
+      if (handle === 'rotate') {
+        startLogoRotate(layer, pointer, event.pointerId);
+      } else {
+        startLogoResize(layer, handle, pointer, event.pointerId);
+      }
     }
   } else {
     startLayerDrag(pointer, event.pointerId);
@@ -1350,6 +1458,10 @@ function handleSelectionPointerMove(event) {
       updateTextResize(event, image);
     } else if (resizeSession.mode === 'qr') {
       updateQrResize(event, image);
+    } else if (resizeSession.mode === 'logo-scale') {
+      updateLogoResize(event, image);
+    } else if (resizeSession.mode === 'logo-rotate') {
+      updateLogoRotate(event, image);
     }
     event.preventDefault();
     return;
@@ -1368,6 +1480,10 @@ function handleSelectionPointerUp(event) {
       finishTextResize(event.pointerId);
     } else if (resizeSession.mode === 'qr') {
       finishQrResize(event.pointerId);
+    } else if (resizeSession.mode === 'logo-scale') {
+      finishLogoResize(event.pointerId);
+    } else if (resizeSession.mode === 'logo-rotate') {
+      finishLogoRotate(event.pointerId);
     }
   }
   if (dragLayer && dragLayer.pointerId === event.pointerId) {
@@ -1644,6 +1760,54 @@ function startQrResize(layer, handle, pointer, pointerId) {
   };
 }
 
+function startLogoResize(layer, handle, pointer, pointerId) {
+  const image = getActiveImage();
+  if (!image) return;
+  const metrics = resolveLogoMetrics(layer, image);
+  if (!metrics) return;
+  const center = { x: metrics.center.x, y: metrics.center.y };
+  const vector = { x: pointer.x - center.x, y: pointer.y - center.y };
+  const initialDistance = Math.hypot(vector.x, vector.y);
+  if (!initialDistance) return;
+  const maxScaleByWidth = metrics.baseWidth ? image.width / metrics.baseWidth : LOGO_MAX_SCALE;
+  const maxScaleByHeight = metrics.baseHeight ? image.height / metrics.baseHeight : LOGO_MAX_SCALE;
+  const maxScaleCandidate = Math.max(LOGO_MIN_SCALE, Math.min(LOGO_MAX_SCALE, maxScaleByWidth, maxScaleByHeight));
+  const maxScale = Math.max(metrics.scale, maxScaleCandidate);
+  const minScale = Math.min(metrics.scale, Math.max(LOGO_MIN_SCALE, metrics.scale * 0.1));
+  resizeSession = {
+    mode: 'logo-scale',
+    layerId: layer.id,
+    imageId: image.id,
+    pointerId,
+    handle,
+    center,
+    initialDistance,
+    initialScale: metrics.scale,
+    minScale,
+    maxScale,
+  };
+}
+
+function startLogoRotate(layer, pointer, pointerId) {
+  const image = getActiveImage();
+  if (!image) return;
+  const metrics = resolveLogoMetrics(layer, image);
+  if (!metrics) return;
+  const dx = pointer.x - metrics.center.x;
+  const dy = pointer.y - metrics.center.y;
+  const initialAngle = Math.atan2(dy, dx);
+  resizeSession = {
+    mode: 'logo-rotate',
+    layerId: layer.id,
+    imageId: image.id,
+    pointerId,
+    center: { x: metrics.center.x, y: metrics.center.y },
+    initialAngle,
+    initialRotation: layer.rotation || 0,
+  };
+  selectionOverlay?.classList.add('is-rotating');
+}
+
 function updateTextResize(event, image) {
   if (!resizeSession || resizeSession.mode !== 'text' || resizeSession.pointerId !== event.pointerId) return;
   const layer = getLayer(resizeSession.imageId, resizeSession.layerId);
@@ -1736,6 +1900,54 @@ function updateQrResize(event, image) {
   renderer.render();
 }
 
+function updateLogoResize(event, image) {
+  if (!resizeSession || resizeSession.mode !== 'logo-scale' || resizeSession.pointerId !== event.pointerId) return;
+  const layer = getLayer(resizeSession.imageId, resizeSession.layerId);
+  if (!layer) return;
+  const pointer = renderer.screenToImage(event.clientX, event.clientY);
+  const vector = {
+    x: pointer.x - resizeSession.center.x,
+    y: pointer.y - resizeSession.center.y,
+  };
+  const distance = Math.hypot(vector.x, vector.y);
+  if (!distance) return;
+  const ratio = distance / resizeSession.initialDistance;
+  let nextScale = resizeSession.initialScale * ratio;
+  if (!Number.isFinite(nextScale)) return;
+  if (event.shiftKey) {
+    const step = 0.05;
+    nextScale = Math.round(nextScale / step) * step;
+  }
+  nextScale = clamp(nextScale, resizeSession.minScale, resizeSession.maxScale);
+  const currentScale = Number.isFinite(layer.scale) ? layer.scale : 1;
+  if (Math.abs(currentScale - nextScale) < 1e-3) return;
+  updateLayer(resizeSession.imageId, resizeSession.layerId, { scale: nextScale });
+  renderer.render();
+}
+
+function updateLogoRotate(event, image) {
+  if (!resizeSession || resizeSession.mode !== 'logo-rotate' || resizeSession.pointerId !== event.pointerId) return;
+  const layer = getLayer(resizeSession.imageId, resizeSession.layerId);
+  if (!layer) return;
+  const pointer = renderer.screenToImage(event.clientX, event.clientY);
+  const dx = pointer.x - resizeSession.center.x;
+  const dy = pointer.y - resizeSession.center.y;
+  const distance = Math.hypot(dx, dy);
+  if (distance < 2) return;
+  const angle = Math.atan2(dy, dx);
+  const delta = angle - resizeSession.initialAngle;
+  let rotationDeg = resizeSession.initialRotation + (delta * 180) / Math.PI;
+  if (event.shiftKey) {
+    const snap = 15;
+    rotationDeg = Math.round(rotationDeg / snap) * snap;
+  }
+  rotationDeg = normalizeAngle(rotationDeg);
+  const currentRotation = normalizeAngle(layer.rotation || 0);
+  if (Math.abs(currentRotation - rotationDeg) < 0.2) return;
+  updateLayer(resizeSession.imageId, resizeSession.layerId, { rotation: rotationDeg });
+  renderer.render();
+}
+
 function finishTextResize(pointerId) {
   if (
     !resizeSession ||
@@ -1766,6 +1978,42 @@ function finishQrResize(pointerId) {
   }
   resizeSession = null;
   queueOverlaySync();
+}
+
+function finishLogoResize(pointerId) {
+  if (
+    !resizeSession ||
+    resizeSession.mode !== 'logo-scale' ||
+    (typeof pointerId === 'number' && resizeSession.pointerId !== pointerId)
+  ) {
+    return;
+  }
+  const image = getImage(resizeSession.imageId) || getActiveImage();
+  if (image) {
+    pushHistory(image.id);
+  }
+  resizeSession = null;
+  queueOverlaySync();
+  renderToolPanel(layerTypes.LOGO);
+}
+
+function finishLogoRotate(pointerId) {
+  if (
+    !resizeSession ||
+    resizeSession.mode !== 'logo-rotate' ||
+    (typeof pointerId === 'number' && resizeSession.pointerId !== pointerId)
+  ) {
+    selectionOverlay?.classList.remove('is-rotating');
+    return;
+  }
+  const image = getImage(resizeSession.imageId) || getActiveImage();
+  if (image) {
+    pushHistory(image.id);
+  }
+  resizeSession = null;
+  selectionOverlay?.classList.remove('is-rotating');
+  queueOverlaySync();
+  renderToolPanel(layerTypes.LOGO);
 }
 
 function handleToolbarAction(event) {
@@ -2567,55 +2815,302 @@ function renderPenPanel(container) {
 
 function renderLogoPanel(container) {
   const image = getActiveImage();
-  const layer = image ? getLayer(image.id, state.activeLayerId) : null;
-  const disabled = !(layer && layer.type === layerTypes.LOGO);
+  const activeLayer = image ? getLayer(image.id, state.activeLayerId) : null;
+  const hasLayer = Boolean(activeLayer && activeLayer.type === layerTypes.LOGO && activeLayer.asset);
+  const defaults = toolDefaults[layerTypes.LOGO];
+  const current = hasLayer ? activeLayer : defaults;
+  const localeIsVi = state.locale === 'vi';
+  const copy = localeIsVi
+    ? {
+        title: 'Logo & nhãn dán',
+        subtitle: 'Tải logo PNG/SVG và tinh chỉnh trực tiếp trên ảnh.',
+        pick: 'Chọn logo',
+        emptyHint: 'Chưa có logo nào. Nhấn "Chọn logo" để bắt đầu.',
+        previewHint: 'Nhấp logo trên ảnh để kéo, thu phóng hoặc xoay.',
+        scale: 'Tỷ lệ',
+        opacity: 'Độ mờ',
+        rotation: 'Góc xoay',
+        align: 'Canh nhanh',
+        alignTopLeft: 'Trên trái',
+        alignTopRight: 'Trên phải',
+        alignBottomLeft: 'Dưới trái',
+        alignBottomRight: 'Dưới phải',
+        alignCenter: 'Giữa ảnh',
+        rotatePreset: 'Góc thường dùng',
+        resetGroup: 'Thiết lập nhanh',
+        reset: 'Về mặc định',
+      }
+    : {
+        title: 'Logo & stickers',
+        subtitle: 'Upload a PNG/SVG logo and fine‑tune it right on the canvas.',
+        pick: 'Choose logo',
+        emptyHint: 'No logo yet. Click “Choose logo” to begin.',
+        previewHint: 'Click the logo on the image to drag, resize, or rotate it.',
+        scale: 'Scale',
+        opacity: 'Opacity',
+        rotation: 'Rotation',
+        align: 'Quick align',
+        alignTopLeft: 'Top left',
+        alignTopRight: 'Top right',
+        alignBottomLeft: 'Bottom left',
+        alignBottomRight: 'Bottom right',
+        alignCenter: 'Center',
+        rotatePreset: 'Common angles',
+        resetGroup: 'Quick presets',
+        reset: 'Reset to default',
+      };
+  const ensureNumber = (value, fallback) => (Number.isFinite(value) ? value : fallback);
+  const scaleValue = ensureNumber(current.scale, defaults.scale ?? 1);
+  const opacityValue = ensureNumber(current.opacity, defaults.opacity ?? 1);
+  const rotationValue = normalizeAngle(ensureNumber(current.rotation, defaults.rotation ?? 0));
+  const scalePercent = clamp(Math.round(scaleValue * 100), 10, 300);
+  const opacityPercent = clamp(Math.round(opacityValue * 100), 10, 100);
+  const rotationDegrees = clamp(Math.round(rotationValue), -180, 180);
+  const previewWidth = hasLayer ? Math.round(ensureNumber(activeLayer.width, 0)) : null;
+  const previewHeight = hasLayer ? Math.round(ensureNumber(activeLayer.height, 0)) : null;
+  const escapeHtml = value => (value == null ? '' : String(value)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const escapeAttr = value => escapeHtml(value).replace(/"/g, '&quot;');
+  const assetSrc = hasLayer && activeLayer.asset?.src ? escapeAttr(activeLayer.asset.src) : '';
+  const assetName = hasLayer ? escapeHtml(activeLayer.assetName || (localeIsVi ? 'Logo' : 'Logo')) : '';
+  const metaLabel = hasLayer && previewWidth && previewHeight
+    ? `${previewWidth} × ${previewHeight} px · ${Math.round((activeLayer.scale ?? scaleValue) * 100)}%`
+    : '';
   container.innerHTML = `
-    <div class="upload-card">
-      <p>${state.locale === 'vi' ? 'Tải logo PNG/SVG' : 'Upload PNG/SVG logo'}</p>
-      <button type="button" class="btn primary" data-action="pick-logo">
-        <svg class="icon"><use href="#icon-upload"></use></svg>
-        <span>${state.locale === 'vi' ? 'Chọn logo' : 'Choose logo'}</span>
-      </button>
-    </div>
-    <form id="logoForm" class="form-grid">
-      <label class="field">
-        <span>${state.locale === 'vi' ? 'Tỷ lệ (%)' : 'Scale (%)'}</span>
-        <input type="range" name="scale" min="10" max="200" value="${Math.round((layer?.scale ?? toolDefaults[layerTypes.LOGO].scale) * 100)}" ${disabled ? 'disabled' : ''}>
-      </label>
-      <label class="field">
-        <span>${state.locale === 'vi' ? 'Độ mờ (%)' : 'Opacity (%)'}</span>
-        <input type="range" name="opacity" min="10" max="100" value="${Math.round((layer?.opacity ?? toolDefaults[layerTypes.LOGO].opacity) * 100)}" ${disabled ? 'disabled' : ''}>
-      </label>
-      <label class="field">
-        <span>${state.locale === 'vi' ? 'Góc xoay' : 'Rotation'}</span>
-        <input type="range" name="rotation" min="-180" max="180" value="${layer?.rotation ?? toolDefaults[layerTypes.LOGO].rotation}" ${disabled ? 'disabled' : ''}>
-      </label>
-    </form>
+    <section class="logo-panel">
+      <header class="logo-panel-header">
+        <div class="logo-panel-copy">
+          <h3>${copy.title}</h3>
+          <p>${copy.subtitle}</p>
+        </div>
+        <button type="button" class="btn primary" data-action="pick-logo">
+          <svg class="icon"><use href="#icon-upload"></use></svg>
+          <span>${copy.pick}</span>
+        </button>
+      </header>
+      <div class="logo-preview-card${hasLayer ? '' : ' is-empty'}">
+        ${
+          hasLayer
+            ? `
+              <div class="logo-preview">
+                <img src="${assetSrc}" alt="${assetName}">
+              </div>
+              <div class="logo-preview-info">
+                <p class="logo-preview-name">${assetName}</p>
+                <p class="logo-preview-meta" data-field="logo-meta">${metaLabel}</p>
+                <p class="logo-preview-hint">${copy.previewHint}</p>
+              </div>
+            `
+            : `<p>${copy.emptyHint}</p>`
+        }
+      </div>
+      <form id="logoForm" class="logo-form">
+        <div class="logo-slider">
+          <div class="logo-slider-label">
+            <span>${copy.scale}</span>
+            <span class="logo-slider-value" data-field="logo-scale">${scalePercent}%</span>
+          </div>
+          <input type="range" name="scale" min="20" max="300" step="1" value="${scalePercent}" ${hasLayer ? '' : 'disabled'}>
+        </div>
+        <div class="logo-slider">
+          <div class="logo-slider-label">
+            <span>${copy.opacity}</span>
+            <span class="logo-slider-value" data-field="logo-opacity">${opacityPercent}%</span>
+          </div>
+          <input type="range" name="opacity" min="10" max="100" step="1" value="${opacityPercent}" ${hasLayer ? '' : 'disabled'}>
+        </div>
+        <div class="logo-slider">
+          <div class="logo-slider-label">
+            <span>${copy.rotation}</span>
+            <span class="logo-slider-value" data-field="logo-rotation">${rotationDegrees}°</span>
+          </div>
+          <input type="range" name="rotation" min="-180" max="180" step="1" value="${rotationDegrees}" ${hasLayer ? '' : 'disabled'}>
+        </div>
+      </form>
+      <div class="logo-quick-actions">
+        <div class="logo-action-group">
+          <span class="logo-action-title">${copy.align}</span>
+          <div class="logo-action-buttons logo-align-buttons">
+            <button type="button" class="logo-action-btn" data-logo-align="top-left" ${hasLayer ? '' : 'disabled'}>${copy.alignTopLeft}</button>
+            <button type="button" class="logo-action-btn" data-logo-align="top-right" ${hasLayer ? '' : 'disabled'}>${copy.alignTopRight}</button>
+            <button type="button" class="logo-action-btn" data-logo-align="bottom-left" ${hasLayer ? '' : 'disabled'}>${copy.alignBottomLeft}</button>
+            <button type="button" class="logo-action-btn" data-logo-align="bottom-right" ${hasLayer ? '' : 'disabled'}>${copy.alignBottomRight}</button>
+            <button type="button" class="logo-action-btn" data-logo-align="center" ${hasLayer ? '' : 'disabled'}>${copy.alignCenter}</button>
+          </div>
+        </div>
+        <div class="logo-action-group">
+          <span class="logo-action-title">${copy.rotatePreset}</span>
+          <div class="logo-action-buttons logo-rotate-buttons">
+            <button type="button" class="logo-action-btn" data-logo-rotate-set="0" ${hasLayer ? '' : 'disabled'}>0°</button>
+            <button type="button" class="logo-action-btn" data-logo-rotate-set="90" ${hasLayer ? '' : 'disabled'}>90°</button>
+            <button type="button" class="logo-action-btn" data-logo-rotate-set="180" ${hasLayer ? '' : 'disabled'}>180°</button>
+            <button type="button" class="logo-action-btn" data-logo-rotate="-15" ${hasLayer ? '' : 'disabled'}>-15°</button>
+            <button type="button" class="logo-action-btn" data-logo-rotate="15" ${hasLayer ? '' : 'disabled'}>+15°</button>
+          </div>
+        </div>
+        <div class="logo-action-group">
+          <span class="logo-action-title">${copy.resetGroup}</span>
+          <div class="logo-action-buttons">
+            <button type="button" class="logo-action-btn" data-logo-reset ${hasLayer ? '' : 'disabled'}>${copy.reset}</button>
+          </div>
+        </div>
+      </div>
+    </section>
   `;
-  container.querySelector('[data-action="pick-logo"]')?.addEventListener('click', () => logoInput?.click());
+  const disposers = [];
+  const addListener = (element, event, handler) => {
+    if (!element) return;
+    element.addEventListener(event, handler);
+    disposers.push(() => element.removeEventListener(event, handler));
+  };
+  addListener(container.querySelector('[data-action="pick-logo"]'), 'click', event => {
+    event.preventDefault();
+    logoInput?.click();
+  });
   const form = container.querySelector('#logoForm');
-  if (!form) return;
-  const handleChange = () => {
-    const imageState = getActiveImage();
-    if (!imageState) return;
-    const activeLayer = getLayer(imageState.id, state.activeLayerId);
-    const values = {
-      scale: parseFloat(form.elements.scale.value) / 100,
-      opacity: parseFloat(form.elements.opacity.value) / 100,
-      rotation: parseFloat(form.elements.rotation.value),
-    };
-    if (activeLayer && activeLayer.type === layerTypes.LOGO) {
-      updateLayer(imageState.id, activeLayer.id, values);
-      renderer.render();
-    } else {
-      Object.assign(toolDefaults[layerTypes.LOGO], values);
+  const scaleInput = form?.elements.scale;
+  const opacityInput = form?.elements.opacity;
+  const rotationInput = form?.elements.rotation;
+  const scaleDisplay = container.querySelector('[data-field="logo-scale"]');
+  const opacityDisplay = container.querySelector('[data-field="logo-opacity"]');
+  const rotationDisplay = container.querySelector('[data-field="logo-rotation"]');
+  const syncMeta = () => {
+    const meta = container.querySelector('[data-field="logo-meta"]');
+    if (!meta) return;
+    const freshImage = getActiveImage();
+    const freshLayer = freshImage ? getLayer(freshImage.id, state.activeLayerId) : null;
+    if (!freshLayer || freshLayer.type !== layerTypes.LOGO) return;
+    const width = Math.round(ensureNumber(freshLayer.width, 0));
+    const height = Math.round(ensureNumber(freshLayer.height, 0));
+    const scalePercentMeta = Math.round(ensureNumber(freshLayer.scale, defaults.scale ?? 1) * 100);
+    meta.textContent = `${width} × ${height} px · ${scalePercentMeta}%`;
+  };
+  const syncReadouts = () => {
+    if (scaleInput && scaleDisplay) {
+      const value = clamp(Math.round(parseFloat(scaleInput.value) || scalePercent), Number(scaleInput.min), Number(scaleInput.max));
+      scaleInput.value = String(value);
+      scaleDisplay.textContent = `${value}%`;
+    }
+    if (opacityInput && opacityDisplay) {
+      const value = clamp(Math.round(parseFloat(opacityInput.value) || opacityPercent), Number(opacityInput.min), Number(opacityInput.max));
+      opacityInput.value = String(value);
+      opacityDisplay.textContent = `${value}%`;
+    }
+    if (rotationInput && rotationDisplay) {
+      const raw = parseFloat(rotationInput.value);
+      const normalized = normalizeAngle(Number.isFinite(raw) ? raw : rotationDegrees);
+      rotationInput.value = String(normalized);
+      rotationDisplay.textContent = `${Math.round(normalized)}°`;
     }
   };
-  form.addEventListener('input', handleChange);
-  form.addEventListener('change', handleChange);
+  const commitLogoUpdates = updates => {
+    const currentImage = getActiveImage();
+    if (!currentImage) {
+      Object.assign(toolDefaults[layerTypes.LOGO], updates);
+      return;
+    }
+    const currentLayer = getLayer(currentImage.id, state.activeLayerId);
+    if (currentLayer && currentLayer.type === layerTypes.LOGO) {
+      updateLayer(currentImage.id, currentLayer.id, updates);
+      renderer.render();
+      syncMeta();
+    } else {
+      Object.assign(toolDefaults[layerTypes.LOGO], updates);
+    }
+  };
+  const handleFormChange = () => {
+    if (!scaleInput || !opacityInput || !rotationInput) return;
+    const scaleRatio = clamp((parseFloat(scaleInput.value) || scalePercent) / 100, LOGO_MIN_SCALE, LOGO_MAX_SCALE);
+    const opacityRatio = clamp((parseFloat(opacityInput.value) || opacityPercent) / 100, 0.1, 1);
+    const rotationRatio = normalizeAngle(parseFloat(rotationInput.value) || 0);
+    rotationInput.value = String(rotationRatio);
+    commitLogoUpdates({
+      scale: scaleRatio,
+      opacity: opacityRatio,
+      rotation: rotationRatio,
+    });
+    syncReadouts();
+  };
+  if (form && hasLayer) {
+    addListener(form, 'input', handleFormChange);
+    addListener(form, 'change', handleFormChange);
+  }
+  const alignButtons = container.querySelectorAll('[data-logo-align]');
+  alignButtons.forEach(button => {
+    addListener(button, 'click', event => {
+      event.preventDefault();
+      if (!button || button.disabled) return;
+      const align = button.dataset.logoAlign;
+      const currentImage = getActiveImage();
+      if (!currentImage) return;
+      const currentLayer = getLayer(currentImage.id, state.activeLayerId);
+      if (!currentLayer || currentLayer.type !== layerTypes.LOGO) return;
+      const metrics = resolveLogoMetrics(currentLayer, currentImage);
+      if (!metrics) return;
+      const widthRatio = clamp(metrics.widthRatio, 0, 1);
+      const heightRatio = clamp(metrics.heightRatio, 0, 1);
+      const marginX = widthRatio >= 1 ? 0.5 : Math.min(0.48, widthRatio / 2 + 0.06);
+      const marginY = heightRatio >= 1 ? 0.5 : Math.min(0.48, heightRatio / 2 + 0.06);
+      let nextPosition = { ...metrics.position };
+      if (align === 'top-left') {
+        nextPosition = { x: marginX, y: marginY };
+      } else if (align === 'top-right') {
+        nextPosition = { x: 1 - marginX, y: marginY };
+      } else if (align === 'bottom-left') {
+        nextPosition = { x: marginX, y: 1 - marginY };
+      } else if (align === 'bottom-right') {
+        nextPosition = { x: 1 - marginX, y: 1 - marginY };
+      } else if (align === 'center') {
+        nextPosition = { x: 0.5, y: 0.5 };
+      }
+      updateLayer(currentImage.id, currentLayer.id, { position: nextPosition });
+      renderer.render();
+      queueOverlaySync();
+    });
+  });
+  const rotateButtons = container.querySelectorAll('[data-logo-rotate], [data-logo-rotate-set]');
+  rotateButtons.forEach(button => {
+    addListener(button, 'click', event => {
+      event.preventDefault();
+      if (!button || button.disabled) return;
+      if (!rotationInput) return;
+      const delta = button.dataset.logoRotate;
+      const absolute = button.dataset.logoRotateSet;
+      const currentValue = parseFloat(rotationInput.value) || 0;
+      let next = currentValue;
+      if (absolute != null) {
+        const parsed = parseFloat(absolute);
+        if (Number.isFinite(parsed)) {
+          next = parsed;
+        }
+      } else if (delta != null) {
+        const parsed = parseFloat(delta);
+        if (Number.isFinite(parsed)) {
+          next = currentValue + parsed;
+        }
+      }
+      rotationInput.value = String(normalizeAngle(next));
+      handleFormChange();
+    });
+  });
+  const resetButton = container.querySelector('[data-logo-reset]');
+  addListener(resetButton, 'click', event => {
+    event.preventDefault();
+    if (!resetButton || resetButton.disabled) return;
+    if (!scaleInput || !opacityInput || !rotationInput) return;
+    const defaultScale = Math.round(ensureNumber(defaults.scale, 1) * 100);
+    const defaultOpacity = Math.round(ensureNumber(defaults.opacity, 1) * 100);
+    const defaultRotation = normalizeAngle(ensureNumber(defaults.rotation, 0));
+    scaleInput.value = String(clamp(defaultScale, Number(scaleInput.min), Number(scaleInput.max)));
+    opacityInput.value = String(clamp(defaultOpacity, Number(opacityInput.min), Number(opacityInput.max)));
+    rotationInput.value = String(defaultRotation);
+    handleFormChange();
+  });
+  if (hasLayer) {
+    syncMeta();
+  }
+  syncReadouts();
   return () => {
-    form.removeEventListener('input', handleChange);
-    form.removeEventListener('change', handleChange);
+    disposers.forEach(dispose => dispose());
   };
 }
 
