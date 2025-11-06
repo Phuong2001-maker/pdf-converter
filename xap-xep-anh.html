@@ -1,5 +1,4 @@
-﻿
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
@@ -16,8 +15,8 @@
       --primary-soft:rgba(76,133,255,.18);
       --border:#d9deeb;
       --border-strong:#b8c2db;
-      --shadow:0 16px 40px rgba(24,40,80,.12);
-      --radius:18px;
+      --shadow:0 20px 50px rgba(24,40,80,.12);
+      --radius:22px;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -29,22 +28,138 @@
     }
     .app{
       min-height:100vh;
-      padding:28px clamp(16px,3vw,48px);
+      padding:32px clamp(16px,3vw,52px);
       display:flex;
       justify-content:center;
       align-items:flex-start;
     }
     .workspace{
       width:100%;
-      max-width:1180px;
-      display:flex;
-      flex-direction:column;
-      gap:22px;
+      max-width:1260px;
+      display:grid;
+      grid-template-columns:minmax(0,1.9fr) minmax(0,1.1fr);
+      gap:28px;
+    }
+    .panelShell{
       background:var(--card);
       border-radius:var(--radius);
-      border:1px solid rgba(255,255,255,.6);
+      border:1px solid rgba(255,255,255,.65);
       box-shadow:var(--shadow);
-      padding:26px clamp(16px,4vw,32px);
+      position:relative;
+    }
+    .canvasPanel{
+      padding:24px;
+      display:flex;
+      flex-direction:column;
+    }
+    .canvasWrap{
+      flex:1;
+      min-height:520px;
+      position:relative;
+      border-radius:20px;
+      border:1px solid var(--border);
+      background: repeating-conic-gradient(#e7ebfa 0% 25%, transparent 0% 50%) 50%/26px 26px,#f5f7ff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+    }
+    .canvasWrap canvas{
+      width:100%;
+      height:100%;
+      border-radius:inherit;
+      display:block;
+    }
+    .canvasWrap.has-images{
+      border-color:#c8d1ec;
+      background:#f7f9ff;
+    }
+    .canvasDrop{
+      position:absolute;
+      inset:0;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:14px;
+      border:2px dashed var(--border-strong);
+      border-radius:inherit;
+      background:rgba(255,255,255,.9);
+      backdrop-filter:blur(12px);
+      color:var(--muted);
+      text-align:center;
+      padding:34px;
+      cursor:pointer;
+      transition:all .25s ease;
+      z-index:3;
+    }
+    .canvasWrap.has-images .canvasDrop{
+      opacity:0;
+      pointer-events:none;
+      transform:scale(.97);
+    }
+    .canvasDrop svg{width:62px;height:62px;fill:var(--primary);}
+    .canvasDrop strong{font-size:22px;color:var(--text);}
+    .canvasDrop p{margin:0;font-size:14px;max-width:300px;line-height:1.55;}
+    .canvasDrop.is-drag{
+      border-color:var(--primary);
+      box-shadow:0 0 0 8px var(--primary-soft);
+      transform:scale(1.02);
+    }
+    #file{display:none;}
+
+    .optionsPanel{
+      padding:22px 24px 26px;
+      display:flex;
+      flex-direction:column;
+      min-height:0;
+    }
+    .optionsHeader{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin-bottom:18px;
+    }
+    .optionsTitle{
+      margin:0;
+      font-size:18px;
+      font-weight:700;
+      color:#1a2130;
+      flex:1;
+    }
+    .options-toggle{
+      display:none;
+      align-items:center;
+      gap:8px;
+      padding:10px 14px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:#f4f6ff;
+      color:#1a2130;
+      font-weight:600;
+      cursor:pointer;
+    }
+    .addBtn{
+      border:0;
+      border-radius:12px;
+      padding:10px 16px;
+      background:var(--primary);
+      color:#fff;
+      font-weight:600;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      cursor:pointer;
+      box-shadow:0 12px 26px rgba(76,133,255,.3);
+    }
+    .addBtn span{font-size:18px;line-height:1;}
+
+    .optionsBody{
+      flex:1;
+      min-height:0;
+      display:flex;
+      flex-direction:column;
+      gap:20px;
     }
     .toolbar{
       display:flex;
@@ -54,7 +169,7 @@
     .controlCard{
       flex:1 1 240px;
       background:var(--subcard);
-      border-radius:16px;
+      border-radius:18px;
       border:1px solid rgba(255,255,255,.8);
       padding:18px 20px;
       display:flex;
@@ -70,207 +185,49 @@
       display:flex;
       justify-content:space-between;
       align-items:center;
-      gap:12px;
-    }
-    .controlValue{
-      font-variant-numeric:tabular-nums;
-      color:var(--primary);
-      font-weight:600;
-    }
-    .sliderWrap{
-      display:flex;
-      align-items:center;
-      gap:14px;
-    }
-    .sliderWrap input[type="range"]{
-      flex:1;
-      appearance:none;
-      height:6px;
-      border-radius:999px;
-      background:#d7dcf1;
-      outline:none;
-    }
-    .sliderWrap input[type="range"]::-webkit-slider-thumb{
-      appearance:none;
-      width:18px;
-      height:18px;
-      border-radius:50%;
-      background:var(--primary);
-      border:2px solid #fff;
-      box-shadow:0 4px 12px rgba(76,133,255,.35);
-      cursor:pointer;
-    }
-    .sliderWrap input[type="range"]::-moz-range-thumb{
-      width:18px;
-      height:18px;
-      border-radius:50%;
-      background:var(--primary);
-      border:2px solid #fff;
-      box-shadow:0 4px 12px rgba(76,133,255,.35);
-      cursor:pointer;
-    }
-    .backgroundPicker{
-      display:flex;
-      align-items:center;
       gap:10px;
-      flex-wrap:wrap;
     }
-    .swatch{
-      width:38px;
-      height:38px;
-      border-radius:12px;
-      border:2px solid transparent;
-      cursor:pointer;
-      background-size:cover;
-      background-position:center;
-      transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease;
-    }
+    .controlValue{color:var(--primary);font-variant-numeric:tabular-nums;font-weight:600;}
+    .sliderWrap{display:flex;align-items:center;gap:14px;}
+    .sliderWrap input[type="range"]{flex:1;appearance:none;height:6px;border-radius:999px;background:#d7dcf1;outline:none;}
+    .sliderWrap input[type="range"]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;border-radius:50%;background:var(--primary);border:2px solid #fff;box-shadow:0 4px 12px rgba(76,133,255,.35);cursor:pointer;}
+    .sliderWrap input[type="range"]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--primary);border:2px solid #fff;box-shadow:0 4px 12px rgba(76,133,255,.35);cursor:pointer;}
+    .backgroundPicker{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+    .swatch{width:38px;height:38px;border-radius:12px;border:2px solid transparent;background-size:cover;background-position:center;cursor:pointer;transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease;}
     .swatch:hover{transform:translateY(-1px);}
-    .swatch.active{
-      border-color:var(--primary);
-      box-shadow:0 0 0 4px var(--primary-soft);
-    }
-    .colorInput{
-      width:42px;
-      height:42px;
-      border-radius:14px;
-      border:1px dashed var(--border-strong);
-      overflow:hidden;
-      position:relative;
-    }
-    .colorInput input[type="color"]{
-      position:absolute;
-      inset:0;
-      width:100%;
-      height:100%;
-      border:0;
-      padding:0;
-      background:none;
-      cursor:pointer;
-    }
-    .canvasWrap{
-      position:relative;
-      border-radius:22px;
-      border:1px solid var(--border);
-      background: repeating-conic-gradient(#e7ebfa 0% 25%, transparent 0% 50%) 50%/26px 26px,#f5f7ff;
-      min-height:480px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      overflow:hidden;
-    }
-    .canvasWrap canvas{
-      width:100%;
-      height:100%;
-      display:block;
-      border-radius:inherit;
-    }
-    .canvasWrap.has-images{
-      border-color:#c8d1ec;
-      background:#f7f9ff;
-    }
-    .canvasDrop{
-      position:absolute;
-      inset:0;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      gap:12px;
-      border:2px dashed var(--border-strong);
-      border-radius:inherit;
-      background:rgba(255,255,255,.86);
-      color:var(--muted);
-      text-align:center;
-      padding:32px;
-      cursor:pointer;
-      z-index:2;
-      transition:all .25s ease;
-      backdrop-filter:blur(10px);
-    }
-    .canvasWrap.has-images .canvasDrop{
-      opacity:0;
-      pointer-events:none;
-      transform:scale(.96);
-    }
-    .canvasDrop svg{
-      width:58px;
-      height:58px;
-      fill:var(--primary);
-    }
-    .canvasDrop strong{
-      font-size:20px;
-      color:var(--text);
-    }
-    .canvasDrop p{
-      margin:0;
-      max-width:260px;
-      font-size:14px;
-      line-height:1.5;
-    }
-    .canvasDrop.is-drag{
-      border-color:var(--primary);
-      box-shadow:0 0 0 6px var(--primary-soft);
-      transform:scale(1.02);
-    }
-    #file{display:none;}
+    .swatch.active{border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-soft);}
+    .colorInput{width:42px;height:42px;border-radius:14px;border:1px dashed var(--border-strong);overflow:hidden;position:relative;}
+    .colorInput input[type="color"]{position:absolute;inset:0;width:100%;height:100%;border:0;padding:0;background:none;cursor:pointer;}
     .collections{
+      flex:1;
+      min-height:0;
       display:flex;
       flex-direction:column;
       gap:18px;
+      overflow-y:auto;
+      padding-right:4px;
     }
     .thumbStrip{
       display:flex;
       gap:14px;
       overflow-x:auto;
-      padding-bottom:4px;
+      padding-bottom:6px;
     }
     .thumb{
       position:relative;
-      width:126px;
-      height:96px;
+      width:132px;
+      height:100px;
       border-radius:16px;
       overflow:hidden;
       border:1px solid #dbe1f5;
       background:#fff;
       flex:0 0 auto;
-      box-shadow:0 8px 24px rgba(31,58,102,.08);
+      box-shadow:0 8px 22px rgba(31,58,102,.1);
     }
-    .thumb img{
-      width:100%;
-      height:100%;
-      object-fit:cover;
-      display:block;
-    }
-    .thumb .rm{
-      position:absolute;
-      top:8px;
-      right:8px;
-      border:0;
-      border-radius:50%;
-      width:28px;
-      height:28px;
-      background:rgba(21,28,45,.7);
-      color:#fff;
-      font-size:16px;
-      cursor:pointer;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-    }
-    .thumb .handle{
-      position:absolute;
-      bottom:8px;
-      left:8px;
-      padding:4px 9px;
-      background:rgba(255,255,255,.86);
-      border-radius:999px;
-      font-size:12px;
-      font-weight:600;
-      color:#111c2b;
-      cursor:grab;
-      box-shadow:0 4px 14px rgba(0,0,0,.12);
-    }
+    .thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+    .thumb .rm{position:absolute;top:8px;right:8px;border:0;border-radius:50%;width:28px;height:28px;background:rgba(21,28,45,.78);color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+    .thumb .handle{position:absolute;bottom:8px;left:8px;padding:4px 9px;background:rgba(255,255,255,.88);border-radius:999px;font-size:12px;font-weight:600;color:#111c2b;cursor:grab;box-shadow:0 4px 14px rgba(0,0,0,.12);}
+
     .panelBlock{
       background:var(--subcard);
       border-radius:18px;
@@ -278,7 +235,7 @@
       border:1px solid rgba(255,255,255,.85);
       display:flex;
       flex-direction:column;
-      gap:14px;
+      gap:16px;
     }
     .panelBlock.is-empty{display:none;}
     .panelHeader{
@@ -287,87 +244,22 @@
       justify-content:space-between;
       gap:16px;
     }
-    .panelHeader h3{
-      margin:0;
-      font-size:16px;
-      font-weight:700;
-      color:#1a2130;
-    }
-    .countTabs{
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-    }
-    .countTabs .tab{
-      border:1px solid #d3dbf2;
-      border-radius:999px;
-      padding:6px 14px;
-      background:#fff;
-      font-weight:600;
-      font-size:14px;
-      color:#33405b;
-      cursor:pointer;
-      transition:all .2s ease;
-    }
-    .countTabs .tab.active{
-      background:var(--primary);
-      border-color:var(--primary);
-      color:#fff;
-      box-shadow:0 8px 18px rgba(76,133,255,.38);
-    }
-    .presetRow{
-      display:flex;
-      gap:12px;
-      overflow-x:auto;
-      padding-bottom:4px;
-    }
-    .preset{
-      min-width:128px;
-      border:0;
-      border-radius:16px;
-      background:#fff;
-      border:1px solid transparent;
-      box-shadow:0 12px 28px rgba(41,57,98,.12);
-      padding:12px;
-      cursor:pointer;
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-      transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease;
-    }
+    .panelHeader h3{margin:0;font-size:16px;font-weight:700;color:#1a2130;}
+    .countTabs{display:flex;flex-wrap:wrap;gap:8px;}
+    .countTabs .tab{border:1px solid #d3dbf2;border-radius:999px;padding:6px 14px;background:#fff;font-weight:600;font-size:14px;color:#33405b;cursor:pointer;transition:all .2s ease;}
+    .countTabs .tab.active{background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:0 8px 18px rgba(76,133,255,.38);}
+    .presetRow{display:flex;gap:12px;overflow-x:auto;padding-bottom:4px;}
+    .preset{min-width:138px;border:0;border-radius:18px;background:#fff;border:1px solid transparent;box-shadow:0 12px 28px rgba(41,57,98,.12);padding:12px 12px 14px;cursor:pointer;display:flex;flex-direction:column;gap:10px;transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease;}
     .preset:hover{transform:translateY(-2px);}
-    .preset.active{
-      border-color:var(--primary);
-      box-shadow:0 18px 32px rgba(76,133,255,.26);
-    }
-    .mini{
-      width:100%;
-      aspect-ratio:1/1;
-      border-radius:12px;
-      background:#222836;
-      position:relative;
-      overflow:hidden;
-    }
-    .mini .cell{
-      position:absolute;
-      border:2px solid rgba(255,255,255,.55);
-      border-radius:10px;
-      background:rgba(173,192,255,.12);
-    }
-    .presetLabel{
-      margin:0;
-      font-size:13px;
-      color:#39445a;
-      font-weight:600;
-    }
-    .footer{
-      display:flex;
-      justify-content:flex-end;
-    }
+    .preset.active{border-color:var(--primary);box-shadow:0 18px 34px rgba(76,133,255,.28);}
+    .presetCanvas{width:120px;height:120px;border-radius:14px;display:block;}
+    .presetLabel{margin:0;font-size:13px;color:#39445a;font-weight:600;}
+
+    .footer{padding-top:14px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;}
     .btn{
       appearance:none;
       border:0;
-      border-radius:14px;
+      border-radius:16px;
       padding:12px 22px;
       background:var(--primary);
       color:#fff;
@@ -380,97 +272,136 @@
       box-shadow:0 14px 32px rgba(76,133,255,.35);
       transition:transform .15s ease, box-shadow .2s ease;
     }
-    .btn:hover{
-      transform:translateY(-1px);
-      box-shadow:0 18px 38px rgba(76,133,255,.4);
+    .btn:hover{transform:translateY(-1px);box-shadow:0 18px 38px rgba(76,133,255,.4);}
+    .btn:disabled, .btn.disabled{opacity:.45;cursor:not-allowed;box-shadow:none;transform:none;}
+
+    .optionsOverlay{
+      position:fixed;
+      inset:0;
+      background:rgba(13,20,33,.38);
+      backdrop-filter:blur(2px);
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .25s ease;
+      z-index:10;
+    }
+    .optionsOverlay.active{opacity:1;pointer-events:auto;}\n    body.options-open{overflow:hidden;}
+
+    @media (max-width:1100px){
+      .workspace{grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);}
+      .canvasWrap{min-height:480px;}
     }
     @media (max-width:820px){
-      .controlCard{flex:1 1 100%;}
-      .mini{aspect-ratio:4/3;}
-      .preset{min-width:180px;}
-      .thumb{width:108px;height:86px;}
+      .app{padding:26px 16px 32px;}
+      .workspace{grid-template-columns:1fr;grid-template-rows:auto auto;gap:20px;}
+      .canvasPanel{padding:20px;}
+      .canvasWrap{min-height:420px;}
+      .optionsPanel{padding:20px;position:relative;}
+      .options-toggle{display:inline-flex;}
+      .optionsPanel .optionsBody{display:none;animation:fadeIn .2s ease forwards;}
+      .optionsPanel.is-open .optionsBody{display:flex;}
+      .optionsPanel.is-open{z-index:15;}
     }
     @media (max-width:560px){
-      .workspace{padding:22px 18px;}
       .canvasWrap{min-height:360px;}
+      .toolbar{gap:14px;}
+      .controlCard{flex:1 1 100%;padding:16px;}
+      .preset{min-width:150px;}
+      .thumb{width:118px;height:92px;}
+      .optionsTitle{font-size:17px;}
+      .addBtn{padding:9px 14px;}
     }
+    @keyframes fadeIn{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);} }
   </style>
 </head>
 <body>
   <div class="app">
     <section class="workspace">
-      <div class="toolbar">
-        <div class="controlCard">
-          <label for="gap">
-            Khoảng cách
-            <span class="controlValue" id="gapValue">16px</span>
+      <div class="panelShell canvasPanel">
+        <div class="canvasWrap" id="canvasWrap">
+          <label class="canvasDrop" id="drop" for="file">
+            <input id="file" type="file" accept="image/*" multiple />
+            <svg viewBox="0 0 64 64" aria-hidden="true">
+              <path d="M32 6a14 14 0 0 0-14 14c0 .7.05 1.4.15 2.08A14.97 14.97 0 0 0 6 36c0 8.28 6.72 15 15 15h25a12 12 0 0 0 3-23.6A14 14 0 0 0 32 6zm0 4a10 10 0 0 1 9.85 11.55 2 2 0 0 0 1.66 2.32A8 8 0 0 1 44 32a8 8 0 0 1-8 8h-4v-9h5a1 1 0 0 0 .7-1.7l-9-9a1 1 0 0 0-1.4 0l-9 9A1 1 0 0 0 19 31h5v9h-3a11 11 0 0 1-1.7-21.87 2 2 0 0 0 1.65-2.3A10 10 0 0 1 32 10zm-4 22v12h8V32h3.586L32 24.414 24.414 32H28z"/>
+            </svg>
+            <strong>Tải ảnh lên</strong>
+            <p>Kéo thả ảnh vào phần canvas hoặc bấm “+ Thêm ảnh”. Hỗ trợ nhiều ảnh cùng lúc.</p>
           </label>
-          <div class="sliderWrap">
-            <input id="gap" type="range" min="0" max="80" step="1" value="16" />
-          </div>
+          <canvas id="preview"></canvas>
         </div>
-        <div class="controlCard">
-          <label for="radius">
-            Bo góc
-            <span class="controlValue" id="radiusValue">20px</span>
-          </label>
-          <div class="sliderWrap">
-            <input id="radius" type="range" min="0" max="120" step="1" value="20" />
-          </div>
+      </div>
+
+      <aside class="panelShell optionsPanel" id="optionsPanel">
+        <div class="optionsHeader">
+          <button class="options-toggle" id="optsToggle" type="button" aria-expanded="false">Mở tùy chọn</button>
+          <h2 class="optionsTitle">Điều chảnh</h2>
+          <button class="addBtn" id="btnAdd" type="button"><span>+</span>Thêm ảnh</button>
         </div>
-        <div class="controlCard">
-          <label for="bg">
-            Nền
-            <span class="controlValue" id="bgLabel">Màu</span>
-          </label>
-          <div class="backgroundPicker" id="bgPalette">
-            <button type="button" class="swatch active" data-color="#ffffff" style="background:#ffffff;"></button>
-            <button type="button" class="swatch" data-color="#f7f4f8" style="background:linear-gradient(135deg,#f7f4f8 0%,#e4d3f4 100%);"></button>
-            <button type="button" class="swatch" data-color="#edf5ff" style="background:linear-gradient(135deg,#edf5ff 0%,#c9e1ff 100%);"></button>
-            <button type="button" class="swatch" data-color="#fff5ec" style="background:linear-gradient(135deg,#fff5ec 0%,#ffe0c1 100%);"></button>
-            <button type="button" class="swatch" data-color="#181d2d" style="background:#181d2d;"></button>
-            <div class="colorInput">
-              <input id="bg" type="color" value="#ffffff" aria-label="Chọn màu nền tùy ý" />
+        <div class="optionsBody" id="optionsBody">
+          <div class="toolbar">
+            <div class="controlCard">
+              <label for="gap">
+                Khoảng cách
+                <span class="controlValue" id="gapValue">16px</span>
+              </label>
+              <div class="sliderWrap">
+                <input id="gap" type="range" min="0" max="80" step="1" value="16" />
+              </div>
+            </div>
+            <div class="controlCard">
+              <label for="radius">
+                Bo góc
+                <span class="controlValue" id="radiusValue">0px</span>
+              </label>
+              <div class="sliderWrap">
+                <input id="radius" type="range" min="0" max="120" step="1" value="0" />
+              </div>
+            </div>
+            <div class="controlCard">
+              <label for="bg">
+                Nền
+                <span class="controlValue" id="bgLabel">#FFFFFF</span>
+              </label>
+              <div class="backgroundPicker" id="bgPalette">
+                <button type="button" class="swatch active" data-color="#ffffff" style="background:#ffffff;"></button>
+                <button type="button" class="swatch" data-color="#f7f4f8" style="background:linear-gradient(135deg,#f7f4f8 0%,#e4d3f4 100%);"></button>
+                <button type="button" class="swatch" data-color="#edf5ff" style="background:linear-gradient(135deg,#edf5ff 0%,#c9e1ff 100%);"></button>
+                <button type="button" class="swatch" data-color="#fff5ec" style="background:linear-gradient(135deg,#fff5ec 0%,#ffe0c1 100%);"></button>
+                <button type="button" class="swatch" data-color="#181d2d" style="background:#181d2d;"></button>
+                <div class="colorInput">
+                  <input id="bg" type="color" value="#ffffff" aria-label="Chọn màu nền tùy ý" />
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      <div class="canvasWrap" id="canvasWrap">
-        <label class="canvasDrop" id="drop" for="file">
-          <input id="file" type="file" accept="image/*" multiple />
-          <svg viewBox="0 0 64 64" aria-hidden="true">
-            <path d="M32 6a14 14 0 0 0-14 14c0 .7.05 1.4.15 2.08A14.97 14.97 0 0 0 6 36c0 8.28 6.72 15 15 15h25a12 12 0 0 0 3-23.6A14 14 0 0 0 32 6zm0 4a10 10 0 0 1 9.85 11.55 2 2 0 0 0 1.66 2.32A8 8 0 0 1 44 32a8 8 0 0 1-8 8h-4v-9h5a1 1 0 0 0 .7-1.7l-9-9a1 1 0 0 0-1.4 0l-9 9A1 1 0 0 0 19 31h5v9h-3a11 11 0 0 1-1.7-21.87 2 2 0 0 0 1.65-2.3A10 10 0 0 1 32 10zm-4 22v12h8V32h3.586L32 24.414 24.414 32H28z"/>
-          </svg>
-          <strong>Tải ảnh lên</strong>
-          <p>Kéo thả ảnh vào khu vực canvas hoặc bấm để chọn nhiều ảnh từ máy.</p>
-        </label>
-        <canvas id="preview"></canvas>
-      </div>
-      <div class="collections">
-        <div class="thumbStrip" id="thumbs"></div>
+          <div class="collections">
+            <div class="thumbStrip" id="thumbs"></div>
 
-        <div class="panelBlock" id="layoutSection">
-          <div class="panelHeader">
-            <h3>Bố cục (2–12 ảnh)</h3>
-            <div class="countTabs" id="countTabs"></div>
+            <div class="panelBlock" id="layoutSection">
+              <div class="panelHeader">
+                <h3>Bố cục (2–12 ảnh)</h3>
+                <div class="countTabs" id="countTabs"></div>
+              </div>
+              <div class="presetRow" id="presetGrid"></div>
+            </div>
+
+            <div class="panelBlock" id="shapeSection">
+              <div class="panelHeader">
+                <h3>Hình dạng</h3>
+              </div>
+              <div class="presetRow" id="shapeGrid"></div>
+            </div>
           </div>
-          <div class="presetRow" id="presetGrid"></div>
-        </div>
 
-        <div class="panelBlock" id="shapeSection">
-          <div class="panelHeader">
-            <h3>Hình dạng</h3>
+          <div class="footer">
+            <button class="btn" id="btnExport" disabled>Xuất ảnh PNG</button>
           </div>
-          <div class="presetRow" id="shapeGrid"></div>
         </div>
-      </div>
-
-      <div class="footer">
-        <button class="btn" id="btnExport">Xuất ảnh PNG</button>
-      </div>
+      </aside>
     </section>
   </div>
+  <div class="optionsOverlay" id="optionsOverlay"></div>
 
   <script>
     const els = {
@@ -479,6 +410,11 @@
       ctx: document.getElementById('preview').getContext('2d'),
       drop: document.getElementById('drop'),
       file: document.getElementById('file'),
+      optsToggle: document.getElementById('optsToggle'),
+      optionsPanel: document.getElementById('optionsPanel'),
+      optionsBody: document.getElementById('optionsBody'),
+      optionsOverlay: document.getElementById('optionsOverlay'),
+      addBtn: document.getElementById('btnAdd'),
       thumbs: document.getElementById('thumbs'),
       countTabs: document.getElementById('countTabs'),
       presetGrid: document.getElementById('presetGrid'),
@@ -495,15 +431,37 @@
     };
 
     const state = {
-      images: [], // {file,url,img,zoom,offsetX,offsetY}
+      images: [],
       draggingIndex: null,
-      layout: null, // normalized cells {x,y,w,h,shape?}
+      layout: null,
       layoutKey: '',
       countSelected: 2,
       bgColor: '#ffffff',
+      optionsOpen: false,
     };
 
-    // ===== Canvas helpers =====
+    function updateOptionsVisibility(force){
+      const isMobile = window.matchMedia('(max-width: 820px)').matches;
+      if(!isMobile){
+        state.optionsOpen = true;
+        els.optionsPanel.classList.add('is-open');
+        els.optsToggle.setAttribute('aria-expanded','true');
+        els.optionsOverlay.classList.remove('active');
+        document.body.classList.remove('options-open');
+        return;
+      }
+      if(typeof force === 'boolean') state.optionsOpen = force;
+      els.optionsPanel.classList.toggle('is-open', state.optionsOpen);
+      els.optsToggle.setAttribute('aria-expanded', state.optionsOpen);
+      els.optionsOverlay.classList.toggle('active', state.optionsOpen);
+      document.body.classList.toggle('options-open', state.optionsOpen);
+    }
+
+    function toggleOptions(){ updateOptionsVisibility(!state.optionsOpen); }
+    window.addEventListener('resize', ()=> updateOptionsVisibility());
+    els.optsToggle.addEventListener('click', toggleOptions);
+    els.optionsOverlay.addEventListener('click', ()=> updateOptionsVisibility(false));
+
     function resizeCanvas(){
       const rect = els.canvasWrap.getBoundingClientRect();
       const dpr = window.devicePixelRatio || 1;
@@ -517,7 +475,6 @@
     }
     window.addEventListener('resize', resizeCanvas);
 
-    // ===== Upload handling =====
     function addFiles(files){
       if(!files.length) return;
       const tasks = files.map(f => new Promise(res=>{
@@ -542,7 +499,7 @@
     ['dragleave','drop'].forEach(ev=>{
       els.canvasWrap.addEventListener(ev, e=>{
         e.preventDefault();
-        if(ev === 'dragleave' && !els.canvasWrap.contains(e.relatedTarget)) {
+        if(ev === 'dragleave' && !els.canvasWrap.contains(e.relatedTarget)){
           els.drop.classList.remove('is-drag');
         }
         if(ev === 'drop'){
@@ -555,18 +512,16 @@
       addFiles(files);
     });
     els.file.addEventListener('change', e=> addFiles([...e.target.files]));
+    els.addBtn.addEventListener('click', ()=> els.file.click());
 
-    // ===== Thumbnails =====
     function renderThumbs(){
       els.thumbs.innerHTML = '';
       state.images.forEach((item, idx)=>{
         const div = document.createElement('div');
         div.className = 'thumb';
-
         const im = document.createElement('img');
         im.src = item.url;
         div.appendChild(im);
-
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'rm';
@@ -579,7 +534,6 @@
           render();
         };
         div.appendChild(btn);
-
         const handle = document.createElement('div');
         handle.className = 'handle';
         handle.textContent = 'Ảnh ' + (idx + 1);
@@ -602,13 +556,12 @@
           render();
         });
         div.appendChild(handle);
-
         els.thumbs.appendChild(div);
       });
       els.canvasWrap.classList.toggle('has-images', state.images.length > 0);
+      updateExportButton();
     }
 
-    // ===== Layout rendering =====
     function computeLayoutFromCells(cells, W, H, gap){
       if(!cells) return [];
       return cells.map(c=>({
@@ -633,6 +586,18 @@
       }
       return res;
     }
+
+    function buildRoundedRectPath(x,y,w,h,r){
+      const p = new Path2D();
+      p.moveTo(x+r, y);
+      p.arcTo(x+w, y, x+w, y+h, r);
+      p.arcTo(x+w, y+h, x, y+h, r);
+      p.arcTo(x, y+h, x, y, r);
+      p.arcTo(x, y, x+w, y, r);
+      p.closePath();
+      return p;
+    }
+
     function drawImageMasked(ctx, img, rect, radius, imgState, shape){
       const {x,y,w,h}=rect;
       const r=Math.min(radius, w/2, h/2);
@@ -642,13 +607,7 @@
         path = buildShapePath(shape, x,y,w,h,r);
       }
       if(!path){
-        path = new Path2D();
-        path.moveTo(x+r, y);
-        path.arcTo(x+w, y, x+w, y+h, r);
-        path.arcTo(x+w, y+h, x, y+h, r);
-        path.arcTo(x, y+h, x, y, r);
-        path.arcTo(x, y, x+w, y, r);
-        path.closePath();
+        path = buildRoundedRectPath(x,y,w,h,r);
       }
       ctx.clip(path);
       const zx = imgState.zoom || 1;
@@ -672,19 +631,24 @@
       const p = new Path2D();
       switch(shape.type){
         case 'circle':{
-          const cx = x + w/2, cy = y + h/2;
-          const rad = Math.min(w,h)/2;
-          p.arc(cx,cy,rad,0,Math.PI*2);
+          const size = Math.min(w,h);
+          const cx = x + size/2 + Math.max(0,(w-size)/2);
+          const cy = y + size/2 + Math.max(0,(h-size)/2);
+          p.arc(cx,cy,size/2,0,Math.PI*2);
           return p;
         }
         case 'heart':{
-          const cx = x + w/2, cy = y + h*0.6;
-          const s = Math.min(w,h)/2;
+          const size = Math.min(w,h);
+          const ox = x + (w-size)/2;
+          const oy = y + (h-size)/2;
+          const cx = ox + size/2;
+          const cy = oy + size*0.55;
+          const s = size/2;
           p.moveTo(cx, cy);
-          p.bezierCurveTo(cx - s, cy - s, x, y + h*0.25, x + w*0.24, y + h*0.2);
-          p.bezierCurveTo(x + w*0.38, y, cx, y + h*0.22, cx, y + h*0.38);
-          p.bezierCurveTo(cx, y + h*0.22, x + w*0.62, y, x + w*0.76, y + h*0.2);
-          p.bezierCurveTo(x + w, y + h*0.26, cx + s, cy - s, cx, cy);
+          p.bezierCurveTo(cx - s, cy - s, ox, oy + size*0.3, ox + size*0.25, oy + size*0.2);
+          p.bezierCurveTo(ox + size*0.38, oy, cx, oy + size*0.22, cx, oy + size*0.38);
+          p.bezierCurveTo(cx, oy + size*0.22, ox + size*0.62, oy, ox + size*0.75, oy + size*0.2);
+          p.bezierCurveTo(ox + size, oy + size*0.3, cx + s, cy - s, cx, cy);
           p.closePath();
           return p;
         }
@@ -698,27 +662,30 @@
           return p;
         }
         case 'star':{
+          const size = Math.min(w,h)/2;
           const cx=x+w/2, cy=y+h/2;
-          const outer=Math.min(w,h)/2;
-          const inner=outer*0.48;
+          const inner=size*0.5;
           let rot=Math.PI/2*3;
           const step=Math.PI/5;
-          p.moveTo(cx, cy - outer);
+          p.moveTo(cx, cy - size);
           for(let i=0;i<5;i++){
-            p.lineTo(cx + Math.cos(rot)*outer, cy + Math.sin(rot)*outer);
+            p.lineTo(cx + Math.cos(rot)*size, cy + Math.sin(rot)*size);
             rot += step;
             p.lineTo(cx + Math.cos(rot)*inner, cy + Math.sin(rot)*inner);
             rot += step;
           }
-          p.lineTo(cx, cy - outer);
+          p.lineTo(cx, cy - size);
           p.closePath();
           return p;
         }
         case 'droplet':{
-          const cx=x+w/2;
-          p.moveTo(cx, y);
-          p.bezierCurveTo(x+w, y + h*0.25, x + w*0.85, y + h*0.75, cx, y+h);
-          p.bezierCurveTo(x + w*0.15, y + h*0.75, x, y + h*0.25, cx, y);
+          const size = Math.min(w,h);
+          const ox = x + (w-size)/2;
+          const oy = y + (h-size)/2;
+          const cx=ox+size/2;
+          p.moveTo(cx, oy);
+          p.bezierCurveTo(ox+size, oy+size*0.28, ox+size*0.82, oy+size*0.78, cx, oy+size);
+          p.bezierCurveTo(ox+size*0.18, oy+size*0.78, ox, oy+size*0.28, cx, oy);
           p.closePath();
           return p;
         }
@@ -730,12 +697,12 @@
           return p;
         }
         case 'hexagon':{
+          const size = Math.min(w,h)/2;
           const cx = x + w/2, cy = y + h/2;
-          const a = Math.min(w,h)/2;
           for(let i=0;i<6;i++){
             const ang = Math.PI/3*i - Math.PI/6;
-            const px = cx + a*Math.cos(ang);
-            const py = cy + a*Math.sin(ang);
+            const px = cx + size*Math.cos(ang);
+            const py = cy + size*Math.sin(ang);
             if(i===0) p.moveTo(px,py); else p.lineTo(px,py);
           }
           p.closePath();
@@ -750,21 +717,21 @@
           return p;
         }
         case 'clover':{
+          const size = Math.min(w,h)/2;
           const cx = x + w/2, cy = y + h/2;
-          const outer = Math.min(w,h)/2;
-          const inner = outer * 0.55;
-          p.moveTo(cx, cy - outer);
-          p.quadraticCurveTo(cx + inner, cy - inner, cx + outer, cy);
-          p.quadraticCurveTo(cx + inner, cy + inner, cx, cy + outer);
-          p.quadraticCurveTo(cx - inner, cy + inner, cx - outer, cy);
-          p.quadraticCurveTo(cx - inner, cy - inner, cx, cy - outer);
+          const inner = size*0.6;
+          p.moveTo(cx, cy - size);
+          p.quadraticCurveTo(cx + inner, cy - inner, cx + size, cy);
+          p.quadraticCurveTo(cx + inner, cy + inner, cx, cy + size);
+          p.quadraticCurveTo(cx - inner, cy + inner, cx - size, cy);
+          p.quadraticCurveTo(cx - inner, cy - inner, cx, cy - size);
           p.closePath();
           return p;
         }
         case 'pebble':{
           const cx = x + w/2, cy = y + h/2;
           const rx = w/2, ry = h/2;
-          p.ellipse(cx, cy, rx*0.9, ry*0.75, Math.PI/8, 0, Math.PI*2);
+          p.ellipse(cx, cy, rx*0.92, ry*0.78, Math.PI/8, 0, Math.PI*2);
           return p;
         }
         case 'pill':{
@@ -801,8 +768,19 @@
       els.ctx.fillStyle = state.bgColor;
       els.ctx.fillRect(0,0,W,H);
       const n = Math.min(state.images.length, state.layout ? state.layout.length : state.images.length);
-      const cells = state.layout ? state.layout.slice(0,n) : autoGrid(n);
-      const rects = computeLayoutFromCells(cells, W, H, gap);
+      let cells;
+      if(state.layout && n>0){
+        if(n === 1){
+          const first = state.layout[0] || {};
+          cells = [{x:0,y:0,w:1,h:1,shape:first.shape}];
+        }else{
+          cells = state.layout.slice(0,n);
+        }
+      }else{
+        cells = autoGrid(n);
+      }
+      const effectiveGap = n <= 1 ? 0 : gap;
+      const rects = computeLayoutFromCells(cells, W, H, effectiveGap);
       rects.forEach((rect, i)=>{
         const img = state.images[i]?.img;
         const sh = cells[i]?.shape;
@@ -812,10 +790,34 @@
       els.ctx.restore();
     }
 
-    // Disable scroll zoom
+    function drawPresetPreview(canvas, cells){
+      const size = 120;
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = size * dpr;
+      canvas.height = size * dpr;
+      canvas.style.width = size + 'px';
+      canvas.style.height = size + 'px';
+      const ctx = canvas.getContext('2d');
+      ctx.save();
+      ctx.scale(dpr,dpr);
+      ctx.fillStyle = '#1f2535';
+      ctx.fillRect(0,0,size,size);
+      const gap = 10;
+      const rects = computeLayoutFromCells(cells, size, size, gap);
+      rects.forEach((rect, idx)=>{
+        const shape = cells[idx]?.shape;
+        const path = shape && shape.type ? buildShapePath(shape, rect.x, rect.y, rect.w, rect.h, 8) : buildRoundedRectPath(rect.x, rect.y, rect.w, rect.h, 10);
+        ctx.fillStyle = 'rgba(173,192,255,.18)';
+        ctx.strokeStyle = 'rgba(255,255,255,.58)';
+        ctx.lineWidth = 2;
+        ctx.fill(path);
+        ctx.stroke(path);
+      });
+      ctx.restore();
+    }
+
     els.canvas.addEventListener('wheel', e=> e.preventDefault(), {passive:false});
 
-    // Optional: pan inside cell
     let hoverIndex = -1;
     let isPanning=false;
     let panStart={x:0,y:0};
@@ -823,8 +825,19 @@
     function locateCell(px,py){
       const gap = parseInt(els.gap.value,10);
       const n = Math.min(state.images.length, state.layout ? state.layout.length : state.images.length);
-      const cells = state.layout ? state.layout.slice(0,n) : autoGrid(n);
-      const rects = computeLayoutFromCells(cells, els.canvas.width, els.canvas.height, gap);
+      let cells;
+      if(state.layout && n>0){
+        if(n === 1){
+          const first = state.layout[0] || {};
+          cells = [{x:0,y:0,w:1,h:1,shape:first.shape}];
+        }else{
+          cells = state.layout.slice(0,n);
+        }
+      }else{
+        cells = autoGrid(n);
+      }
+      const effectiveGap = n <= 1 ? 0 : gap;
+      const rects = computeLayoutFromCells(cells, els.canvas.width, els.canvas.height, effectiveGap);
       for(let i=0;i<rects.length;i++){
         const r=rects[i];
         if(px>=r.x && px<=r.x+r.w && py>=r.y && py<=r.y+r.h) return i;
@@ -850,7 +863,7 @@
       panStart={x:e.clientX,y:e.clientY};
       render();
     });
-    // ===== Controls =====
+
     ['input','change'].forEach(ev=>{
       els.gap.addEventListener(ev, render);
       els.radius.addEventListener(ev, render);
@@ -873,11 +886,16 @@
       [...els.bgPalette.querySelectorAll('.swatch')].forEach(btn=>{
         btn.classList.toggle('active', btn.dataset.color.toLowerCase() === state.bgColor.toLowerCase());
       });
-      const label = document.getElementById('bgLabel');
-      label.textContent = state.bgColor.toUpperCase();
+      document.getElementById('bgLabel').textContent = state.bgColor.toUpperCase();
+    }
+
+    function updateExportButton(){
+      const disabled = state.images.length === 0;
+      els.btnExport.disabled = disabled;
     }
 
     els.btnExport.addEventListener('click', ()=>{
+      if(state.images.length === 0) return;
       els.canvas.toBlob(blob=>{
         if(!blob) return;
         const url = URL.createObjectURL(blob);
@@ -891,7 +909,6 @@
       }, 'image/png');
     });
 
-    // ===== Layout picker =====
     function setupLayoutPicker(){
       for(let i=2;i<=12;i++){
         const btn = document.createElement('button');
@@ -920,6 +937,12 @@
         child.classList.toggle('active', child.dataset.key === key);
       });
     }
+    function createPresetCanvas(cells){
+      const canvas=document.createElement('canvas');
+      canvas.className='presetCanvas';
+      drawPresetPreview(canvas, cells);
+      return canvas;
+    }
 
     function renderPresets(){
       els.presetGrid.innerHTML = '';
@@ -931,23 +954,12 @@
         const key = `layout-${state.countSelected}-${idx}`;
         card.dataset.key = key;
         if(state.layoutKey === key) card.classList.add('active');
-        const mini=document.createElement('div');
-        mini.className='mini';
-        cells.forEach(c=>{
-          const d=document.createElement('div');
-          d.className='cell';
-          d.style.left=(c.x*100)+'%';
-          d.style.top=(c.y*100)+'%';
-          d.style.width=(c.w*100)+'%';
-          d.style.height=(c.h*100)+'%';
-          mini.appendChild(d);
-        });
-        card.appendChild(mini);
+        const canvas = createPresetCanvas(cells);
+        card.appendChild(canvas);
         const label=document.createElement('p');
         label.className='presetLabel';
         label.textContent = `Kiểu ${idx+1}`;
         card.appendChild(label);
-
         card.addEventListener('click', ()=>{
           state.layout = cells.map(c=>({...c}));
           state.layoutKey = key;
@@ -971,23 +983,12 @@
           const key = `shape-${state.countSelected}-${idx}`;
           card.dataset.key = key;
           if(state.layoutKey === key) card.classList.add('active');
-          const mini=document.createElement('div');
-          mini.className='mini';
-          item.cells.forEach(c=>{
-            const d=document.createElement('div');
-            d.className='cell';
-            d.style.left=(c.x*100)+'%';
-            d.style.top=(c.y*100)+'%';
-            d.style.width=(c.w*100)+'%';
-            d.style.height=(c.h*100)+'%';
-            mini.appendChild(d);
-          });
-          card.appendChild(mini);
+          const canvas=createPresetCanvas(item.cells);
+          card.appendChild(canvas);
           const label=document.createElement('p');
           label.className='presetLabel';
           label.textContent = item.name;
           card.appendChild(label);
-
           card.addEventListener('click', ()=>{
             state.layout = item.cells.map(c=>({...c}));
             state.layoutKey = key;
@@ -999,6 +1000,7 @@
         });
       }
     }
+
     function getPresets(n){
       const grid = (r,c)=>{const a=[]; for(let j=0;j<r;j++)for(let i=0;i<c;i++) a.push({x:i/c,y:j/r,w:1/c,h:1/r}); return a;};
       const headerGrid = (hRatio, rows, cols)=>{
@@ -1084,13 +1086,13 @@
 
     function getShapePresets(){
       return [
-        {count:2, name:'Hai khung tròn', cells:[{x:0,y:0,w:.5,h:1,shape:{type:'circle'}},{x:.5,y:0,w:.5,h:1,shape:{type:'circle'}}]},
-        {count:2, name:'Trái tim & tròn', cells:[{x:0,y:0,w:.5,h:1,shape:{type:'heart'}},{x:.5,y:0,w:.5,h:1,shape:{type:'circle'}}]},
-        {count:2, name:'Cánh hoa đôi', cells:[{x:0,y:0,w:.5,h:1,shape:{type:'clover'}},{x:.5,y:0,w:.5,h:1,shape:{type:'clover'}}]},
+        {count:2, name:'Hai khung tròn', cells:[{x:0,y:0.05,w:.5,h:.9,shape:{type:'circle'}},{x:.5,y:0.05,w:.5,h:.9,shape:{type:'circle'}}]},
+        {count:2, name:'Trái tim & tròn', cells:[{x:0,y:0.05,w:.5,h:.9,shape:{type:'heart'}},{x:.5,y:0.05,w:.5,h:.9,shape:{type:'circle'}}]},
+        {count:2, name:'Cánh hoa dôi', cells:[{x:0,y:0.05,w:.5,h:.9,shape:{type:'clover'}},{x:.5,y:0.05,w:.5,h:.9,shape:{type:'clover'}}]},
 
-        {count:3, name:'Ba trái tim', cells:[{x:0,y:0,w:1/3,h:1,shape:{type:'heart'}},{x:1/3,y:0,w:1/3,h:1,shape:{type:'heart'}},{x:2/3,y:0,w:1/3,h:1,shape:{type:'heart'}}]},
+        {count:3, name:'Ba trái tim', cells:[{x:0,y:.05,w:1/3,h:.9,shape:{type:'heart'}},{x:1/3,y:.05,w:1/3,h:.9,shape:{type:'heart'}},{x:2/3,y:.05,w:1/3,h:.9,shape:{type:'heart'}}]},
         {count:3, name:'Tam giác nghệ thuật', cells:[{x:0,y:0,w:1/3,h:1,shape:{type:'triangle'}},{x:1/3,y:0,w:1/3,h:1,shape:{type:'triangle'}},{x:2/3,y:0,w:1/3,h:1,shape:{type:'triangle'}}]},
-        {count:3, name:'Viên sỏi mềm', cells:[{x:0,y:0,w:1/3,h:1,shape:{type:'pebble'}},{x:1/3,y:0,w:1/3,h:1,shape:{type:'pebble'}},{x:2/3,y:0,w:1/3,h:1,shape:{type:'pebble'}}]},
+        {count:3, name:'Viên sỏi mềm', cells:[{x:0,y:.05,w:1/3,h:.9,shape:{type:'pebble'}},{x:1/3,y:.05,w:1/3,h:.9,shape:{type:'pebble'}},{x:2/3,y:.05,w:1/3,h:.9,shape:{type:'pebble'}}]},
 
         {count:4, name:'Bốn khung tròn', cells:[{x:0,y:0,w:.5,h:.5,shape:{type:'circle'}},{x:.5,y:0,w:.5,h:.5,shape:{type:'circle'}},{x:0,y:.5,w:.5,h:.5,shape:{type:'circle'}},{x:.5,y:.5,w:.5,h:.5,shape:{type:'circle'}}]},
         {count:4, name:'Lục giác đối xứng', cells:[{x:0,y:0,w:.5,h:.5,shape:{type:'hexagon'}},{x:.5,y:0,w:.5,h:.5,shape:{type:'hexagon'}},{x:0,y:.5,w:.5,h:.5,shape:{type:'hexagon'}},{x:.5,y:.5,w:.5,h:.5,shape:{type:'hexagon'}}]},
@@ -1111,13 +1113,16 @@
       ];
     }
 
-    // ===== Init =====
     (function init(){
+      updateOptionsVisibility(false);
       resizeCanvas();
       setupLayoutPicker();
       renderPresets();
       updateBgPalette();
+      renderThumbs();
     })();
   </script>
 </body>
 </html>
+
+
