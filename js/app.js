@@ -3113,47 +3113,66 @@ function renderWatermarkPanel(container) {
   const layer = image ? getLayer(image.id, state.activeLayerId) : null;
   const current = layer?.type === layerTypes.WATERMARK ? layer : toolDefaults[layerTypes.WATERMARK];
   const disabled = !(layer && layer.type === layerTypes.WATERMARK);
+  const sliderPercent = Math.round((current.opacity ?? 0.25) * 100);
   container.innerHTML = `
-    <form id="watermarkForm" class="form-grid">
-      <label class="field">
-        <span>${state.locale === 'vi' ? 'Nội dung dấu mờ' : 'Watermark text'}</span>
-        <textarea name="text" rows="2" ${disabled ? 'disabled' : ''}>${current.text}</textarea>
-      </label>
-      <div class="field two-col">
-        <label>
-          <span>${state.locale === 'vi' ? 'Kích thước' : 'Font size'}</span>
-          <input type="number" name="fontSize" min="12" max="140" value="${current.fontSize}" ${disabled ? 'disabled' : ''}>
-        </label>
-        <label>
-          <span>${state.locale === 'vi' ? 'Độ mờ (%)' : 'Opacity (%)'}</span>
-          <input type="range" name="opacity" min="5" max="80" value="${Math.round((current.opacity ?? 0.25) * 100)}" ${disabled ? 'disabled' : ''}>
-        </label>
+    <div class="wm-card">
+      <div class="wm-header">
+        <h3>${state.locale === 'vi' ? 'Dấu mờ' : 'Watermark'}</h3>
+        <p>${state.locale === 'vi' ? 'Tạo dấu mờ lặp theo góc và khoảng cách.' : 'Lay down repeating watermark text with angle and spacing control.'}</p>
       </div>
-      <div class="field two-col">
-        <label>
-          <span>${state.locale === 'vi' ? 'Góc xoay' : 'Angle'}</span>
-          <select name="angle"${disabled ? ' disabled' : ''}>
-            <option value="-45"${current.angle === -45 ? ' selected' : ''}>-45°</option>
-            <option value="45"${current.angle === 45 ? ' selected' : ''}>45°</option>
-          </select>
+      <form id="watermarkForm" class="wm-form">
+        <label class="wm-field">
+          <span class="wm-label">${state.locale === 'vi' ? 'Nội dung dấu mờ' : 'Watermark text'}</span>
+          <textarea name="text" rows="2" ${disabled ? 'disabled' : ''}>${current.text}</textarea>
         </label>
-        <label>
-          <span>${state.locale === 'vi' ? 'Khoảng cách ngang' : 'Spacing X'}</span>
-          <input type="number" name="spacingX" min="60" max="400" value="${current.spacingX}" ${disabled ? 'disabled' : ''}>
-        </label>
-      </div>
-      <label class="field">
-        <span>${state.locale === 'vi' ? 'Khoảng cách dọc' : 'Spacing Y'}</span>
-        <input type="number" name="spacingY" min="40" max="400" value="${current.spacingY}" ${disabled ? 'disabled' : ''}>
-      </label>
-    </form>
-    <button type="button" class="btn primary" data-action="add-watermark"${disabled ? '' : ' hidden'}>
-      ${state.locale === 'vi' ? 'Thêm dấu mờ' : 'Add watermark'}
-    </button>
+        <div class="wm-grid pairs">
+          <label class="wm-field">
+            <span class="wm-label">${state.locale === 'vi' ? 'Kích thước' : 'Font size'}</span>
+            <input type="number" name="fontSize" min="12" max="140" value="${current.fontSize}" ${disabled ? 'disabled' : ''}>
+          </label>
+          <label class="wm-field wm-select">
+            <span class="wm-label">${state.locale === 'vi' ? 'Góc xoay' : 'Angle'}</span>
+            <select name="angle"${disabled ? ' disabled' : ''}>
+              <option value="-45"${current.angle === -45 ? ' selected' : ''}>-45°</option>
+              <option value="45"${current.angle === 45 ? ' selected' : ''}>45°</option>
+            </select>
+          </label>
+        </div>
+        <div class="wm-field wm-slider-field">
+          <div class="wm-slider-head">
+            <span class="wm-label">${state.locale === 'vi' ? 'Độ mờ (%)' : 'Opacity (%)'}</span>
+            <span class="wm-slider-value">${sliderPercent}%</span>
+          </div>
+          <input type="range" name="opacity" min="5" max="80" value="${sliderPercent}" ${disabled ? 'disabled' : ''}>
+        </div>
+        <div class="wm-grid pairs">
+          <label class="wm-field">
+            <span class="wm-label">${state.locale === 'vi' ? 'Khoảng cách ngang' : 'Spacing X'}</span>
+            <input type="number" name="spacingX" min="60" max="400" value="${current.spacingX}" ${disabled ? 'disabled' : ''}>
+          </label>
+          <label class="wm-field">
+            <span class="wm-label">${state.locale === 'vi' ? 'Khoảng cách dọc' : 'Spacing Y'}</span>
+            <input type="number" name="spacingY" min="40" max="400" value="${current.spacingY}" ${disabled ? 'disabled' : ''}>
+          </label>
+        </div>
+      </form>
+      <button type="button" class="btn primary wm-submit" data-action="add-watermark"${disabled ? '' : ' hidden'}>
+        ${state.locale === 'vi' ? 'Thêm dấu mờ' : 'Add watermark'}
+      </button>
+    </div>
   `;
   const form = container.querySelector('#watermarkForm');
   if (!form) return;
+  const sliderInput = form.elements.opacity;
+  const sliderLabel = form.querySelector('.wm-slider-value');
+  const updateSliderLabel = () => {
+    if (sliderInput && sliderLabel) {
+      sliderLabel.textContent = `${Math.round(parseFloat(sliderInput.value))}%`;
+    }
+  };
+  updateSliderLabel();
   const handleChange = () => {
+    updateSliderLabel();
     const values = {
       text: form.elements.text.value,
       fontSize: parseFloat(form.elements.fontSize.value),

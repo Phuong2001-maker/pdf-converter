@@ -1359,6 +1359,151 @@ button:disabled {
   background: color-mix(in srgb, var(--color-danger) 18%, var(--color-surface) 82%);
 }
 
+.wm-card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px;
+  border-radius: var(--radius-xl);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 16%, transparent);
+  background: color-mix(in srgb, var(--color-muted-surface) 94%, transparent 6%);
+  box-shadow: var(--shadow-sm);
+}
+
+.wm-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wm-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.wm-header p {
+  margin: 0;
+  font-size: 0.86rem;
+  color: var(--color-subtext);
+}
+
+.wm-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.wm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wm-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-subtext);
+}
+
+.wm-field textarea,
+.wm-field input,
+.wm-field select {
+  width: 100%;
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent 30%);
+  background: var(--color-surface);
+  padding: 10px 12px;
+  font-size: 0.92rem;
+  color: var(--color-text);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.wm-field textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.wm-field textarea:focus,
+.wm-field input:focus,
+.wm-field select:focus {
+  border-color: color-mix(in srgb, var(--color-primary) 60%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 18%, transparent);
+  outline: none;
+}
+
+.wm-field textarea[disabled],
+.wm-field input[disabled],
+.wm-field select[disabled] {
+  background: color-mix(in srgb, var(--color-muted-surface) 78%, transparent 22%);
+  color: var(--color-subtext);
+  cursor: not-allowed;
+}
+
+.wm-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.wm-grid.pairs {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.wm-select {
+  position: relative;
+}
+
+.wm-select select {
+  appearance: none;
+  padding-right: 36px;
+}
+
+.wm-select::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid color-mix(in srgb, var(--color-text) 70%, transparent 30%);
+  border-bottom: 2px solid color-mix(in srgb, var(--color-text) 70%, transparent 30%);
+  transform: translateY(-60%) rotate(45deg);
+  pointer-events: none;
+}
+
+.wm-slider-field {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wm-slider-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.wm-slider-value {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.wm-slider-field input[type='range'] {
+  width: 100%;
+}
+
+.wm-submit {
+  width: 100%;
+  justify-content: center;
+  padding: 12px 18px;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
 .logo-form {
   display: flex;
   flex-direction: column;
@@ -2682,18 +2827,25 @@ textarea {
   }
 
   .logo-card {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 10px;
-  }
-
-  .logo-card-thumb {
-    width: 100%;
-    height: 140px;
+    padding: 14px;
   }
 
   .logo-card-actions {
-    flex-direction: row;
-    justify-content: space-between;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .logo-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  dummy.two {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .wm-submit {
+    width: 100%;
   }
 
   .field,
