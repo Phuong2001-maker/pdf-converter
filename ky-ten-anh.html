@@ -724,6 +724,54 @@
       cursor: nwse-resize;
     }
 
+    .selection-overlay .transform-handle.handle-rotate {
+      top: -36px;
+      left: 50%;
+      width: 22px;
+      height: 22px;
+      transform: translate(-50%, 0);
+      background: var(--color-surface);
+      border: 2px solid color-mix(in srgb, var(--color-primary) 65%, transparent);
+      color: var(--color-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: grab;
+      box-shadow: 0 4px 10px color-mix(in srgb, var(--color-primary) 18%, transparent);
+    }
+
+    .selection-overlay .transform-handle.handle-rotate::after {
+      content: '';
+      width: 10px;
+      height: 10px;
+      border: 2px solid currentColor;
+      border-radius: 50%;
+      border-top-color: transparent;
+      border-right-color: transparent;
+      transform: rotate(-45deg);
+      display: block;
+    }
+
+    .selection-overlay.is-rotating .transform-handle.handle-rotate {
+      cursor: grabbing;
+      color: #fff;
+      background: var(--color-primary);
+    }
+
+    .selection-overlay.is-rotating .transform-handle.handle-rotate::after {
+      border-color: #fff;
+      border-top-color: transparent;
+      border-right-color: transparent;
+    }
+
+    .selection-overlay:not([data-layer-type="logo"]) .transform-handle.handle-rotate {
+      display: none;
+    }
+
+    .selection-overlay[data-layer-type="logo"] .transform-handle.handle-rotate {
+      display: flex;
+    }
+
     .canvas-board.is-pen-mode,
     .canvas-board.is-pen-mode *:not(.transform-handle) {
       cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath fill='%231D4ED8' d='M3 24 22.5 4.5a3.5 3.5 0 1 1 5 5L8 28z'/%3E%3Cpath fill='%2360A5FA' d='M6 24.5 24.4 6.1a2 2 0 0 1 2.8 2.8L8.8 27.3z'/%3E%3Cpath fill='%230B1021' d='M3 24l3 3-3.5.9z'/%3E%3Cpath fill='%23F8FAFC' d='m26.5 6.5-2.5-2.5L21.5 6.5l2.5 2.5z'/%3E%3Ccircle cx='24.75' cy='7.25' r='1.1' fill='%23FACC15'/%3E%3C/svg%3E") 5 27, crosshair;
