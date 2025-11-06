@@ -32,6 +32,7 @@
       display:flex;
       justify-content:center;
       align-items:flex-start;
+      width:100%;
     }
     .workspace{
       width:100%;
@@ -46,6 +47,7 @@
       border:1px solid rgba(255,255,255,.65);
       box-shadow:var(--shadow);
       position:relative;
+      width:100%;
     }
     .canvasPanel{
       padding:24px;
@@ -54,6 +56,7 @@
     }
     .canvasWrap{
       flex:1;
+      width:100%;
       aspect-ratio:4/5;
       min-height:460px;
       position:relative;
@@ -114,6 +117,7 @@
       display:flex;
       flex-direction:column;
       min-height:0;
+      width:100%;
     }
     .optionsHeader{
       display:flex;
@@ -250,6 +254,11 @@
     .countTabs .tab{border:1px solid #d3dbf2;border-radius:999px;padding:6px 14px;background:#fff;font-weight:600;font-size:14px;color:#33405b;cursor:pointer;transition:all .2s ease;}
     .countTabs .tab.active{background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:0 8px 18px rgba(76,133,255,.38);}
     .presetRow{display:flex;gap:12px;overflow-x:auto;padding-bottom:4px;}
+    .presetRow{
+      -webkit-overflow-scrolling:touch;
+      overscroll-behavior-inline:contain;
+      touch-action:pan-x;
+    }
     .preset{min-width:138px;border:0;border-radius:18px;background:#fff;border:1px solid transparent;box-shadow:0 12px 28px rgba(41,57,98,.12);padding:12px 12px 14px;cursor:pointer;display:flex;flex-direction:column;gap:10px;transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease;}
     .preset:hover{transform:translateY(-2px);}
     .preset.active{border-color:var(--primary);box-shadow:0 18px 34px rgba(76,133,255,.28);}
@@ -293,24 +302,63 @@
       .canvasWrap{min-height:480px;}
     }
     @media (max-width:820px){
-      .app{padding:26px 16px 32px;}
-      .workspace{grid-template-columns:1fr;grid-template-rows:auto auto;gap:20px;}
-      .canvasPanel{padding:20px;}
-      .canvasWrap{aspect-ratio:3/4; min-height:380px;}
-      .optionsPanel{padding:20px;position:relative;}
+      .app{padding:22px 14px 28px;}
+      .workspace{grid-template-columns:1fr;grid-template-rows:auto auto;gap:18px;}
+      .canvasPanel{padding:18px;}
+      .canvasWrap{width:100%; aspect-ratio:3/4; min-height:360px;}
+      .optionsPanel{padding:18px;position:relative;}
       .options-toggle{display:inline-flex;}
       .optionsPanel .optionsBody{display:none;animation:fadeIn .2s ease forwards;}
-      .optionsPanel.is-open .optionsBody{display:flex;}
-      .optionsPanel.is-open{z-index:15;}
+      .optionsPanel.is-open{
+        position:fixed;
+        left:50%;
+        top:50%;
+        transform:translate(-50%,-50%);
+        width:min(520px, calc(100vw - 32px));
+        height:calc(100vh - 88px);
+        max-height:640px;
+        padding:18px;
+        overflow:hidden;
+        z-index:20;
+      }
+      .optionsPanel.is-open .optionsBody{
+        display:flex;
+        flex-direction:column;
+        flex:1;
+        min-height:0;
+      }
+      .optionsPanel.is-open .toolbar{
+        overflow-x:auto;
+        padding-bottom:6px;
+      }
+      .optionsPanel.is-open .collections{
+        flex:1;
+        overflow-y:auto;
+        margin-right:-6px;
+        padding-right:10px;
+      }
+      .optionsPanel.is-open .panelBlock{
+        min-width:0;
+      }
     }
     @media (max-width:560px){
-      .canvasWrap{aspect-ratio:3/4; min-height:320px;}
+      .app{padding:18px 12px 24px;}
+      .canvasPanel{padding:16px;}
+      .canvasWrap{width:100%; aspect-ratio:3/5; min-height:300px;}
       .toolbar{gap:14px;}
       .controlCard{flex:1 1 100%;padding:16px;}
-      .preset{min-width:150px;}
+      .preset{min-width:130px;}
       .thumb{width:118px;height:92px;}
       .optionsTitle{font-size:17px;}
       .addBtn{padding:9px 14px;}
+      .optionsPanel.is-open{
+        width:calc(100vw - 24px);
+        height:calc(100vh - 64px);
+        padding:16px;
+      }
+      .optionsPanel.is-open .collections{
+        padding-right:8px;
+      }
     }
     @keyframes fadeIn{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);} }
   </style>
@@ -335,7 +383,6 @@
       <aside class="panelShell optionsPanel" id="optionsPanel">
         <div class="optionsHeader">
           <button class="options-toggle" id="optsToggle" type="button" aria-expanded="false">Mở tùy chọn</button>
-          <h2 class="optionsTitle">Điều chảnh</h2>
           <button class="addBtn" id="btnAdd" type="button"><span>+</span>Thêm ảnh</button>
         </div>
         <div class="optionsBody" id="optionsBody">
