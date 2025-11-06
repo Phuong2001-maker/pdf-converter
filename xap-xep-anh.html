@@ -55,10 +55,11 @@
       flex-direction:column;
     }
     .canvasWrap{
-      flex:1;
+      flex:0 0 auto;
       width:100%;
-      aspect-ratio:4/5;
-      min-height:460px;
+      aspect-ratio:1/1;
+      height:auto;
+      margin:0 auto;
       position:relative;
       border-radius:20px;
       border:1px solid var(--border);
@@ -77,6 +78,35 @@
     .canvasWrap.has-images{
       border-color:#c8d1ec;
       background:#f7f9ff;
+    }
+    .canvasThumbs{
+      margin-top:28px;
+      padding:22px clamp(18px,2.4vw,28px);
+      border-radius:20px;
+      border:1px solid rgba(148,162,220,.28);
+      background:linear-gradient(155deg,rgba(248,249,255,.92) 0%,rgba(255,255,255,.98) 45%,#f1f4ff 100%);
+      box-shadow:0 22px 46px rgba(35,58,110,.14);
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+    }
+    .canvasThumbsHeader{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:18px;
+    }
+    .canvasThumbsHeader h3{
+      margin:0;
+      font-size:18px;
+      font-weight:700;
+      color:#182133;
+      letter-spacing:-.01em;
+    }
+    .canvasThumbsHeader .subtext{
+      margin:0;
+      font-size:13px;
+      color:var(--muted);
     }
     .canvasDrop{
       position:absolute;
@@ -212,25 +242,49 @@
       padding-right:4px;
     }
     .thumbStrip{
+      display:grid;
+      grid-template-columns:repeat(auto-fill, minmax(142px, 1fr));
+      gap:18px;
+    }
+    .thumbStrip:empty{
       display:flex;
-      flex-wrap:wrap;
-      gap:14px;
-      padding-bottom:6px;
+      justify-content:center;
+      align-items:center;
+      min-height:140px;
+      border:1px dashed rgba(148,162,220,.5);
+      border-radius:18px;
+      background:rgba(255,255,255,.7);
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.35);
+    }
+    .thumbStrip:empty::before{
+      content:'Ch\u01b0a c\u00f3 \u1ea3nh n\u00e0o \u0111\u01b0\u1ee3c th\u00eam. H\u00e3y t\u1ea3i \u1ea3nh \u0111\u1ec3 b\u1eaft \u0111\u1ea7u.';
+      max-width:360px;
+      text-align:center;
+      font-size:14px;
+      line-height:1.6;
+      color:var(--muted);
+      padding:0 16px;
     }
     .thumb{
       position:relative;
-      width:132px;
-      height:100px;
+      width:100%;
+      aspect-ratio:4/3;
       border-radius:16px;
       overflow:hidden;
       border:1px solid #dbe1f5;
       background:#fff;
-      flex:0 0 auto;
       box-shadow:0 8px 22px rgba(31,58,102,.1);
+      transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+    }
+    .thumb:hover{
+      transform:translateY(-3px);
+      border-color:rgba(76,133,255,.6);
+      box-shadow:0 18px 32px rgba(45,72,140,.18);
     }
     .thumb img{width:100%;height:100%;object-fit:cover;display:block;}
-    .thumb .rm{position:absolute;top:8px;right:8px;border:0;border-radius:50%;width:28px;height:28px;background:rgba(21,28,45,.78);color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
-    .thumb .handle{position:absolute;bottom:8px;left:8px;padding:4px 9px;background:rgba(255,255,255,.88);border-radius:999px;font-size:12px;font-weight:600;color:#111c2b;cursor:grab;box-shadow:0 4px 14px rgba(0,0,0,.12);}
+    .thumb .rm{position:absolute;top:8px;right:8px;border:0;border-radius:50%;width:28px;height:28px;background:rgba(21,28,45,.82);color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .18s ease, background .18s ease;}
+    .thumb .rm:hover{transform:scale(1.05);background:rgba(21,28,45,.92);}
+    .thumb .handle{position:absolute;bottom:10px;left:10px;padding:5px 11px;background:rgba(255,255,255,.88);border-radius:999px;font-size:12px;font-weight:600;color:#111c2b;cursor:grab;box-shadow:0 4px 14px rgba(0,0,0,.12);backdrop-filter:blur(4px);}
 
     .panelBlock{
       background:var(--subcard);
@@ -311,13 +365,16 @@
 
     @media (max-width:1100px){
       .workspace{grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);}
-      .canvasWrap{min-height:480px;}
+      .canvasWrap{height:auto;}
     }
     @media (max-width:820px){
       .app{padding:22px 14px 28px;}
       .workspace{grid-template-columns:1fr;grid-template-rows:auto auto;gap:18px;}
       .canvasPanel{padding:18px;}
-      .canvasWrap{width:100%; aspect-ratio:3/4; min-height:360px;}
+      .canvasWrap{width:100%; aspect-ratio:1/1; height:auto;}
+      .canvasThumbs{margin-top:22px;padding:18px;}
+      .canvasThumbsHeader{flex-direction:column;align-items:flex-start;gap:8px;}
+      .canvasThumbsHeader .subtext{font-size:12px;}
       .optionsPanel{padding:18px;position:relative;}
       .options-toggle{display:inline-flex;}
       .optionsPanel .optionsBody{display:none;animation:fadeIn .2s ease forwards;}
@@ -357,11 +414,14 @@
     @media (max-width:560px){
       .app{padding:18px 12px 24px;}
       .canvasPanel{padding:16px;}
-      .canvasWrap{width:100%; aspect-ratio:3/5; min-height:300px;}
+      .canvasWrap{width:100%; aspect-ratio:1/1; height:auto;}
       .toolbar{gap:14px;}
       .controlCard{flex:1 1 100%;padding:16px;}
       .preset{min-width:130px;}
-      .thumb{width:118px;height:92px;}
+      .canvasThumbs{padding:16px;margin-top:18px;}
+      .thumbStrip{display:flex;gap:14px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x mandatory;}
+      .thumbStrip:empty{min-height:120px;}
+      .thumb{flex:0 0 140px;scroll-snap-align:start;}
       .optionsTitle{font-size:17px;}
       .addBtn{padding:9px 14px;}
       .optionsPanel.is-open{
@@ -390,6 +450,13 @@
             <p>Kéo thả ảnh vào phần canvas hoặc bấm “+ Thêm ảnh”. Hỗ trợ nhiều ảnh cùng lúc.</p>
           </label>
           <canvas id="preview"></canvas>
+        </div>
+        <div class="canvasThumbs" id="canvasThumbs">
+          <div class="canvasThumbsHeader">
+            <h3>&#7842;nh &#273;&#227; th&#234;m</h3>
+            <p class="subtext">K&#233;o th&#7843; &#273;&#7875; s&#7855;p x&#7871;p th&#7913; t&#7921; hi&#7875;n th&#7883;.</p>
+          </div>
+          <div class="thumbStrip" id="thumbs"></div>
         </div>
       </div>
 
@@ -437,8 +504,6 @@
           </div>
 
           <div class="collections">
-            <div class="thumbStrip" id="thumbs"></div>
-
             <div class="panelBlock" id="layoutSection">
               <div class="panelHeader">
                 <h3>Bố cục (2–12 ảnh)</h3>
