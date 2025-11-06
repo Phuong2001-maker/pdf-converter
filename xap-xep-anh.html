@@ -54,7 +54,8 @@
     }
     .canvasWrap{
       flex:1;
-      min-height:520px;
+      aspect-ratio:4/5;
+      min-height:460px;
       position:relative;
       border-radius:20px;
       border:1px solid var(--border);
@@ -295,7 +296,7 @@
       .app{padding:26px 16px 32px;}
       .workspace{grid-template-columns:1fr;grid-template-rows:auto auto;gap:20px;}
       .canvasPanel{padding:20px;}
-      .canvasWrap{min-height:420px;}
+      .canvasWrap{aspect-ratio:3/4; min-height:380px;}
       .optionsPanel{padding:20px;position:relative;}
       .options-toggle{display:inline-flex;}
       .optionsPanel .optionsBody{display:none;animation:fadeIn .2s ease forwards;}
@@ -303,7 +304,7 @@
       .optionsPanel.is-open{z-index:15;}
     }
     @media (max-width:560px){
-      .canvasWrap{min-height:360px;}
+      .canvasWrap{aspect-ratio:3/4; min-height:320px;}
       .toolbar{gap:14px;}
       .controlCard{flex:1 1 100%;padding:16px;}
       .preset{min-width:150px;}
@@ -558,7 +559,10 @@
         div.appendChild(handle);
         els.thumbs.appendChild(div);
       });
-      els.canvasWrap.classList.toggle('has-images', state.images.length > 0);
+      const hasImages = state.images.length > 0;
+      els.canvasWrap.classList.toggle('has-images', hasImages);
+      // Ensure canvas pixel size follows wrapper size after layout changes
+      requestAnimationFrame(resizeCanvas);
       updateExportButton();
     }
 
