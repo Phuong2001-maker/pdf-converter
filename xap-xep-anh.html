@@ -76,6 +76,9 @@
       .canvasThumbsHeader h3{font-size:17px;}
       .thumbStrip{grid-template-columns:1fr;}
       .thumb{aspect-ratio:4/3;}
+      .qualityBlock{gap:14px;}
+      .qualityOption strong{font-size:17px;}
+      .qualityNote{padding:12px 14px;}
     }
     .canvasWrap canvas{
       width:100%;
@@ -265,7 +268,7 @@
       box-shadow:inset 0 0 0 1px rgba(255,255,255,.35);
     }
     .thumbStrip:empty::before{
-      content:'Chưa có ảnh nào được thêm. Hãy tải ảnh để bắt đầu.';
+      content:'Ch\u01b0a c\u00f3 \u1ea3nh n\u00e0o \u0111\u01b0\u1ee3c th\u00eam. H\u00e3y t\u1ea3i \u1ea3nh \u0111\u1ec3 b\u1eaft \u0111\u1ea7u.';
       max-width:360px;
       text-align:center;
       font-size:14px;
@@ -293,6 +296,74 @@
     .thumb .rm{position:absolute;top:8px;right:8px;border:0;border-radius:50%;width:28px;height:28px;background:rgba(21,28,45,.82);color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .18s ease, background .18s ease;}
     .thumb .rm:hover{transform:scale(1.05);background:rgba(21,28,45,.92);}
     .thumb .handle{position:absolute;bottom:10px;left:10px;padding:5px 11px;background:rgba(255,255,255,.88);border-radius:999px;font-size:12px;font-weight:600;color:#111c2b;cursor:grab;box-shadow:0 4px 14px rgba(0,0,0,.12);backdrop-filter:blur(4px);}
+
+    .qualityBlock{gap:16px;}
+    .qualityOptions{
+      display:flex;
+      gap:14px;
+      flex-wrap:wrap;
+    }
+    .qualityOption{
+      flex:1 1 160px;
+      min-width:150px;
+      border:1px solid rgba(173,185,225,.65);
+      border-radius:18px;
+      padding:16px;
+      background:#fff;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      cursor:pointer;
+      transition:transform .18s ease, box-shadow .22s ease, border-color .18s ease;
+      outline:none;
+      position:relative;
+      text-align:left;
+    }
+    .qualityOption .badge{
+      display:inline-block;
+      border-radius:999px;
+      padding:4px 10px;
+      font-size:11px;
+      font-weight:600;
+      letter-spacing:.02em;
+      text-transform:uppercase;
+      color:#2f3a5f;
+      background:rgba(223,230,255,.88);
+    }
+    .qualityOption strong{
+      font-size:18px;
+      font-weight:700;
+      color:#1c2539;
+      letter-spacing:-.01em;
+    }
+    .qualityOption small{
+      font-size:13px;
+      font-weight:600;
+      color:#5b6786;
+    }
+    .qualityOption:hover{
+      transform:translateY(-2px);
+      border-color:var(--primary);
+      box-shadow:0 16px 36px rgba(64,103,185,.22);
+    }
+    .qualityOption.active{
+      border-color:transparent;
+      background:linear-gradient(160deg,rgba(233,240,255,1) 0%,rgba(255,255,255,1) 60%,rgba(214,227,255,.9) 100%);
+      box-shadow:0 20px 40px rgba(76,133,255,.28);
+    }
+    .qualityOption[data-quality="normal"].active .badge{background:rgba(255,103,129,.12);color:#d9576f;}
+    .qualityOption[data-quality="high"].active .badge{background:rgba(90,216,170,.18);color:#239a6f;}
+    .qualityOption[data-quality="ultra"].active .badge{background:rgba(244,110,255,.16);color:#b52ac9;}
+    .qualityNote{
+      margin:0;
+      padding:14px 16px;
+      border-radius:16px;
+      background:rgba(233,238,255,.65);
+      border:1px solid rgba(194,206,245,.65);
+      font-size:13px;
+      line-height:1.6;
+      color:#46506b;
+    }
 
     .panelBlock{
       background:var(--subcard);
@@ -382,6 +453,7 @@
         grid-template-columns:repeat(auto-fill, minmax(160px, 1fr));
         gap:16px;
       }
+      .qualityOption{flex:1 1 140px;}
     }
     @media (max-width:820px){
       .app{padding:22px 14px 28px;}
@@ -394,6 +466,8 @@
       .thumbStrip{
         grid-template-columns:repeat(auto-fill, minmax(180px, 1fr));
       }
+      .qualityOptions{flex-direction:column;}
+      .qualityOption{min-width:0;}
       .optionsPanel{padding:18px;position:relative;}
       .options-toggle{display:inline-flex;}
       .optionsPanel .optionsBody{display:none;animation:fadeIn .2s ease forwards;}
@@ -448,6 +522,9 @@
       }
       .thumbStrip:empty{min-height:140px;}
       .thumb{flex:none;width:100%;}
+      .qualityOptions{flex-direction:column;gap:12px;}
+      .qualityOption{width:100%;}
+      .qualityNote{font-size:12px;}
       .optionsTitle{font-size:17px;}
       .addBtn{padding:9px 14px;}
       .optionsPanel.is-open{
@@ -545,6 +622,30 @@
               <div class="presetRow" id="shapeGrid"></div>
             </div>
 
+            <div class="panelBlock qualityBlock" id="qualitySection">
+              <div class="panelHeader">
+                <h3>Ch&#7845;t l&#432;&#7907;ng &#7843;nh</h3>
+              </div>
+              <div class="qualityOptions" id="qualityOptions" role="radiogroup" aria-label="Ch&#7845;t l&#432;&#7907;ng &#7843;nh">
+                <button type="button" class="qualityOption active" data-quality="normal" data-dpi="150" role="radio" aria-checked="true" tabindex="0">
+                  <span class="badge">Khuy&#7871;n d&#7909;ng</span>
+                  <strong>B&#236;nh th&#432;&#7901;ng</strong>
+                  <small>150 DPI</small>
+                </button>
+                <button type="button" class="qualityOption" data-quality="high" data-dpi="220" role="radio" aria-checked="false" tabindex="-1">
+                  <span class="badge">Chi ti&#7871;t</span>
+                  <strong>Cao</strong>
+                  <small>220 DPI</small>
+                </button>
+                <button type="button" class="qualityOption" data-quality="ultra" data-dpi="600" role="radio" aria-checked="false" tabindex="-1">
+                  <span class="badge">Max DPI</span>
+                  <strong>Si&#234;u n&#233;t</strong>
+                  <small>600 DPI</small>
+                </button>
+              </div>
+              <p class="qualityNote" id="qualityNote">Ch&#7871; &#273;&#7897; b&#236;nh th&#432;&#7901;ng (150 DPI) c&#226;n b&#7857;ng gi&#7919;a ch&#7845;t l&#432;&#7907;ng v&#224; dung l&#432;&#7907;ng.</p>
+            </div>
+
             <div class="footer footer--inline">
               <button class="btn" id="btnExport" disabled>Xuất ảnh PNG</button>
             </div>
@@ -579,6 +680,8 @@
       radiusValue: document.getElementById('radiusValue'),
       bgInput: document.getElementById('bg'),
       bgPalette: document.getElementById('bgPalette'),
+      qualityOptions: document.getElementById('qualityOptions'),
+      qualityNote: document.getElementById('qualityNote'),
       btnExport: document.getElementById('btnExport'),
     };
 
@@ -590,7 +693,27 @@
       countSelected: 2,
       bgColor: '#ffffff',
       optionsOpen: false,
+      quality: 'normal',
     };
+
+    const QUALITY_PRESETS = {
+      normal: {
+        dpi: 150,
+        scale: 1,
+        note: 'Ch\u1ebf \u0111\u1ed9 b\u00ecnh th\u01b0\u1eddng (150 DPI) c\u00e2n b\u1eb1ng gi\u1eefa ch\u1ea5t l\u01b0\u1ee3ng v\u00e0 dung l\u01b0\u1ee3ng.',
+      },
+      high: {
+        dpi: 220,
+        scale: 1.5,
+        note: 'Ch\u1ebf \u0111\u1ed9 cao (220 DPI) hi\u1ec3n th\u1ecb chi ti\u1ebft r\u00f5 h\u01a1n.',
+      },
+      ultra: {
+        dpi: 600,
+        scale: 4,
+        note: 'Si\u00eau n\u00e9t (600 DPI) ph\u00f9 h\u1ee3p in kh\u1ed5 l\u1edbn.',
+      },
+    };
+    const EXPORT_BASE_LABEL = 'Xu\u1ea5t \u1ea3nh PNG';
 
     function updateOptionsVisibility(force){
       const isMobile = window.matchMedia('(max-width: 820px)').matches;
@@ -908,21 +1031,18 @@
       }
     }
 
-    function render(){
-      const gap = parseInt(els.gap.value,10);
-      const radius = parseInt(els.radius.value,10);
-      els.gapValue.textContent = gap + 'px';
-      els.radiusValue.textContent = radius + 'px';
-      if(els.bgInput.value.toLowerCase() !== state.bgColor.toLowerCase()){
-        els.bgInput.value = state.bgColor;
+    function drawCollage(ctx, width, height, scale, baseGap, baseRadius){
+      ctx.save();
+      ctx.setTransform(1,0,0,1,0,0);
+      ctx.clearRect(0,0,width,height);
+      ctx.fillStyle = state.bgColor;
+      ctx.fillRect(0,0,width,height);
+      ctx.imageSmoothingEnabled = true;
+      if(typeof ctx.imageSmoothingQuality === 'string'){
+        ctx.imageSmoothingQuality = 'high';
       }
-      const W = els.canvas.width;
-      const H = els.canvas.height;
-      els.ctx.save();
-      els.ctx.setTransform(1,0,0,1,0,0);
-      els.ctx.fillStyle = state.bgColor;
-      els.ctx.fillRect(0,0,W,H);
-      const n = Math.min(state.images.length, state.layout ? state.layout.length : state.images.length);
+      const maxCells = state.layout ? state.layout.length : state.images.length;
+      const n = Math.min(state.images.length, maxCells);
       let cells;
       if(state.layout && n>0){
         if(n === 1){
@@ -934,15 +1054,32 @@
       }else{
         cells = autoGrid(n);
       }
-      const effectiveGap = n <= 1 ? 0 : gap;
-      const rects = computeLayoutFromCells(cells, W, H, effectiveGap);
+      const effectiveGap = n <= 1 ? 0 : baseGap * scale;
+      const rects = computeLayoutFromCells(cells, width, height, effectiveGap);
       rects.forEach((rect, i)=>{
         const img = state.images[i]?.img;
         const sh = cells[i]?.shape;
         if(!img) return;
-        drawImageMasked(els.ctx, img, rect, radius, state.images[i], sh);
+        const original = state.images[i];
+        const scaledState = original ? {
+          ...original,
+          offsetX: (original.offsetX || 0) * scale,
+          offsetY: (original.offsetY || 0) * scale,
+        } : original;
+        drawImageMasked(ctx, img, rect, baseRadius * scale, scaledState, sh);
       });
-      els.ctx.restore();
+      ctx.restore();
+    }
+
+    function render(){
+      const gap = parseInt(els.gap.value,10);
+      const radius = parseInt(els.radius.value,10);
+      els.gapValue.textContent = gap + 'px';
+      els.radiusValue.textContent = radius + 'px';
+      if(els.bgInput.value.toLowerCase() !== state.bgColor.toLowerCase()){
+        els.bgInput.value = state.bgColor;
+      }
+      drawCollage(els.ctx, els.canvas.width, els.canvas.height, 1, gap, radius);
     }
 
     function drawPresetPreview(canvas, cells){
@@ -1047,21 +1184,111 @@
     function updateExportButton(){
       const disabled = state.images.length === 0;
       els.btnExport.disabled = disabled;
+      els.btnExport.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+    }
+
+    function setupQualityControls(){
+      if(!els.qualityOptions) return;
+      const getButtons = ()=> Array.from(els.qualityOptions.querySelectorAll('.qualityOption'));
+      function applyQuality(key){
+        const preset = QUALITY_PRESETS[key] ? QUALITY_PRESETS[key] : QUALITY_PRESETS.normal;
+        state.quality = preset === QUALITY_PRESETS[key] ? key : 'normal';
+        const buttons = getButtons();
+        buttons.forEach(btn=>{
+          const isActive = btn.dataset.quality === state.quality;
+          btn.classList.toggle('active', isActive);
+          btn.setAttribute('aria-checked', String(isActive));
+          btn.tabIndex = isActive ? 0 : -1;
+        });
+        if(els.qualityNote){
+          els.qualityNote.textContent = preset.note;
+        }
+        if(els.btnExport){
+          let label = EXPORT_BASE_LABEL;
+          if(preset.dpi){
+            label += ` (${preset.dpi} DPI)`;
+          }
+          els.btnExport.textContent = label;
+          els.btnExport.setAttribute('aria-label', label);
+        }
+      }
+
+      els.qualityOptions.addEventListener('click', e=>{
+        const target = e.target.closest('.qualityOption');
+        if(!target) return;
+        applyQuality(target.dataset.quality || 'normal');
+      });
+
+      els.qualityOptions.addEventListener('keydown', e=>{
+        const keys = ['ArrowRight','ArrowDown','ArrowLeft','ArrowUp','Home','End'];
+        if(!keys.includes(e.key)) return;
+        e.preventDefault();
+        const buttons = getButtons();
+        if(!buttons.length) return;
+        let currentIndex = buttons.findIndex(btn=>btn.dataset.quality === state.quality);
+        if(currentIndex < 0) currentIndex = 0;
+        let nextIndex = currentIndex;
+        if(e.key === 'ArrowRight' || e.key === 'ArrowDown'){
+          nextIndex = (currentIndex + 1) % buttons.length;
+        }else if(e.key === 'ArrowLeft' || e.key === 'ArrowUp'){
+          nextIndex = (currentIndex - 1 + buttons.length) % buttons.length;
+        }else if(e.key === 'Home'){
+          nextIndex = 0;
+        }else if(e.key === 'End'){
+          nextIndex = buttons.length - 1;
+        }
+        const nextBtn = buttons[nextIndex];
+        if(nextBtn){
+          applyQuality(nextBtn.dataset.quality || 'normal');
+          nextBtn.focus();
+        }
+      });
+
+      applyQuality(state.quality);
     }
 
     els.btnExport.addEventListener('click', ()=>{
       if(state.images.length === 0) return;
-      els.canvas.toBlob(blob=>{
-        if(!blob) return;
-        const url = URL.createObjectURL(blob);
-        const a=document.createElement('a');
-        a.href=url;
-        a.download = 'collage.png';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(()=>URL.revokeObjectURL(url), 3000);
-      }, 'image/png');
+      render();
+      const preset = QUALITY_PRESETS[state.quality] || QUALITY_PRESETS.normal;
+      const scale = preset?.scale || 1;
+      const baseGap = parseInt(els.gap.value,10);
+      const baseRadius = parseInt(els.radius.value,10);
+      const fileName = `collage-${(preset?.dpi || 150)}dpi.png`;
+
+      const downloadFromCanvas = canvas=>{
+        canvas.toBlob(blob=>{
+          if(!blob) return;
+          const url = URL.createObjectURL(blob);
+          const a=document.createElement('a');
+          a.href=url;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(()=>URL.revokeObjectURL(url), 3000);
+        }, 'image/png');
+      };
+
+      if(scale === 1){
+        downloadFromCanvas(els.canvas);
+        return;
+      }
+
+      const exportCanvas = document.createElement('canvas');
+      exportCanvas.width = Math.max(1, Math.round(els.canvas.width * scale));
+      exportCanvas.height = Math.max(1, Math.round(els.canvas.height * scale));
+      const exportCtx = exportCanvas.getContext('2d');
+      if(!exportCtx){
+        downloadFromCanvas(els.canvas);
+        return;
+      }
+      exportCtx.imageSmoothingEnabled = true;
+      if(typeof exportCtx.imageSmoothingQuality === 'string'){
+        exportCtx.imageSmoothingQuality = 'high';
+      }
+      drawCollage(exportCtx, exportCanvas.width, exportCanvas.height, scale, baseGap, baseRadius);
+      downloadFromCanvas(exportCanvas);
     });
 
     function setupLayoutPicker(){
@@ -1274,6 +1501,7 @@
       setupLayoutPicker();
       renderPresets();
       updateBgPalette();
+      setupQualityControls();
       renderThumbs();
     })();
   </script>
