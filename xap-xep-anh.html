@@ -209,13 +209,12 @@
       display:flex;
       flex-direction:column;
       gap:18px;
-      overflow-y:auto;
       padding-right:4px;
     }
     .thumbStrip{
       display:flex;
+      flex-wrap:wrap;
       gap:14px;
-      overflow-x:auto;
       padding-bottom:6px;
     }
     .thumb{
@@ -253,19 +252,32 @@
     .countTabs{display:flex;flex-wrap:wrap;gap:8px;}
     .countTabs .tab{border:1px solid #d3dbf2;border-radius:999px;padding:6px 14px;background:#fff;font-weight:600;font-size:14px;color:#33405b;cursor:pointer;transition:all .2s ease;}
     .countTabs .tab.active{background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:0 8px 18px rgba(76,133,255,.38);}
-    .presetRow{display:flex;gap:12px;overflow-x:auto;padding-bottom:4px;}
-    .presetRow{
-      -webkit-overflow-scrolling:touch;
-      overscroll-behavior-inline:contain;
-      touch-action:pan-x;
-    }
+    .presetRow{display:flex;flex-wrap:wrap;gap:12px;padding-bottom:4px;}
     .preset{min-width:138px;border:0;border-radius:18px;background:#fff;border:1px solid transparent;box-shadow:0 12px 28px rgba(41,57,98,.12);padding:12px 12px 14px;cursor:pointer;display:flex;flex-direction:column;gap:10px;transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease;}
     .preset:hover{transform:translateY(-2px);}
     .preset.active{border-color:var(--primary);box-shadow:0 18px 34px rgba(76,133,255,.28);}
     .presetCanvas{width:120px;height:120px;border-radius:14px;display:block;}
     .presetLabel{margin:0;font-size:13px;color:#39445a;font-weight:600;}
 
+    #layoutSection,
+    #shapeSection{
+      display:flex;
+      flex-direction:column;
+      max-height:min(420px,60vh);
+    }
+    #shapeSection{max-height:min(360px,55vh);}
+    #layoutSection .presetRow,
+    #shapeSection .presetRow{
+      flex:1;
+      min-height:0;
+      overflow-y:auto;
+      padding-right:6px;
+      overscroll-behavior:contain;
+      -webkit-overflow-scrolling:touch;
+    }
+
     .footer{padding-top:14px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;}
+    .footer--inline{padding-top:12px;margin-top:6px;}
     .btn{
       appearance:none;
       border:0;
@@ -326,6 +338,7 @@
         flex-direction:column;
         flex:1;
         min-height:0;
+        overflow-y:auto;
       }
       .optionsPanel.is-open .toolbar{
         overflow-x:auto;
@@ -333,9 +346,9 @@
       }
       .optionsPanel.is-open .collections{
         flex:1;
-        overflow-y:auto;
-        margin-right:-6px;
-        padding-right:10px;
+        min-height:0;
+        display:flex;
+        flex-direction:column;
       }
       .optionsPanel.is-open .panelBlock{
         min-width:0;
@@ -440,10 +453,10 @@
               </div>
               <div class="presetRow" id="shapeGrid"></div>
             </div>
-          </div>
 
-          <div class="footer">
-            <button class="btn" id="btnExport" disabled>Xuất ảnh PNG</button>
+            <div class="footer footer--inline">
+              <button class="btn" id="btnExport" disabled>Xuất ảnh PNG</button>
+            </div>
           </div>
         </div>
       </aside>
