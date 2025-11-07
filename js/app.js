@@ -3256,9 +3256,9 @@ function renderQrPanel(container) {
         textOptionCaption: '',
         linkOption: 'Liên kết',
         linkOptionCaption: '',
-        textLabel: 'Nội dung chữ ký',
+        textLabel: '',
         textHelp: '',
-        linkLabel: 'Liên kết QR',
+        linkLabel: '',
         linkHelp: '',
         placeholderDefault: 'Nhập chữ ký hoặc dán liên kết để tạo mã QR.',
         placeholderTooLong: 'Nội dung quá dài, hãy rút gọn hoặc chia thành nhiều mã.',
@@ -3309,12 +3309,12 @@ function renderQrPanel(container) {
     <div class='qr-panel'>
       <form id='qrForm' class='form-grid qr-form'>
         <label class='field' data-role='text-field'${inputType === 'link' ? ' hidden' : ''}>
-          <span>${copy.textLabel}</span>
+          ${copy.textLabel ? `<span>${copy.textLabel}</span>` : ''}
           <textarea class='qr-textarea' name='text' rows='3' maxlength='720' placeholder='${escapeAttr(copy.textPlaceholder)}'>${escapeHtml(textFieldValue)}</textarea>
           ${copy.textHelp ? `<small>${copy.textHelp}</small>` : ''}
         </label>
         <label class='field' data-role='link-field'${inputType === 'text' ? ' hidden' : ''}>
-          <span>${copy.linkLabel}</span>
+          ${copy.linkLabel ? `<span>${copy.linkLabel}</span>` : ''}
           <input type='url' name='link' inputmode='url' placeholder='${escapeAttr(copy.linkPlaceholder)}' value='${escapeAttr(linkFieldValue)}' spellcheck='false' autocomplete='off' maxlength='2048'>
           ${copy.linkHelp ? `<small>${copy.linkHelp}</small>` : ''}
         </label>
