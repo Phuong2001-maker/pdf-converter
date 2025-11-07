@@ -3253,13 +3253,13 @@ function renderQrPanel(container) {
         introBody: 'Nhập nội dung chữ ký tiếng Việt có dấu hoặc dán liên kết web, ứng dụng sẽ tạo mã QR rõ nét để đặt lên ảnh.',
         contentLegend: 'Loại nội dung',
         textOption: 'Văn bản',
-        textOptionCaption: 'QR chứa trọn nội dung chữ ký, hỗ trợ tiếng Việt đầy đủ dấu.',
+        textOptionCaption: '',
         linkOption: 'Liên kết',
-        linkOptionCaption: 'QR dẫn đến website, tài liệu hoặc trang đặt lịch.',
+        linkOptionCaption: '',
         textLabel: 'Nội dung chữ ký',
         textHelp: '',
-        linkLabel: 'Đường dẫn QR',
-        linkHelp: 'Dán URL website, tài liệu hoặc trang cần chia sẻ.',
+        linkLabel: 'Liên kết QR',
+        linkHelp: '',
         placeholderDefault: 'Nhập chữ ký hoặc dán liên kết để tạo mã QR.',
         placeholderTooLong: 'Nội dung quá dài, hãy rút gọn hoặc chia thành nhiều mã.',
         placeholderGeneric: 'Không thể tạo mã QR với nội dung này. Vui lòng rút gọn hoặc kiểm tra lại.',
@@ -3308,25 +3308,6 @@ function renderQrPanel(container) {
   container.innerHTML = `
     <div class='qr-panel'>
       <form id='qrForm' class='form-grid qr-form'>
-        <fieldset class='field qr-fieldset'>
-          <legend>${copy.contentLegend}</legend>
-          <div class='qr-choice-group'>
-            <label class='qr-choice-card'>
-              <input type='radio' name='inputType' value='text'${inputType === 'text' ? ' checked' : ''}>
-              <span class='qr-choice-content'>
-                <span class='qr-choice-title'>${copy.textOption}</span>
-                <span class='qr-choice-caption'>${copy.textOptionCaption}</span>
-              </span>
-            </label>
-            <label class='qr-choice-card'>
-              <input type='radio' name='inputType' value='link'${inputType === 'link' ? ' checked' : ''}>
-              <span class='qr-choice-content'>
-                <span class='qr-choice-title'>${copy.linkOption}</span>
-                <span class='qr-choice-caption'>${copy.linkOptionCaption}</span>
-              </span>
-            </label>
-          </div>
-        </fieldset>
         <label class='field' data-role='text-field'${inputType === 'link' ? ' hidden' : ''}>
           <span>${copy.textLabel}</span>
           <textarea class='qr-textarea' name='text' rows='3' maxlength='720' placeholder='${escapeAttr(copy.textPlaceholder)}'>${escapeHtml(textFieldValue)}</textarea>
@@ -3337,6 +3318,25 @@ function renderQrPanel(container) {
           <input type='url' name='link' inputmode='url' placeholder='${escapeAttr(copy.linkPlaceholder)}' value='${escapeAttr(linkFieldValue)}' spellcheck='false' autocomplete='off' maxlength='2048'>
           ${copy.linkHelp ? `<small>${copy.linkHelp}</small>` : ''}
         </label>
+        <fieldset class='field qr-fieldset'>
+          <legend>${copy.contentLegend}</legend>
+          <div class='qr-choice-group'>
+            <label class='qr-choice-card'>
+              <input type='radio' name='inputType' value='text'${inputType === 'text' ? ' checked' : ''}>
+              <span class='qr-choice-content'>
+                <span class='qr-choice-title'>${copy.textOption}</span>
+                ${copy.textOptionCaption ? `<span class='qr-choice-caption'>${copy.textOptionCaption}</span>` : ''}
+              </span>
+            </label>
+            <label class='qr-choice-card'>
+              <input type='radio' name='inputType' value='link'${inputType === 'link' ? ' checked' : ''}>
+              <span class='qr-choice-content'>
+                <span class='qr-choice-title'>${copy.linkOption}</span>
+                ${copy.linkOptionCaption ? `<span class='qr-choice-caption'>${copy.linkOptionCaption}</span>` : ''}
+              </span>
+            </label>
+          </div>
+        </fieldset>
       </form>
       <aside class='qr-preview-card'>
         <div class='qr-preview-header'>

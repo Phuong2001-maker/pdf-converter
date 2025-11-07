@@ -40,7 +40,7 @@ const localeStrings = {
       pen: 'Ký tay',
       logo: 'Logo/Nhãn dán',
       watermark: 'Dấu mờ',
-      qr: 'QR chữ ký',
+      qr: 'QR',
       blur: 'Làm mờ/Pixel hóa',
       export: 'Xuất ảnh',
     },
@@ -209,7 +209,7 @@ function describeLayer(layer) {
     case layerTypes.WATERMARK:
       return isVi ? 'Dấu mờ lặp' : 'Repeated watermark';
     case layerTypes.QR:
-      return isVi ? 'QR chữ ký' : 'QR signature';
+      return isVi ? 'QR' : 'QR signature';
     case layerTypes.BLUR:
       return layer.mode === 'pixelate'
         ? (isVi ? 'Vùng làm mờ điểm ảnh' : 'Pixelated region')
