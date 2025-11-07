@@ -3689,6 +3689,7 @@ async function generateQr(values) {
       width: baseSize,
       height: baseSize,
       margin: baseMargin,
+      typeNumber: 0,
     };
     const correctLevels = [];
     if (window.QRCode.CorrectLevel) {
