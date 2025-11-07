@@ -3257,7 +3257,7 @@ function renderQrPanel(container) {
         linkOption: 'Liên kết',
         linkOptionCaption: 'QR dẫn đến website, tài liệu hoặc trang đặt lịch.',
         textLabel: 'Nội dung chữ ký',
-        textHelp: 'Hỗ trợ tiếng Việt có dấu và nhiều ngôn ngữ khác.',
+        textHelp: '',
         linkLabel: 'Đường dẫn QR',
         linkHelp: 'Dán URL website, tài liệu hoặc trang cần chia sẻ.',
         placeholderDefault: 'Nhập chữ ký hoặc dán liên kết để tạo mã QR.',
@@ -3267,12 +3267,12 @@ function renderQrPanel(container) {
         linkPlaceholder: 'https://congty.com/chu-ky-so',
         previewPlaced: 'Đã chèn trên ảnh',
         previewReady: 'Đã tạo bản xem trước',
-        previewEmpty: 'Nhập nội dung để tạo mã',
+        previewEmpty: '',
         previewTooLong: 'Nội dung vượt giới hạn QR',
         previewError: 'Không thể hiển thị mã QR',
         previewButton: 'Quét thử bằng camera',
         createButton: 'Chèn vào ảnh',
-        hint: 'Mã QR nằm trên nền trắng nhẹ để dễ đọc trên ảnh của bạn.',
+        hint: '',
         toastTitle: 'QR quá dài',
         toastMessage: 'Rút gọn nội dung hoặc chia thành nhiều mã trước khi chèn.'
       }
@@ -3307,9 +3307,6 @@ function renderQrPanel(container) {
   const escapeAttr = value => escapeHtml(value).replace(/"/g, '&quot;');
   container.innerHTML = `
     <div class='qr-panel'>
-      <div class='qr-panel-intro'>
-        <p>${copy.introBody}</p>
-      </div>
       <form id='qrForm' class='form-grid qr-form'>
         <fieldset class='field qr-fieldset'>
           <legend>${copy.contentLegend}</legend>
@@ -3333,12 +3330,12 @@ function renderQrPanel(container) {
         <label class='field' data-role='text-field'${inputType === 'link' ? ' hidden' : ''}>
           <span>${copy.textLabel}</span>
           <textarea class='qr-textarea' name='text' rows='3' maxlength='720' placeholder='${escapeAttr(copy.textPlaceholder)}'>${escapeHtml(textFieldValue)}</textarea>
-          <small>${copy.textHelp}</small>
+          ${copy.textHelp ? `<small>${copy.textHelp}</small>` : ''}
         </label>
         <label class='field' data-role='link-field'${inputType === 'text' ? ' hidden' : ''}>
           <span>${copy.linkLabel}</span>
           <input type='url' name='link' inputmode='url' placeholder='${escapeAttr(copy.linkPlaceholder)}' value='${escapeAttr(linkFieldValue)}' spellcheck='false' autocomplete='off' maxlength='2048'>
-          <small>${copy.linkHelp}</small>
+          ${copy.linkHelp ? `<small>${copy.linkHelp}</small>` : ''}
         </label>
       </form>
       <aside class='qr-preview-card'>
@@ -3361,9 +3358,7 @@ function renderQrPanel(container) {
             ${copy.createButton}
           </button>
         </div>
-        <p class='qr-preview-hint'>
-          ${copy.hint}
-        </p>
+        ${copy.hint ? `<p class='qr-preview-hint'>${copy.hint}</p>` : ''}
       </aside>
     </div>
   `;

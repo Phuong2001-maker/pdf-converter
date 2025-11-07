@@ -1003,6 +1003,8 @@ button:disabled {
   display: flex;
   flex-direction: column;
   gap: 18px;
+  border: none;
+  border-radius: 0;
 }
 
 .panel-block {
@@ -1485,21 +1487,6 @@ button:disabled {
 
 .qr-panel form {
   margin: 0;
-}
-
-.qr-panel-intro {
-  padding: 14px 16px;
-  border-radius: var(--radius-lg);
-  border: 1px solid color-mix(in srgb, var(--color-primary) 12%, transparent);
-  background: color-mix(in srgb, var(--color-primary) 6%, var(--color-surface) 94%);
-  box-shadow: var(--shadow-sm);
-}
-
-.qr-panel-intro p {
-  margin: 0;
-  font-size: 0.86rem;
-  line-height: 1.5;
-  color: var(--color-subtext);
 }
 
 .qr-form {

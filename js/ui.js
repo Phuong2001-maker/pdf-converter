@@ -49,7 +49,7 @@ const localeStrings = {
       pen: 'Vẽ chữ ký tay, hoàn tác/làm lại và chuyển thành nhãn dán.',
       logo: 'Chèn logo PNG/SVG, chỉnh kích thước và vị trí.',
       watermark: 'Tạo dấu mờ lặp theo góc và khoảng cách.',
-      qr: 'Sinh QR chứa nội dung chữ ký và đặt vào ảnh.',
+      qr: '',
       blur: 'Chọn vùng để làm mờ hoặc pixel hóa.',
       export: 'Chọn định dạng, chất lượng, kích thước và tải xuống.',
     },
